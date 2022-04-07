@@ -2,7 +2,12 @@ export class Contact {
     email: string;
     verified: boolean;
     primary: boolean;
+
+    constructor(partial: Partial<Contact>) {
+        Object.assign(this, partial);
+    }
 }
+
 export class User {
     public id: string;
     public username: string;
@@ -14,7 +19,7 @@ export class User {
     public password: string;
     public level: string;
     public subject: string;
-    
+
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);
     }
