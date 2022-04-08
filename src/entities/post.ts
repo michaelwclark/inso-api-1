@@ -1,4 +1,4 @@
-export class Post {
+export class DiscussionPost {
     public id: string;
     public userId: string;
     public discussionId: string;
@@ -8,7 +8,8 @@ export class Post {
     public comment_for: string;
     public post: string;
 
-    constructor(partial: Partial<Post>) {
+    constructor(partial: Partial<DiscussionPost>) {
+        console.log(partial)
         Object.assign(this, partial);
     }
 }
