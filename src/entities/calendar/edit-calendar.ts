@@ -29,7 +29,7 @@ export class CalendarEditDTO {
     
         return new Types.ObjectId(id.value);
     })
-    public id: string;
+    public id: Types.ObjectId;
 
     @IsNotEmpty()
     @Type(() => Date)

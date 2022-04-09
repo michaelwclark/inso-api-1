@@ -3,6 +3,7 @@ import { AppService } from './app.service';
 import { Calendar } from './entities/calendar/calendar';
 import { CalendarCreateDTO } from './entities/calendar/create-calendar';
 import { CalendarEditDTO } from './entities/calendar/edit-calendar';
+import { DiscussionSetCreateDTO } from './entities/discussion-set/create-discussion-set';
 import { DiscussionPost } from './entities/post';
 
 @Controller()
@@ -15,7 +16,7 @@ export class AppController {
   }
 
   @Post('stuff')
-  testStuff(@Body() body: CalendarEditDTO): void {
+  testStuff(@Body() body: DiscussionSetCreateDTO): void {
     console.log(body);
   }
 }
