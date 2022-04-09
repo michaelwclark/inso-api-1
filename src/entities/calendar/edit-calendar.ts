@@ -1,14 +1,17 @@
 import { BadRequestException } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
-import { IsDate, IsNotEmpty, ValidateNested } from "class-validator";
+import { IsDate, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { Types } from 'mongoose';
 
 export class StartEnd {
+
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
     open: Date;
 
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
@@ -20,6 +23,7 @@ export class StartEnd {
 }
 
 export class CalendarEditDTO {
+
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @Transform((id:any) => {
@@ -31,24 +35,29 @@ export class CalendarEditDTO {
     })
     public id: Types.ObjectId;
 
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
     public open: Date;
 
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
     public close: Date;
 
+    @IsOptional()
     @ValidateNested()
     @Type(() => StartEnd)
     public posting?: StartEnd;
 
+    @IsOptional()
     @ValidateNested()
     @Type(() => StartEnd)
     public responding?: StartEnd;
 
+    @IsOptional()
     @ValidateNested()
     @Type(() => StartEnd)
     public synthesizing?: StartEnd;

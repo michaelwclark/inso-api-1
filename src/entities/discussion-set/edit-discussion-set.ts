@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsDate, IsNotEmpty, IsString, Length } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsDate, IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
 import { Types } from 'mongoose';
 
 export class DiscussionSetEditDTO {
@@ -15,6 +15,7 @@ export class DiscussionSetEditDTO {
     })
     public id: Types.ObjectId;
 
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @Transform((id:any) => {
@@ -23,18 +24,24 @@ export class DiscussionSetEditDTO {
     })
     public insoCode: string;
 
+    @IsOptional()
+    @IsNotEmpty()
     @IsString()
     public name: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
     public archived: Date;
 
+    @IsOptional()
+    @IsNotEmpty()
     @IsArray()
-    @Length(1)
+    @ArrayNotEmpty()
     public facilitators: string [];
 
+    @IsOptional()
     @IsNotEmpty()
     @Transform((id:any) => {
         if (!Types.ObjectId.isValid(id.value)) {
