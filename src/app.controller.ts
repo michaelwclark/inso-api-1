@@ -17,7 +17,7 @@ export class AppController {
   }
 
   @Post('stuff')
-  testStuff(@Body() body: DiscussionSetEditDTO): void {
+  testStuff(@Body() body: CalendarCreateDTO): void {
     console.log(body);
   }
 }
