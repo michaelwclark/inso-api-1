@@ -61,6 +61,19 @@ export class DiscussionEditDTO {
     })
     public poster: Types.ObjectId;
     
+    @IsOptional()
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @Transform((id:any) => {
+        if (!Types.ObjectId.isValid(id.value)) {
+          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
+        }
+    
+        return new Types.ObjectId(id.value);
+    })
+    public set: Types.ObjectId;
+
+    
     constructor(partial: Partial<DiscussionEditDTO>) {
         Object.assign(this, partial);
     }
