@@ -1,11 +1,5 @@
-export class StartEnd {
-    open: Date;
-    close: Date;
+import { StartEnd } from "./startEnd/startEnd";
 
-    constructor(partial: Partial<StartEnd>) {
-        Object.assign(this, partial);
-    }
-}
 export class Calendar {
     public id: string;
     public open: Date;

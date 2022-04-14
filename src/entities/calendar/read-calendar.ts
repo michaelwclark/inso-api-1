@@ -1,17 +1,11 @@
-export class StartEnd {
-    open: Date;
-    close: Date;
+import { ReadStartEnd } from "./startEnd/read-startEnd";
 
-    constructor(partial: Partial<StartEnd>) {
-        Object.assign(this, partial);
-    }
-}
 
 export class CalendarDTO {
     public id: string;
     public open: Date;
     public close: Date;
-    public posting?: StartEnd;
-    public responding?: StartEnd;
-    public synthesizing?: StartEnd;
+    public posting?: ReadStartEnd;
+    public responding?: ReadStartEnd;
+    public synthesizing?: ReadStartEnd;
 }
