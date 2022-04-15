@@ -16,7 +16,7 @@ export class CalendarCreateDTO {
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
-    public open: string;
+    public open: Date;
 
     @ApiProperty({
         name: 'close',

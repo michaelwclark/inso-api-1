@@ -1,22 +1,88 @@
-import { BadRequestException } from "@nestjs/common";
-import { Type, Transform } from "class-transformer";
-import { IsNotEmpty } from "class-validator";
-import { Types } from 'mongoose';
-
-export class Discussion {
-    @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
-        }
+export class DiscussionReadDTO {
     
-        return new Types.ObjectId(id.value);
-    })
-    public id: Types.ObjectId;
-
-    @IsNotEmpty()
-    public insoCode: string;
-
-    
+  public id: string;
+  public insoCode: string;
+  public name: string;
+  public created: string;
+  public archived: string;
+  public setting: {
+    id: string;
+    starterPrompt: string;
+    postInspiration: {
+      id: string;
+      type: string;
+      instructions: string;
+      outline: [{
+        header: string;
+        prompt: string;
+      }]
+    };
+    scores: {
+      id: string;
+      instructions: {
+        posting: number;
+        responding: number;
+        synthesizing: number;
+      };
+      interactions: {
+        max: number;
+      };
+      impact: {
+        max: number;
+      };
+      rubric: {
+        max: number;
+        criteria: [{
+          description: string;
+          max: number;
+        }]
+      }
+    };
+    calendar: {
+      id: string;
+      open: string;
+      close: string;
+      posting: {
+        open: string;
+        close: string;
+      };
+      responding: {
+        open: string;
+        close: string;
+      };
+      synthesizing: {
+        open: string;
+        close: string;
+      }
+    };
+  };
+  public facilitators: {
+      id: string;
+      username: string;
+      f_name: string;
+      l_name: string;
+  } [];
+  public poster: {
+      id: string;
+      username: string;
+      f_name: string;
+      l_name: string;
+  };
+  public posts: {
+      id: string;
+      user: {
+        id: string;
+        username: string;
+        f_name: string;
+        l_name: string;
+      }
+      draft: boolean;
+      date: string;
+      tags: string [];
+      post: string;
+  } [];
+  
+  constructor(partial: Partial<DiscussionReadDTO>) {
+      Object.assign(this, partial);
+  }
 }
