@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class DiscussionSetController {
   constructor() {}
 
-  @Get()
+  @Get('discussion-set')
   getHello(): string {
-    return 'wow'
+    return 'discussion-set'
   }
 }

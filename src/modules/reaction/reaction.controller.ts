@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class ReactionController {
   constructor() {}
 
-  @Get()
+  @Get('reaction')
   getHello(): string {
-    return 'wow'
+    return 'reaction'
   }
 }

@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class PostController {
   constructor() {}
 
-  @Get()
+  @Get('post')
   getHello(): string {
-    return 'wow'
+    return 'post'
   }
 }

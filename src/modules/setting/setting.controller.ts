@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class SettingController {
   constructor() {}
 
-  @Get()
+  @Get('setting')
   getHello(): string {
-    return 'wow'
+    return 'setting'
   }
 }

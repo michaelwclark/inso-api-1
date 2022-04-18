@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class GradeController {
   constructor() {}
 
-  @Get()
+  @Get('grade')
   getHello(): string {
-    return 'wow'
+    return 'grade'
   }
 }

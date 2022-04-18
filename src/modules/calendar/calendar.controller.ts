@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class CalendarController {
   constructor() {}
 
-  @Get()
+  @Get('calendar')
   getHello(): string {
-    return 'wow'
+    return 'calendar'
   }
 }

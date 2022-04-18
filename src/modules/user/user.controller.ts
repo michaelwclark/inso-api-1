@@ -5,8 +5,8 @@ import { Controller, Get } from '@nestjs/common';
 export class UserController {
   constructor() {}
 
-  @Get()
+  @Get('user')
   getHello(): string {
-    return 'wow'
+    return 'user'
   }
 }
