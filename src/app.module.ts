@@ -11,6 +11,7 @@ import { GradeModule } from './modules/grade/grade.module';
 import { DiscussionSetModule } from './modules/discussion-set/discussion-set.module';
 import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     GradeModule,
     DiscussionSetModule,
     DiscussionModule,
-    CalendarModule
+    CalendarModule,
+    MongooseModule.forRoot('mongodb://localhost/inso')
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -16,9 +16,12 @@ async function bootstrap() {
     .setTitle('Inso API')
     .setDescription('API for Inso system')
     .setVersion('0.0')
+    .addTag('Routes')
     .build();
     
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    deepScanRoutes: true
+  });
   SwaggerModule.setup('api', app, document);
   
   await app.listen(3000);

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsDate, IsNotEmpty, ValidateNested } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { CreateStartEnd } from './startEnd/create-startEnd';
 
 export class CalendarCreateDTO {
