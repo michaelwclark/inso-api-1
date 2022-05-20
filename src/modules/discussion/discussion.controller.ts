@@ -1,11 +1,12 @@
-import { Body, Controller, Delete, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
-
+import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
+import { makeInsoId } from '../shared/generateInsoCode';
 
 @Controller()
 export class DiscussionController {
@@ -20,14 +21,25 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  createDiscussion(@Body() discussion: DiscussionCreateDTO): any {
-    // Check that user exists in DB
-    // Add the poster to the facilitators
-    // Create Inso Code 
+  async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
+    // TODO: Check that user exists in DB
 
-    const createdDiscussion = new this.discussionModel(discussion);
-    return createdDiscussion.save();
+    // Add the poster to the facilitators
+    if(discussion.facilitators === undefined) {
+      discussion.facilitators = [];
+    }
+    discussion.facilitators.push(discussion.poster);
+    // Create Inso Code 
+    const code = makeInsoId(5);
+    // Check that the code is not active in the database
+    let found = new this.discussionModel();
+    while(found !== null) {
+      found = await this.discussionModel.findOne({ insoCode: code });
+      const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
+      return createdDiscussion.save();
+    }
   }
+
 
   @Patch('discussion/:discussionId/metadata')
   @ApiOperation({description: 'Update the metadata for the discussion'})
@@ -38,7 +50,22 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  updateDiscussionMetadata(): string {
+  async updateDiscussionMetadata(@Body() discussion: Partial<DiscussionEditDTO>): Promise<string> {
+    console.log(discussion);
+    return 'update discussion metadata'
+  }
+
+  @Get('discussion/:discussionId')
+  @ApiOperation({description: 'Update the metadata for the discussion'})
+  @ApiBody({description: '', type: DiscussionEditDTO})
+  @ApiParam({name: '', description: ''})
+  @ApiOkResponse({ description: ''})
+  @ApiBadRequestResponse({ description: ''})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: ''})
+  @ApiTags('Discussion')
+  async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
+    console.log(discussionId);
     return 'update discussion metadata'
   }
 

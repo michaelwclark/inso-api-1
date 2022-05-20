@@ -35,6 +35,24 @@ export class DiscussionCreateDTO {
         return new Types.ObjectId(id.value);
     })
     public poster: Types.ObjectId;
+
+    @ApiProperty({
+        name: 'facilitators',
+        description: 'The ObjectId of the users that is are facilitators of the discussion',
+        required: true,
+        type: Types.ObjectId,
+        isArray: false,
+        example: '507f1f77bcf86cd799439011'
+    })
+    @Type(() => Types.ObjectId)
+    @Transform((id:any) => {
+        if (!Types.ObjectId.isValid(id.value)) {
+          throw new BadRequestException(['Invalid ObjectId for Poster Id']);
+        }
+    
+        return new Types.ObjectId(id.value);
+    })
+    public facilitators: Types.ObjectId [];
     
     constructor(partial: Partial<DiscussionCreateDTO>) {
         Object.assign(this, partial);
