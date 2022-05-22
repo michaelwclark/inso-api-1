@@ -15,11 +15,10 @@ export class DiscussionController {
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
   @ApiBody({description: '', type: DiscussionCreateDTO})
-  @ApiParam({name: '', description: ''})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
-  @ApiUnauthorizedResponse({ description: ''})
-  @ApiNotFoundResponse({ description: ''})
+  @ApiOkResponse({ description: 'Discussion created!'})
+  @ApiBadRequestResponse({ description: 'The discussion is missing a name, poster, or facilitators'})
+  @ApiUnauthorizedResponse({ description: 'The user does not have permission to create a discussion'})
+  @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // TODO: Check that user exists in DB
@@ -58,7 +57,7 @@ export class DiscussionController {
   @Get('discussion/:discussionId')
   @ApiOperation({description: 'Update the metadata for the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
-  @ApiParam({name: '', description: ''})
+  @ApiParam({name: 'discussionId', description: 'The id of the discussion'})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
@@ -67,6 +66,17 @@ export class DiscussionController {
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
     console.log(discussionId);
     return 'update discussion metadata'
+  }
+
+  @Get('discussions')
+  @ApiOperation({description: 'Gets discussions for a user from the database'})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: ''})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: ''})
+  @ApiTags('Discussion')
+  async getDiscussions(): Promise<Discussion[]> {
+    return;
   }
 
   @Patch('discussion/:discussionId/settings')

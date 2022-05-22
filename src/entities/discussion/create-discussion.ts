@@ -42,7 +42,7 @@ export class DiscussionCreateDTO {
         required: true,
         type: Types.ObjectId,
         isArray: false,
-        example: '507f1f77bcf86cd799439011'
+        example: [ '507f1f77bcf86cd799439011' ]
     })
     @Type(() => Types.ObjectId)
     @Transform((id:any) => {
