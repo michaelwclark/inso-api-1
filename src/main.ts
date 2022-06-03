@@ -12,6 +12,7 @@ async function bootstrap() {
     })
   );
 
+  
   const config = new DocumentBuilder()
     .setTitle('Inso API')
     .setDescription('API for Inso system')
