@@ -3,7 +3,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 
-export type DiscussionDocument = DiscussionSet & Document;
+export type DiscussionSetDocument = DiscussionSet & Document;
 
 @Schema()
 export class DiscussionSet {
