@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { ScoreModule } from './modules/score/score.module';
@@ -38,6 +37,6 @@ import { SendGridModule } from "@ntegral/nestjs-sendgrid";
     })
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}
