@@ -26,7 +26,13 @@ import { SendGridModule } from "@ntegral/nestjs-sendgrid";
     DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
-    MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING),
+    MongooseModule.forRoot(
+      process.env.MONGO_CONNECTION_STRING,
+      {
+        useUnifiedTopology: true,
+        useNewUrlParser: true
+      }
+    ),
     SendGridModule.forRoot({ 
       apiKey: process.env.SENDGRID_KEY
     })
