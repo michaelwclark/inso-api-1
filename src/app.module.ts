@@ -12,6 +12,7 @@ import { DiscussionSetModule } from './modules/discussion-set/discussion-set.mod
 import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 
 @Module({
   imports: [
@@ -25,7 +26,10 @@ import { MongooseModule } from '@nestjs/mongoose';
     DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
-    MongooseModule.forRoot('mongodb://localhost/inso')
+    MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING),
+    SendGridModule.forRoot({ 
+      apiKey: process.env.SENDGRID_KEY
+    })
   ],
   controllers: [AppController],
   providers: [AppService],
