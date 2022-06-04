@@ -33,5 +33,5 @@ export class DiscussionSet {
     }
 }
 
-export const DiscussionSchema = SchemaFactory.createForClass(DiscussionSet);
+export const DiscussionSetSchema = SchemaFactory.createForClass(DiscussionSet);
 

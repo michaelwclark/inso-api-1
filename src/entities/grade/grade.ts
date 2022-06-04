@@ -33,4 +33,4 @@ export class Grade {
     }
 }
 
-export const DiscussionSchema = SchemaFactory.createForClass(Grade);
+export const GradeSchema = SchemaFactory.createForClass(Grade);

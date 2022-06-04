@@ -5,6 +5,7 @@ import { Document } from 'mongoose';
 
 export type InspirationDocument = Inspiration & Document;
 
+@Schema()
 export class Outline {
     @Prop(String)
     public header: string;
@@ -17,6 +18,7 @@ export class Outline {
     }
 }
 
+@Schema()
 export class Inspiration {
     @Prop(Types.ObjectId)
     public id: Types.ObjectId;
@@ -36,4 +38,4 @@ export class Inspiration {
     }
 }
 
-export const DiscussionSchema = SchemaFactory.createForClass(Inspiration);
+export const InspirationSchema = SchemaFactory.createForClass(Inspiration);
