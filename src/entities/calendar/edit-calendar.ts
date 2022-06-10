@@ -92,4 +92,6 @@ export class CalendarEditDTO {
     constructor(partial: Partial<CalendarEditDTO>) {
         Object.assign(this, partial);
     }
+
+    
 }

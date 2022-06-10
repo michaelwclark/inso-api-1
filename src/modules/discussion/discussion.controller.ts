@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { Model } from 'mongoose';
+import { Type } from 'class-transformer';
+import { model, Model, Types } from 'mongoose';
+import { type } from 'os';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
@@ -22,7 +24,11 @@ export class DiscussionController {
   @ApiTags('Discussion')
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // TODO: Check that user exists in DB
-
+    if(!Types.ObjectId){
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
+      return;
+    }
+    
     // Add the poster to the facilitators
     if(discussion.facilitators === undefined) {
       discussion.facilitators = [];
