@@ -7,8 +7,6 @@ export type DiscussionDocument = Discussion & Document;
 
 @Schema()
 export class Discussion {
-    @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
 
     @Prop(String)
     public insoCode: string;

@@ -4,7 +4,7 @@ import { InspirationController } from './inspiration.controller';
 
 @Module({
     // TODO Add Schema
-    imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
+    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
     controllers: [InspirationController],
     providers: [],
 })

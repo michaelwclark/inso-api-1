@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SettingController } from './setting.controller';
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
+    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
     controllers: [SettingController],
     providers: [],
 })

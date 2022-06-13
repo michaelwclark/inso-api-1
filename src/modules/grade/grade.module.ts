@@ -4,7 +4,7 @@ import { GradeController } from './grade.controller';
 
 @Module({
     // TODO Add Schema
-    imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
+    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
     controllers: [GradeController],
     providers: [],
 })

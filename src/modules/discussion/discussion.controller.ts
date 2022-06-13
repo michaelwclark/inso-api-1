@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
@@ -49,9 +49,18 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  async updateDiscussionMetadata(@Body() discussion: Partial<DiscussionEditDTO>): Promise<string> {
-    console.log(discussion);
-    return 'update discussion metadata'
+  async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
+    // Check that the ids match
+    if(discussionId !== discussion.id.toString()) {
+      throw new HttpException("Discussion being updated is not discussion", HttpStatus.BAD_REQUEST)
+    }
+    // Check that discussion exists
+    const found = await this.discussionModel.findOne({_id: discussionId});
+    if(!found) {
+      throw new HttpException("Discussion not found", HttpStatus.NOT_FOUND);
+    }
+    // Update the discussion and return the new value
+    return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
 
   @Get('discussion/:discussionId')
@@ -64,7 +73,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
-    console.log(discussionId);
+    
     return 'update discussion metadata'
   }
 

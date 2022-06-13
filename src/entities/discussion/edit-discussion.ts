@@ -46,6 +46,7 @@ export class DiscussionEditDTO {
       isArray: false,
       example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
     })
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()

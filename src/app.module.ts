@@ -12,6 +12,7 @@ import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SendGridModule } from "@ntegral/nestjs-sendgrid";
     DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(
       process.env.MONGO_CONNECTION_STRING,
       {

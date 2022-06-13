@@ -3,7 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ReactionController } from './reaction.controller';
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
+    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
     controllers: [ReactionController],
     providers: [],
 })
