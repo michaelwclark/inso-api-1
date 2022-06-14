@@ -9,10 +9,12 @@ import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussi
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { makeInsoId } from '../shared/generateInsoCode';
+import { User, UserDocument } from 'src/entities/user/user';
 
 @Controller()
 export class DiscussionController {
-  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>) {}
+  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
+  @InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -24,6 +26,13 @@ export class DiscussionController {
   @ApiTags('Discussion')
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // TODO: Check that user exists in DB
+    const checkUser = this.userModel.find({_id: discussion.poster});
+
+    if(checkUser == null){
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
+    }
+
+
     if(!Types.ObjectId){
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
       return;

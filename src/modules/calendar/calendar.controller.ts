@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
-import mongoose, { model, Model, mongo, Types, Schema } from 'mongoose';
+import { model, Model, mongo, Types, Schema } from 'mongoose';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
@@ -35,44 +35,15 @@ export class CalendarController {
       return;
     }
 
-    var now = new Date();
-    now.setHours(0, 0, 0, 0);
-    //if(Date.parse(calendar.open)-Date.parse(new Date())<0){
-    if(calendar.open < now){
-      throw new HttpException("Open date is in the past", HttpStatus.BAD_REQUEST);
+    ValidateSetOfDates(calendar.open, calendar.close, ""); 
+    if(calendar.hasOwnProperty('posting')){
+    ValidateSetOfDates(calendar.posting.open, calendar.posting.close, "Posting ");
     }
-    if(calendar.close < now){
-      throw new HttpException("Close date is in the past", HttpStatus.BAD_REQUEST);
+    if(calendar.hasOwnProperty('responding')){
+    ValidateSetOfDates(calendar.responding.open, calendar.responding.close, "Responding ");
     }
-    if(calendar.close < calendar.open){
-      throw new HttpException("Close date cannot be before open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.open < now){
-      throw new HttpException("Posting open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.close < now){
-      throw new HttpException("Posting close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.close < calendar.posting.open){
-      throw new HttpException("Posting close date cannot be before posting open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.open < now){
-      throw new HttpException("Responding open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.close < now){
-      throw new HttpException("Responding close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.close < calendar.responding.open){
-      throw new HttpException("Responding close date cannot be before responding open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.open < now){
-      throw new HttpException("Synthesizing open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.close < now){
-      throw new HttpException("Synthesizing close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.close < calendar.synthesizing.open){
-      throw new HttpException("Synthesizing close date cannot be before synthesizing open date.", HttpStatus.BAD_REQUEST);
+    if(calendar.hasOwnProperty('synthesizing')){
+    ValidateSetOfDates(calendar.synthesizing.open, calendar.synthesizing.close, "Synthesizing ");
     }
 
     const newCalendar = new this.calendarModel({...calendar, creator: id});
@@ -93,28 +64,12 @@ export class CalendarController {
   async updateCalendar(
     @Param('userId') id: string, 
     @Param('calendarId') calendarId: string,
-    @Body() calendar: Partial<CalendarEditDTO>): Promise<string> {
+    @Body() calendar: CalendarEditDTO): Promise<string> {
 
-      var dataReturned;
-    //Querying
-    let calendarSchema = new mongoose.Schema({
-      id: { type: String, required: true}
-    })
+    console.log(calendar);
 
-    //var mongoose = require('mongoose')
-    //let findCalendar = mongoose.model("Calendar", calendarSchema);
-    //let findCalendar = this.calendarModel
+    const found = this.calendarModel.find({_id: calendarId});
 
-    //findCalendar.find({_id: id}, (error, data) => {
-    this.calendarModel.find({_id: id}, (error, data) => { 
-    if(error){
-        console.log(error);
-      } else {
-        console.log(data);
-        dataReturned = data;
-      }
-
-    })
 
     //Validation
     if(!Types.ObjectId.isValid(id)){
@@ -130,47 +85,26 @@ export class CalendarController {
       throw new HttpException("No calendar id provided", HttpStatus.BAD_REQUEST); //No calendar id provided
     }
 
-    var now = new Date();
-    now.setHours(0, 0, 0, 0);
-    
-    if(calendar.open < now){
-      throw new HttpException("Open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.close < now){
-      throw new HttpException("Close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.close < calendar.open){
-      throw new HttpException("Close date cannot be before open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.open < now){
-      throw new HttpException("Posting open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.close < now){
-      throw new HttpException("Posting close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.posting.close < calendar.posting.open){
-      throw new HttpException("Posting close date cannot be before posting open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.open < now){
-      throw new HttpException("Responding open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.close < now){
-      throw new HttpException("Responding close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.responding.close < calendar.responding.open){
-      throw new HttpException("Responding close date cannot be before responding open date.", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.open < now){
-      throw new HttpException("Synthesizing open date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.close < now){
-      throw new HttpException("Synthesizing close date is in the past", HttpStatus.BAD_REQUEST);
-    }
-    if(calendar.synthesizing.close < calendar.synthesizing.open){
-      throw new HttpException("Synthesizing close date cannot be before synthesizing open date.", HttpStatus.BAD_REQUEST);
+    if(!calendar.id.equals(calendarId)){
+      throw new HttpException("Body id and url id for calendar do not match", HttpStatus.BAD_REQUEST);
     }
 
-    return dataReturned;
+    console.log(calendar);
+
+    ValidateSetOfDates(calendar.open, calendar.close, "");
+    if(calendar.hasOwnProperty('posting')){
+    ValidateSetOfDates(calendar.posting.open, calendar.posting.close, "Posting ");
+    }
+    if(calendar.hasOwnProperty('responding')){
+    ValidateSetOfDates(calendar.responding.open, calendar.responding.close, "Responding ");
+    }
+    if(calendar.hasOwnProperty('synthesizing')){
+    ValidateSetOfDates(calendar.synthesizing.open, calendar.synthesizing.close, "Synthesizing ");
+    }
+
+    const res = await found.updateOne(calendar);
+
+    return 'Calender Updated';
   }
 
   @Delete('users/:userId/calendar/:calendarId')
@@ -184,4 +118,20 @@ export class CalendarController {
   deleteCalendar(): string{
     return 'delete calendar';
   }
+
+  
 }
+
+function ValidateSetOfDates( openDate: Date, closeDate: Date, type: String) { 
+    var now = new Date();
+    if(openDate < now){
+      throw new HttpException(type + "Open date is in the past", HttpStatus.BAD_REQUEST);
+    }
+    if(closeDate < now){
+      throw new HttpException(type + "Close date is in the past", HttpStatus.BAD_REQUEST);
+    }
+    if(closeDate < openDate){
+      throw new HttpException(type + "Close date cannot be before " + type + "Open date.", HttpStatus.BAD_REQUEST);
+    }
+    return;
+  }

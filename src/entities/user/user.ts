@@ -1,3 +1,5 @@
+import { SchemaFactory } from "@nestjs/mongoose";
+
 export class Contact {
     email: string;
     verified: boolean;
@@ -7,6 +9,8 @@ export class Contact {
         Object.assign(this, partial);
     }
 }
+
+export type UserDocument = User & Document;
 
 export class User {
     public id: string;
@@ -24,3 +28,5 @@ export class User {
         Object.assign(this, partial);
     }
 }
+
+export const UserSchema = SchemaFactory.createForClass(User)
