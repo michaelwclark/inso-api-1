@@ -40,10 +40,7 @@ export class DiscussionController {
     // Verify that all facilitators exist
     for await (const user of discussion.facilitators) {
       let found = await this.userModel.exists({_id: user});
-      console.log(user);
-      console.log(found);
       if(!found) {
-        console.log(!found)
         throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       }
     }
