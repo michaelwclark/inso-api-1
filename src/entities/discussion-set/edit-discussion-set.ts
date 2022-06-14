@@ -87,7 +87,7 @@ export class DiscussionSetEditDTO {
             throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
         }
       
-        return new Types.ObjectId(id.value);
+        return new Types.ObjectId(id);
       });
       return ids;
     })
