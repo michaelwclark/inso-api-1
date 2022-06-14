@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class DiscussionCreateDTO {
@@ -45,12 +45,16 @@ export class DiscussionCreateDTO {
         example: [ '507f1f77bcf86cd799439011' ]
     })
     @Type(() => Types.ObjectId)
+    @IsArray()
     @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Poster Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
+        const ids = id.value.map(id => {
+            if (!Types.ObjectId.isValid(id)) {
+                throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
+            }
+          
+            return new Types.ObjectId(id.value);
+        });
+        return ids;
     })
     public facilitators: Types.ObjectId [];
     
