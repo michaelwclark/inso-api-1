@@ -84,11 +84,13 @@ export class DiscussionEditDTO {
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
+      const ids = id.value.map(id => {
+        if (!Types.ObjectId.isValid(id)) {
+            throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
         }
-    
         return new Types.ObjectId(id.value);
+      });
+      return ids;
     })
     public facilitators: Types.ObjectId [];
     
