@@ -2,10 +2,9 @@ import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, P
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { model, Model, mongo, Types, Schema } from 'mongoose';
-import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
-import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
-import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
-import { CalendarDTO } from 'src/entities/calendar/read-calendar';
+import { Calendar, CalendarDocument } from '../../../src/entities/calendar/calendar';
+import { CalendarCreateDTO } from '../../../src/entities/calendar/create-calendar';
+import { CalendarEditDTO } from '../../../src/entities/calendar/edit-calendar';
 
 
 @Controller()
@@ -47,7 +46,7 @@ export class CalendarController {
     }
 
     const newCalendar = new this.calendarModel({...calendar, creator: id});
-    console.log(newCalendar);
+    
     
     return newCalendar.save();
   }
@@ -73,23 +72,23 @@ export class CalendarController {
 
     //Validation
     if(!Types.ObjectId.isValid(id)){
-      //throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
+      
       throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST); //invalid/non-existant user id
     }
 
     if(!Types.ObjectId.isValid(calendarId)){
-      throw new HttpException("Calendar does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("CalendarId is not valid", HttpStatus.BAD_REQUEST);
     }
 
-    if(calendar.id === null){
-      throw new HttpException("No calendar id provided", HttpStatus.BAD_REQUEST); //No calendar id provided
-    }
+    
+    
+    
 
     if(!calendar.id.equals(calendarId)){
       throw new HttpException("Body id and url id for calendar do not match", HttpStatus.BAD_REQUEST);
     }
 
-    console.log(calendar);
+    
 
     ValidateSetOfDates(calendar.open, calendar.close, "");
     if(calendar.hasOwnProperty('posting')){
