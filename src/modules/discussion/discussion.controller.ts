@@ -6,6 +6,7 @@ import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
+import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { makeInsoId } from '../shared/generateInsoCode';
 
 @Controller()
@@ -88,7 +89,8 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  updateDiscussionSettings(): string {
+  updateDiscussionSettings(@Body() discussion: SettingsCreateDTO ): string {
+    console.log(discussion)
     return 'update discussion settings'
   }
 
