@@ -3,7 +3,7 @@ import { Transform, Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { Types } from "mongoose";
 
-export class SettingEditDTO{
+export class SettingsEditDTO{
 
 //id for settings id
     @IsNotEmpty()
@@ -73,7 +73,7 @@ export class SettingEditDTO{
     public userId: Types.ObjectId;
 
 
-    constructor(partial: Partial<SettingEditDTO>) {
+    constructor(partial: Partial<SettingsEditDTO>) {
         Object.assign(this, partial);
     }
 

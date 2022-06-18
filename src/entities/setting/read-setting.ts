@@ -1,4 +1,4 @@
-export class SettingReadDTO{
+export class SettingsReadDTO{
     
     public id: string;
     public starterPrompt: string;
@@ -51,7 +51,7 @@ export class SettingReadDTO{
       }
     };
 
-    constructor(partial: Partial<SettingReadDTO>) {
+    constructor(partial: Partial<SettingsReadDTO>) {
         Object.assign(this, partial);
     }
 }
