@@ -1,14 +1,11 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsString } from "class-validator";
 import { Types } from "mongoose";
 import { Score } from "../score/score";
 
 export class SettingsCreateDTO {
-
-    //id
-
 
     //starter prompt 
     @IsNotEmpty()
@@ -18,12 +15,15 @@ export class SettingsCreateDTO {
     //post inspiration 
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
+    @IsArray()
     @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)){
-            throw new BadRequestException (['Invalid ObjectId for Post Inspiration Id ']);
-        }
-
-        return new Types.ObjectId(id.value)
+        const ids = id.value.map(id => {
+            if (!Types.ObjectId.isValid(id.value)){
+                throw new BadRequestException (['Invalid ObjectId for Post Inspiration Id ']);
+            }
+            return new Types.ObjectId(id.value)
+        })
+        return ids;
     })
     public post_inspiration: Types.ObjectId [];
 

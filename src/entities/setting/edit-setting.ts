@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { Transform, Type } from "class-transformer";
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { Types } from "mongoose";
 
 export class SettingsEditDTO{
@@ -27,12 +27,17 @@ export class SettingsEditDTO{
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)){
+    @IsArray()
+    @Transform((id:any) => {    
+    const ids = id.value.map(id => {
+            if (!Types.ObjectId.isValid(id.value)){
             throw new BadRequestException(['Invalid ObjectId for Post Inspiration Id']);
-        }
-
-        return new Types.ObjectId(id.value);
+            }
+            
+            return new Types.ObjectId(id.value);
+        }) 
+       return ids;
+    
     })
     public post_inspiration: Types.ObjectId [];
 
