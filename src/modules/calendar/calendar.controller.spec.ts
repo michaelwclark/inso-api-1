@@ -19,6 +19,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { User, UserSchema } from 'src/entities/user/user';
 import { stringify } from 'querystring';
+import { doesNotThrow } from 'assert';
 
 describe('AppController', () => {
   let appController: CalendarController;
@@ -36,32 +37,32 @@ describe('AppController', () => {
     
         calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
         userModel = mongoConnection.model(User.name, UserSchema);
-  })
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [CalendarController],
-      providers: [{provide: getModelToken(Calendar.name), useValue: calendarModel},
-      {provide: getModelToken(User.name), useValue: userModel}],
-    }).compile();
+        const seedUser = new userModel({"_id": new Types.ObjectId('629a3aaa17d028a1f19f0e5c'), "username" : "mockuser1234"})
+        await userModel.insertMany(
+          [seedUser]
+        );
 
-    appController = app.get<CalendarController>(CalendarController);
-  });
+        const app: TestingModule = await Test.createTestingModule({
+          controllers: [CalendarController],
+          providers: [{provide: getModelToken(Calendar.name), useValue: calendarModel},
+          {provide: getModelToken(User.name), useValue: userModel}],
+        }).compile();
+    
+        appController = app.get<CalendarController>(CalendarController);
+  })
+
 
   //  TEST CASES FOR POST ROUTE
 
   //  VALID USER ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 200 STATUS
   describe('POST /user/{userId}/calendar 200 STATUS', () => {
-    it('Create Calendar Test', async () => {
+    it('Create Calendar Test', done => {
       
-      const returnValue = await appController.createCalendar('629a3aaa17d028a1f19f0e5c', validCalendar);
-
-      //expect(returnValue).toBe('Calendar created');
-
-      expect(Types.ObjectId.isValid(returnValue.id)).toBe(true);
-      //expect(returnValue.id).toBe('');
-      //expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', validCalendar) }).toBe('Calendar createdd');
-    
-    }); // ALMOST DONE
+    appController.createCalendar('629a3aaa17d028a1f19f0e5c', validCalendar).then(returnValue => {
+      expect(Types.ObjectId.isValid(returnValue)).toBe(true);
+    });
+    done();
+    }); // DONE
   });
 
   // EXAMPLE TEST 
@@ -75,33 +76,37 @@ describe('AppController', () => {
 
   //INVALID USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
   describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case invalid user', () => {
+    it('Test case invalid user', done => {
       const error = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST)
       expect(async() => { await appController.createCalendar('ThisIsNotAValidUserId', validCalendar) }).rejects.toThrow(error);
+      done();
     }); //FINISHED
   });
 
   //NO USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
   describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case no user id', async () => {
+    it('Test case no user id', done => {
       const error = new HttpException("No user id provided", HttpStatus.BAD_REQUEST)
       expect(async() => { await appController.createCalendar(null, validCalendar) }).rejects.toThrow(error);
+      done();
     }); //FINISHED 
   });
 
   //NON EXISTENT USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS
   describe('POST /user/{userId}/calendar 404 STATUS', () => {
-    it('Test case non existent user', async () => {
-      //const error = new HttpException("No user id provideddd sir", HttpStatus.BAD_REQUEST)
-      //expect(async() => { await appController.createCalendar('629a69deaa8494f552c89cd9', validCalendar) }).rejects.toThrow(error);
+    it('Test case non existent user', done => {
+      const error = new HttpException("User does not existtt", HttpStatus.BAD_REQUEST)
+      expect(async() => { await appController.createCalendar('629a69deaa8494f552c89cd9', validCalendar)}).rejects.toThrow(error);
+      done();
     }); // NOT FINISHED, CALENDAR CONTROLLER NEEDS QUERY FUNCTION
   });
 
   //VALID USERID, OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
   describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case open date in the past', async () => {
-     const error = new HttpException("Open date is in the past", HttpStatus.BAD_REQUEST)
+    it('Test case open date in the past', done => {
+     const error = new HttpException("Open date is in the pasttt", HttpStatus.BAD_REQUEST)
      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', openDateInPast) }).rejects.toThrow(error);
+    done();
     }); // FINISHED
   });
 
@@ -330,15 +335,16 @@ describe('AppController', () => {
       const errors = await validate(calendarBad);
       expect(errors.length).not.toBe(0);
       const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('synthesizing open must be a Date instance')
+      expect(message).toBe('synthesizing open must be a Date instance');
     }); // FINISHED
   });
 
   //VALID USERID, SYNTHESIZING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
   describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing close date is in the past', async () => {
+    it('Test case synthesizing close date is in the past', done => {
       const error = new HttpException("Synthesizing Close date is in the past", HttpStatus.BAD_REQUEST)
       expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', synthesizingClosePast) }).rejects.toThrow(error);
+      done();
     }); // FINISHED
   });
 
@@ -365,7 +371,7 @@ describe('AppController', () => {
   });
 
   //afterAll(async () => {
-  //   app.close();
+    //console.log("WHY DONT YOU STOP")
+    //return await mongod.stop({doCleanup: true});
   //});
-
 });

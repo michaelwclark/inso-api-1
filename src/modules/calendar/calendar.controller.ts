@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseInterceptors } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { model, Model, mongo, Types, Schema } from 'mongoose';
@@ -6,6 +6,7 @@ import { User, UserDocument } from '../../../src/entities/user/user';
 import { Calendar, CalendarDocument } from '../../../src/entities/calendar/calendar';
 import { CalendarCreateDTO } from '../../../src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from '../../../src/entities/calendar/edit-calendar';
+import { CalendarDTO } from 'src/entities/calendar/read-calendar';
 
 
 @Controller()
@@ -15,7 +16,7 @@ export class CalendarController {
     @InjectModel(User.name) private userModel: Model<User>
      ) {}
 
-  @HttpCode(200) // should maybe be 201 for creation? 
+  @HttpCode(200)  
   @Post('users/:userId/calendar')
   @ApiOperation({description: 'Creates a calendar'})
   @ApiBody({description: '', type: CalendarCreateDTO})
@@ -25,19 +26,18 @@ export class CalendarController {
   @ApiUnauthorizedResponse({ description: 'User does not have access.'})
   @ApiNotFoundResponse({ description: 'User does not exist.'})
   @ApiTags('Calendar')
-  async createCalendar(@Param('userId') id: string, @Body() calendar: CalendarCreateDTO): Promise<Calendar>{ // function used to return Promise<Calendar>
+  @UseInterceptors(ClassSerializerInterceptor)
+  async createCalendar(@Param('userId') id: string, @Body() calendar: CalendarCreateDTO): Promise<string>{ // function used to return Promise<Calendar>
     
     if(id === null){
       throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST); //No user id provided
-      return;
     }
     
     if(!Types.ObjectId.isValid(id)){
       throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); //invalid/non-existant user id
-      return;
     }
 
-    const user = this.userModel.findOne({_id: id});
+    const user = await this.userModel.findOne({_id: id});
     if(!user) {
       throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
     }
@@ -55,8 +55,8 @@ export class CalendarController {
 
     const newCalendar = new this.calendarModel({...calendar, creator: id});
     
-    
-    return newCalendar.save();
+    await newCalendar.save();
+    return newCalendar._id.toString();
   }
 
   @Patch('users/:userId/calendar/:calendarId')
@@ -78,17 +78,6 @@ export class CalendarController {
       throw new HttpException("Object is empty", HttpStatus.BAD_REQUEST)
     }
 
-    const user = this.userModel.findOne({_id: id});
-    if(!user) {
-      throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
-    }
-
-    const found = this.calendarModel.findOne({_id: calendarId});
-    if(!found) {
-      throw new HttpException("Calendar does not exist", HttpStatus.BAD_REQUEST);
-    }
-
-
     //Validation
     if(id == null){
       throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST); //invalid/non-existant user id
@@ -101,13 +90,20 @@ export class CalendarController {
     if(!Types.ObjectId.isValid(id)){
       throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); //invalid/non-existant user id
     }
-
+    const user = await this.userModel.findOne({_id: id});
+    if(!user) {
+      throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
+    }
     if(!Types.ObjectId.isValid(calendarId)){
       throw new HttpException("Calendar id is not valid", HttpStatus.BAD_REQUEST);
     }
+    const found = await this.calendarModel.findOne({_id: calendarId});
+    if(!found) {
+      throw new HttpException("Calendar does not exist", HttpStatus.BAD_REQUEST);
+    }
 
-    if(!calendar.id.equals(calendarId)){
-      throw new HttpException("Body id and url id for calendar do not match", HttpStatus.BAD_REQUEST);
+    if(!calendar.creatorId.equals(id)){
+      throw new HttpException("Body id and url id for user do not match", HttpStatus.BAD_REQUEST);
     }
 
     ValidateSetOfDates(calendar.open, calendar.close, "");

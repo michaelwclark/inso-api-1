@@ -34,6 +34,54 @@ describe('AppController', () => {
     
         calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
         userModel = mongoConnection.model(User.name, UserSchema);
+        const seedUser = new userModel({"_id": new Types.ObjectId('629a3aaa17d028a1f19f0e5c'), "username" : "mockuser1234"})
+        const seedUser2 = new userModel({"_id": new Types.ObjectId('629a3aaa17d028a1f19f0777'), "username" : "mockuser4321"})
+        await userModel.insertMany(
+          [seedUser, seedUser2]
+        );
+        var openDate = new Date("2022-06-25");
+        var closeDate = new Date("2022-06-30");
+        const seedCalendar = new calendarModel({
+          'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
+          '_id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
+          'open': openDate,
+          'close': closeDate,
+          'posting': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'responding': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'synthesizing': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'creatorId': new Types.ObjectId('629a3aaa17d028a1f19f0e5c')
+        })
+        const seedCalendar2 = new calendarModel({
+          'id': new Types.ObjectId('629a69deaa8494f552c89cd8'),
+          '_id': new Types.ObjectId('629a69deaa8494f552c89cd8'),
+          'open': openDate,
+          'close': closeDate,
+          'posting': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'responding': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'synthesizing': {
+            'open': openDate,
+            'close': closeDate,
+          },
+          'creatorId': new Types.ObjectId('629a3aaa17d028a1f19f0e5c')
+        })
+        await calendarModel.insertMany(
+          [seedCalendar, seedCalendar2]
+        );
   })
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
@@ -66,7 +114,8 @@ describe('AppController', () => {
     'synthesizing': {
       'open': open,
       'close': close,
-    }
+    },
+    'creatorId': new Types.ObjectId('629a3aaa17d028a1f19f0e5c')
 
   }
 
@@ -118,24 +167,28 @@ describe('AppController', () => {
 
   // NON EXISTENT USER ID, VALID CALENDAR ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS
   describe('PATCH /user/{userId}/calendar/{calendarId} 404 STATUS', () => {
-    it('Test case non existent user id', async () => {
+    it('Test case non existent user id', done => {
       
-      //const error = new HttpException("User does not exist", HttpStatus.BAD_REQUEST)
-      //expect(async() => { await appController.updateCalendar(
-      // '629a69deaa8494f552c89cd9',
-      // '629a69deaa8494f552c89cd9',
-      //  validCalendar) }).rejects.toThrow(error)
+      const error = new HttpException("User does not exist", HttpStatus.BAD_REQUEST)
+      expect(async() => { await appController.updateCalendar(
+       '629a69deaa8494f552c89cd9',
+       '629a69deaa8494f552c89cd9',
+        validCalendar) }).rejects.toThrow(error)
+        done()
+
     }); // NOT FINISHED
   });
 
   // USER ID IS NOT CREATOR ID, VALID CALENDAR ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 403 STATUS
   describe('PATCH /user/{userId}/calendar/{calendarId} 403 STATUS', () => {
-    it('Test case user id and creator id do not match', async () => {
-      
-      expect(await appController.updateCalendar(
-       '629a3aaa17d028a1f19f0e5c',
-       '629a69deaa8494f552c89cd9',
-        patchCalendarReq)).toBe('Calendar Updated')
+    it('Test case user id and creator id do not match', done => {
+    
+    const error = new HttpException("Body id and url id for user do not match", HttpStatus.BAD_REQUEST);
+       expect(async() => {await appController.updateCalendar(
+        '629a3aaa17d028a1f19f0777',
+        '629a69deaa8494f552c89cd9',
+         patchCalendarReq)}).rejects.toThrow();
+         done();
     }); // NOT FINISHED
   });
 
@@ -165,13 +218,14 @@ describe('AppController', () => {
 
   // VALID USER ID, NON EXISTENT CALENDAR ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS
   describe('PATCH /user/{userId}/calendar/{calendarId} 404 STATUS', () => {
-    it('Test case non existent calender id', async () => {
+    it('Test case non existent calender id', done => {
       
-      //const error = new HttpException("No calendar id provided", HttpStatus.BAD_REQUEST)
-      //expect(async() => { await appController.updateCalendar(
-      //'629a3aaa17d028a1f19f0e5c',
-      //'629a3aaa17d028a1f19f0e5c',
-       //validCalendar) }).rejects.toThrow(error);
+      const error = new HttpException("Calendar does not exist", HttpStatus.BAD_REQUEST)
+      expect(async() => { await appController.updateCalendar(
+       '629a3aaa17d028a1f19f0e5c',
+       '629a3aaa17d028a1f19f0e5c',
+        validCalendar) }).rejects.toThrow(error)
+        done()
     }); // NOT FINISHED
   });
 
@@ -505,5 +559,9 @@ describe('AppController', () => {
     
     }); // FINISHED
   });
+
+  //afterAll(async () => {
+  //  return await mongod.stop({doCleanup: true});
+  //});
 
 });

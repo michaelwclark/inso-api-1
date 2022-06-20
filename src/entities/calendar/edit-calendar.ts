@@ -89,6 +89,25 @@ export class CalendarEditDTO {
     @Type(() => EditStartEnd)
     public synthesizing?: EditStartEnd;
 
+    @ApiProperty({
+        name: 'creatorId',
+        description: 'The ObjectId of the user editing the calendar',
+        required: true,
+        type: Types.ObjectId,
+        isArray: false,
+        example: '507f1f77bcf86cd799439011'
+    })
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @Transform((creatorId:any) => {
+        if (!Types.ObjectId.isValid(creatorId.value)) {
+          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
+        }
+    
+        return new Types.ObjectId(creatorId.value);
+    })
+    public creatorId: Types.ObjectId;
+
     constructor(partial: Partial<CalendarEditDTO>) {
         Object.assign(this, partial);
     }

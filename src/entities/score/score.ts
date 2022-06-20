@@ -3,6 +3,8 @@ export class Criteria {
     public max: number;
 }
 
+export type ScoreDocument = Score & Document;
+
 export class Score {
     public id: string;
     public type: string;

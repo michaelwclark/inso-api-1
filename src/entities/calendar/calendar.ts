@@ -1,12 +1,13 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Types } from "mongoose";
 import { StartEnd } from "./startEnd/startEnd";
 
 export type CalendarDocument = Calendar & Document;
 
 @Schema()
 export class Calendar {
-    @Prop(String)
-    public id: string;
+    @Prop(Types.ObjectId)
+    public id: Types.ObjectId;
     @Prop({Date, default: Date.now})
     public open: Date;
     @Prop({Date, default: null})
