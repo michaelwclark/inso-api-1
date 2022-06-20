@@ -17,14 +17,12 @@ describe('CalendarController', () => {
     let mongoConnection: Connection;
     let calendarModel: Model<any>;
    
-   // const CalendarFactory = factory<CalendarDocument>(CalendarDocument, {}).setGlobalObjectIdOptions({ tostring: false})
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
         const uri = mongod.getUri();
         mongoConnection = (await connect(uri)).connection;
     
-        //calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
 
         const moduleFixture: TestingModule = await Test.createTestingModule
         ({

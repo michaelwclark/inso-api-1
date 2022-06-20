@@ -57,8 +57,8 @@ describe('AppController', () => {
 
       //expect(returnValue).toBe('Calendar created');
 
-      //expect(Types.ObjectId.isValid(returnValue.id)).toBe(true);
-      expect(returnValue.id).toBe('');
+      expect(Types.ObjectId.isValid(returnValue.id)).toBe(true);
+      //expect(returnValue.id).toBe('');
       //expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', validCalendar) }).toBe('Calendar createdd');
     
     }); // ALMOST DONE

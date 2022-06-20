@@ -3,8 +3,8 @@
 
 import { Types } from "mongoose";
 
-var openDate = new Date("2022-06-20");
-var closeDate = new Date("2022-06-25");
+var openDate = new Date("2022-06-25");
+var closeDate = new Date("2022-06-30");
 
 
 export const validCalendar = {
@@ -294,7 +294,7 @@ export const respondingOpenPast = {
 }
 
 export const respondingOpenNotDate = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -312,7 +312,7 @@ export const respondingOpenNotDate = {
 }
 
 export const respondingOpenEmpty = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -330,7 +330,7 @@ export const respondingOpenEmpty = {
 }
 
 export const respondingClosePast = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -348,7 +348,7 @@ export const respondingClosePast = {
 }
 
 export const respondingCloseNotDate = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -366,7 +366,7 @@ export const respondingCloseNotDate = {
 }
 
 export const respondingCloseEmpty = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -386,7 +386,7 @@ export const respondingCloseEmpty = {
 // SYNTHESIZING ERRORS
 
 export const synthesizingEmpty = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -401,7 +401,7 @@ export const synthesizingEmpty = {
 }
 
 export const synthesizingOpenPast = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -419,7 +419,7 @@ export const synthesizingOpenPast = {
 }
 
 export const synthesizingOpenNotDate = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -437,7 +437,7 @@ export const synthesizingOpenNotDate = {
 }
 
 export const synthesizingOpenEmpty = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -455,7 +455,7 @@ export const synthesizingOpenEmpty = {
 }
 
 export const synthesizingClosePast = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -473,7 +473,7 @@ export const synthesizingClosePast = {
 }
 
 export const synthesizingCloseNotDate = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {
@@ -491,7 +491,7 @@ export const synthesizingCloseNotDate = {
 }
 
 export const synthesizingCloseEmpty = {
-  'id': '629a69deaa8494f552c89cd9',
+  'id': new Types.ObjectId('629a69deaa8494f552c89cd9'),
   'open': openDate,
   'close': closeDate,
   'posting': {

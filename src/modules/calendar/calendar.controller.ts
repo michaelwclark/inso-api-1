@@ -33,7 +33,6 @@ export class CalendarController {
     }
     
     if(!Types.ObjectId.isValid(id)){
-      //throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
       throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); //invalid/non-existant user id
       return;
     }
@@ -58,9 +57,6 @@ export class CalendarController {
     
     
     return newCalendar.save();
-    //newCalendar.save();
-
-    //return 'Calendar created'
   }
 
   @Patch('users/:userId/calendar/:calendarId')
@@ -81,8 +77,6 @@ export class CalendarController {
     if(calendar == null){
       throw new HttpException("Object is empty", HttpStatus.BAD_REQUEST)
     }
-
-    //console.log(calendar);
 
     const user = this.userModel.findOne({_id: id});
     if(!user) {
