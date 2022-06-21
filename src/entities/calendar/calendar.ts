@@ -18,6 +18,8 @@ export class Calendar {
     public responding?: StartEnd;
     @Prop(StartEnd)
     public synthesizing?: StartEnd;
+    @Prop(Types.ObjectId)
+    public creatorId: Types.ObjectId;
 
     constructor(partial: any) {
         Object.assign(this, partial);

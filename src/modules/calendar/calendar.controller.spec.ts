@@ -20,6 +20,7 @@ import { validate } from 'class-validator';
 import { User, UserSchema } from 'src/entities/user/user';
 import { stringify } from 'querystring';
 import { doesNotThrow } from 'assert';
+import { error } from 'console';
 
 describe('AppController', () => {
   let appController: CalendarController;
@@ -51,327 +52,323 @@ describe('AppController', () => {
         appController = app.get<CalendarController>(CalendarController);
   })
 
+  // EXAMPLE TEST 
+  describe('root', () => {
+    it('Example Test, should fail', async () => {
+      var i = 2 + 2;
+      
+      expect(i).toBe(5);
+    });
+  });
 
   //  TEST CASES FOR POST ROUTE
 
   //  VALID USER ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 200 STATUS
   describe('POST /user/{userId}/calendar 200 STATUS', () => {
     it('Create Calendar Test', done => {
-      
     appController.createCalendar('629a3aaa17d028a1f19f0e5c', validCalendar).then(returnValue => {
       expect(Types.ObjectId.isValid(returnValue)).toBe(true);
     });
     done();
-    }); // DONE
+    }); // FINISHED
   });
 
-  // EXAMPLE TEST 
-  describe('root', () => {
-    it('Example Test, should fail', async () => {
-      var i = 2 + 2;
+  // 400 STATUS CODE TEST CASES
+   describe('POST /user/{userId}/calendar 400 STATUS', () => {
+
+      it('Test case invalid user', async() => {
+      const invalidUserError = new HttpException("User id is not valid THIS SHOULDNT MATCH", HttpStatus.BAD_REQUEST)
+      const promise1 = expect(async() => { await appController.createCalendar('ThisIsNotAValidUserId', validCalendar) }).rejects.toThrow(invalidUserError);
+      promise1.catch((error) => {
+        console.error(error);
+      });
+      });
+    
+      //NO USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
+      it('Test case no user id', async() => {
+      const noUserError = new HttpException("No user id provideddd THIS SHOULDNT MATCH", HttpStatus.BAD_REQUEST)
+      const promise2 = expect(async() => { await appController.createCalendar(null, validCalendar) }).rejects.toThrow(noUserError);
+      promise2.catch((error) => {
+        console.error(error);
+      });
+      });
+
+      //NON EXISTENT USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS   not finished??????
+      it('Test case nonexistent user id', async() => {
+      const nonexistingUserError = new HttpException("User does not exist", HttpStatus.BAD_REQUEST)
+      const example3 = expect(async() => { await appController.createCalendar('629a69deaa8494f552c89cd9', validCalendar)}).rejects.toThrow(nonexistingUserError);
+      example3.catch();
+      });
+
+      //VALID USERID, OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+      it('Test case open date in past', async() => {
+      const openPastError = new HttpException("Open date is in the past", HttpStatus.BAD_REQUEST)
+      const example4 = expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', openDateInPast) }).rejects.toThrow(openPastError);
+      example4.catch();
+      });
+
+      // //VALID USERID, OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+      // it('Test case open not a date', done => {
+      // const openNotDateCal = plainToInstance(CalendarCreateDTO, openDateNotADate);
+      // const openNotDateErrors = async () => { await validate(openNotDateCal);
+      // expect(openNotDateErrors.length).not.toBe(0);
+      // expect(JSON.stringify(openNotDateErrors)).toContain('open must be a Dateee')}
+      // done()
+      // });
+
+      // //VALID USERID, OPEN DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
+      // it('Test case open is undefined', done => {
+      // const openEmptyCal = plainToInstance(CalendarCreateDTO, openDateEmpty);
+      // const openEmptyErrors = async () => { await validate(openEmptyCal);
+      // expect(openEmptyErrors.length).not.toBe(0);
+      // expect(JSON.stringify(openEmptyErrors)).toContain('open must be a Date');}
+      // done()
+      // });
       
-      expect(i).toBe(4);
-    });
   });
 
-  //INVALID USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case invalid user', done => {
-      const error = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('ThisIsNotAValidUserId', validCalendar) }).rejects.toThrow(error);
-      done();
-    }); //FINISHED
-  });
+  // //VALID USERID, CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {    
+  //   it('Test case close date is in the past', async () => {
+  //     const error = new HttpException("Close date is in the past", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', closeDateInPast) }).rejects.toThrow(error);
+  //   }); // FINISHED
+  // });
 
-  //NO USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case no user id', done => {
-      const error = new HttpException("No user id provided", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar(null, validCalendar) }).rejects.toThrow(error);
-      done();
-    }); //FINISHED 
-  });
+  // //VALID USERID, CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case close is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, closeDateNotADate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     expect(JSON.stringify(errors)).toContain('close must be a Date');
+  //   }); // FINISHED 
+  // });
 
-  //NON EXISTENT USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS
-  describe('POST /user/{userId}/calendar 404 STATUS', () => {
-    it('Test case non existent user', done => {
-      const error = new HttpException("User does not existtt", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a69deaa8494f552c89cd9', validCalendar)}).rejects.toThrow(error);
-      done();
-    }); // NOT FINISHED, CALENDAR CONTROLLER NEEDS QUERY FUNCTION
-  });
+  // //VALID USERID, CLOSE DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case close is undefined', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, closeDateEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     expect(JSON.stringify(errors)).toContain('close must be a Date');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case open date in the past', done => {
-     const error = new HttpException("Open date is in the pasttt", HttpStatus.BAD_REQUEST)
-     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', openDateInPast) }).rejects.toThrow(error);
-    done();
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, postingEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     expect(JSON.stringify(errors)).toContain('posting must be either object or array');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case open is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, openDateNotADate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('open must be a Date');
-      
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting open date is in the past', async () => {
+  //     const error = new HttpException("Posting Open date is in the past", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', postingOpenPast) }).rejects.toThrow(error);
+  //    }); // FINISHED
+  // });
 
-  //VALID USERID, OPEN DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case open is undefined', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, openDateEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('open must be a Date');
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting open is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, postingOpenNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('posting open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case close date is in the past', async () => {
-      const error = new HttpException("Close date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', closeDateInPast) }).rejects.toThrow(error);
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting open is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, postingOpenEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('posting open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case close is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, closeDateNotADate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('close must be a Date');
-    }); // FINISHED 
-  });
+  // //VALID USERID, POSTING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting close date is in the past', async () => {
+  //     const error = new HttpException("Posting Close date is in the past", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', postingClosePast) }).rejects.toThrow(error);
+  //   });  // FINISHED
+  // });
 
-  //VALID USERID, CLOSE DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case close is undefined', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, closeDateEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('close must be a Date');
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting close is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, postingCloseNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('posting close must be a Date instance');
+  //   });  // FINISHED
+  // });
 
-  //VALID USERID, POSTING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, postingEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('posting must be either object or array');
-    }); // FINISHED
-  });
+  // //VALID USERID, POSTING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case posting close is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, postingCloseEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('posting close must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting open date is in the past', async () => {
-      const error = new HttpException("Posting Open date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', postingOpenPast) }).rejects.toThrow(error);
-     }); // FINISHED
-  });
+  // //VALID USERID, RESPONDING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, respondingEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     expect(JSON.stringify(errors)).toContain('responding must be either object or array');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting open is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, postingOpenNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('posting open must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, RESPONDING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding open date is in the past', async () => {
+  //     const error = new HttpException("Responding Open date is in the past", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', respondingOpenPast) }).rejects.toThrow(error);  
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting open is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, postingOpenEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('posting open must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, RESPONDING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding open is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, respondingOpenNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('responding open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting close date is in the past', async () => {
-      const error = new HttpException("Posting Close date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', postingClosePast) }).rejects.toThrow(error);
-    });  // FINISHED
-  });
+  // //VALID USERID, RESPONDING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding open is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, respondingOpenEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('responding open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting close is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, postingCloseNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('posting close must be a Date instance');
-    });  // FINISHED
-  });
+  // //VALID USERID, RESPONDING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding close date is in the past', async () => {
+  //     const error = new HttpException("Responding Close date is in the past", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', respondingClosePast) }).rejects.toThrow(error);
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, POSTING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case posting close is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, postingCloseEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('posting close must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, RESPONDING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding close is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, respondingCloseNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('responding close must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, respondingEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('responding must be either object or array');
-    }); // FINISHED
-  });
+  // //VALID USERID, RESPONDING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case responding close is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, respondingCloseEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('responding close must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding open date is in the past', async () => {
-      const error = new HttpException("Responding Open date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', respondingOpenPast) }).rejects.toThrow(error);  
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     expect(JSON.stringify(errors)).toContain('synthesizing must be either object or arrayyy');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding open is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, respondingOpenNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('responding open must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing open date is in the past', async () => {
+  //     const errorr = new HttpException("Synthesizing Open date is in the pasttt", HttpStatus.BAD_REQUEST)
+  //     const p = expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', synthesizingOpenPast) }).rejects.toThrow(errorr);
+  //     p.catch(error);
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding open is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, respondingOpenEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('responding open must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing open is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingOpenNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('synthesizing open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding close date is in the past', async () => {
-      const error = new HttpException("Responding Close date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', respondingClosePast) }).rejects.toThrow(error);
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing open is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingOpenEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('synthesizing open must be a Date instance');
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding close is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, respondingCloseNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('responding close must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing close date is in the past', done => {
+  //     const error = new HttpException("Synthesizing Close date is in the pasttt", HttpStatus.BAD_REQUEST)
+  //     expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', synthesizingClosePast) }).rejects.toThrow(error);
+  //     done();
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, RESPONDING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case responding close is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, respondingCloseEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('responding close must be a Date instance');
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing close is not a date', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingCloseNotDate);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('synthesizing close must be a Date instance')
+  //   }); // FINISHED
+  // });
 
-  //VALID USERID, SYNTHESIZING IS AN EMPTY OBJECT, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('synthesizing must be either object or array');
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING OPEN DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing open date is in the past', async () => {
-      const error = new HttpException("Synthesizing Open date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', synthesizingOpenPast) }).rejects.toThrow(error);
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING OPEN DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing open is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingOpenNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('synthesizing open must be a Date instance');
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING OPEN DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing open is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingOpenEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('synthesizing open must be a Date instance');
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING CLOSE DATE IS IN THE PAST, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing close date is in the past', done => {
-      const error = new HttpException("Synthesizing Close date is in the past", HttpStatus.BAD_REQUEST)
-      expect(async() => { await appController.createCalendar('629a3aaa17d028a1f19f0e5c', synthesizingClosePast) }).rejects.toThrow(error);
-      done();
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING CLOSE DATE IS NOT A DATE, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing close is not a date', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingCloseNotDate);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('synthesizing close must be a Date instance')
-    }); // FINISHED
-  });
-
-  //VALID USERID, SYNTHESIZING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
-  describe('POST /user/{userId}/calendar 400 STATUS', () => {
-    it('Test case synthesizing close is empty', async () => {
-      const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingCloseEmpty);
-      const errors = await validate(calendarBad);
-      expect(errors.length).not.toBe(0);
-      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
-      expect(message).toBe('synthesizing close must be a Date instance')
-    }); // FINISHED
-  });
+  // //VALID USERID, SYNTHESIZING CLOSE DATE IS EMPTY, SHOULD RETURN 400 STATUS
+  // describe('POST /user/{userId}/calendar 400 STATUS', () => {
+  //   it('Test case synthesizing close is empty', async () => {
+  //     const calendarBad = plainToInstance(CalendarCreateDTO, synthesizingCloseEmpty);
+  //     const errors = await validate(calendarBad);
+  //     expect(errors.length).not.toBe(0);
+  //     const message = errors[0].property + ' ' + errors[0].children[0].constraints.isDate;
+  //     expect(message).toBe('synthesizing close must be a Date instanceeee')
+  //   }); // FINISHED
+  // });
 
   //afterAll(async () => {
     //console.log("WHY DONT YOU STOP")
     //return await mongod.stop({doCleanup: true});
   //});
-});
+ });

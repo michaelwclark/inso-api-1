@@ -137,6 +137,9 @@ export class CalendarController {
   
 }
 
+
+//function to validate a set including an open date and a close date, useful for validating regular open
+//close dates and the sets inside posting, responding, or synthesize, which is specified as the type string
 function ValidateSetOfDates( openDate: Date, closeDate: Date, type: String) { 
     var now = new Date();
     if(openDate < now){
