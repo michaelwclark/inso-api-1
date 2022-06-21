@@ -1,7 +1,11 @@
 import { Type, Transform } from 'class-transformer';
-import { IsNotEmpty, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsString, isString, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { json } from 'express';
+import { instructions } from './scoreNestedObjects/instructions/instructions';
+import { interactions } from './scoreNestedObjects/interactions/interactions';
+import { impact } from './scoreNestedObjects/impact/impact';
+import { rubric } from './scoreNestedObjects/rubric/rubric';
 
 
 export class ScoreCreateDTO {
@@ -14,14 +18,14 @@ export class ScoreCreateDTO {
         isArray: false,
     })
     @IsNotEmpty()
-    @Type(() => String)
-    public type: String;
+    @IsString()
+    public type: string;
 
     @ApiProperty({
         name: 'instructions',
         description: 'scoring instructions which should include posting, responding and synthesizing',
         required: true,
-        type: json,
+        type: instructions,
         isArray: false,
         example: {
             'posting': 10,
@@ -30,8 +34,53 @@ export class ScoreCreateDTO {
         }
     })
     @IsNotEmpty()
-    @Type(() => json)
-    public instructions: JSON;
+    @ValidateNested()
+    @Type(() => instructions)
+    public instructions: instructions;
 
-    
+    @ApiProperty({
+        name: 'interactions',
+        description: 'interactions which should only include one number as a variable',
+        required: true,
+        type: interactions,
+        isArray: false,
+        example: {
+            'max': 10,
+        }
+    })
+    @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => interactions)
+    public interactions: interactions;
+
+    @ApiProperty({
+        name: 'impact',
+        description: 'impact which should only include one number as a variable',
+        required: true,
+        type: impact,
+        isArray: false,
+        example: {
+            'max': 10,
+        }
+    })
+    @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => impact)
+    public impact: impact;
+
+    @ApiProperty({
+        name: 'rubric',
+        description: 'consists of a max number variable and an array of criteria information',
+        required: true,
+        type: rubric,
+        isArray: false,
+        example: {
+            'max': 10,
+        }
+    })
+    @IsNotEmpty()
+    @ValidateNested()
+    @Type(() => rubric)
+    public rubric: rubric;
+
 }
