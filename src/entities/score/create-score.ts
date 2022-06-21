@@ -33,4 +33,5 @@ export class ScoreCreateDTO {
     @Type(() => json)
     public instructions: JSON;
 
+    
 }
