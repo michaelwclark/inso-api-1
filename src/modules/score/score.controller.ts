@@ -7,7 +7,7 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 @Controller()
 export class ScoreController {
   constructor(
-    @InjectModel(Score.name) private ScoreModel: Model<ScoreDocument>
+    // @InjectModel(Score.name) private ScoreModel: Model<ScoreDocument>
   ) {}
 
   @Get('score')

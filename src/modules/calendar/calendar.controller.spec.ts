@@ -52,15 +52,6 @@ describe('AppController', () => {
         appController = app.get<CalendarController>(CalendarController);
   })
 
-  // EXAMPLE TEST 
-  describe('root', () => {
-    it('Example Test, should fail', async () => {
-      var i = 2 + 2;
-      
-      expect(i).toBe(5);
-    });
-  });
-
   //  TEST CASES FOR POST ROUTE
 
   //  VALID USER ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 200 STATUS
@@ -77,7 +68,7 @@ describe('AppController', () => {
    describe('POST /user/{userId}/calendar 400 STATUS', () => {
 
       it('Test case invalid user', async() => {
-      const invalidUserError = new HttpException("User id is not valid THIS SHOULDNT MATCH", HttpStatus.BAD_REQUEST)
+      const invalidUserError = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST)
       const promise1 = expect(async() => { await appController.createCalendar('ThisIsNotAValidUserId', validCalendar) }).rejects.toThrow(invalidUserError);
       promise1.catch((error) => {
         console.error(error);
@@ -86,7 +77,7 @@ describe('AppController', () => {
     
       //NO USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 400 STATUS
       it('Test case no user id', async() => {
-      const noUserError = new HttpException("No user id provideddd THIS SHOULDNT MATCH", HttpStatus.BAD_REQUEST)
+      const noUserError = new HttpException("No user id provided", HttpStatus.BAD_REQUEST)
       const promise2 = expect(async() => { await appController.createCalendar(null, validCalendar) }).rejects.toThrow(noUserError);
       promise2.catch((error) => {
         console.error(error);

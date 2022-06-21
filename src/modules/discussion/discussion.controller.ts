@@ -31,7 +31,6 @@ export class DiscussionController {
       throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
     }
 
-
     if(!Types.ObjectId){
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
       return;
@@ -104,8 +103,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
-    
-    return 'get a single discussion'
+    return 'wowo';
   }
 
   @Get('discussions')
