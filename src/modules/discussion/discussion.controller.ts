@@ -1,20 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, HttpException, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { model, Model, Types } from 'mongoose';
-import { type } from 'os';
+import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { makeInsoId } from '../shared/generateInsoCode';
-import { User, UserDocument } from 'src/entities/user/user';
+import { User } from 'src/entities/user/user';
 
 @Controller()
 export class DiscussionController {
-  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
-  @InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
+    @InjectModel(User.name) private userModel: Model<User>
+  ) {}
 
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -25,17 +25,10 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
-    // TODO: Check that user exists in DB
-    const checkUser = this.userModel.find({_id: discussion.poster});
-
-    if(checkUser == null){
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
-    }
-
-
-    if(!Types.ObjectId){
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
-      return;
+    // Check that user exists in DB
+    const user = await this.userModel.findOne({_id: discussion.poster});
+    if(!user) {
+      throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
     }
     
     // Add the poster to the facilitators
@@ -43,6 +36,14 @@ export class DiscussionController {
       discussion.facilitators = [];
     }
     discussion.facilitators.push(discussion.poster);
+
+    // Verify that all facilitators exist
+    for await (const user of discussion.facilitators) {
+      let found = await this.userModel.exists({_id: user});
+      if(!found) {
+        throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+      }
+    }
     // Create Inso Code 
     const code = makeInsoId(5);
     // Check that the code is not active in the database
@@ -64,9 +65,27 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  async updateDiscussionMetadata(@Body() discussion: Partial<DiscussionEditDTO>): Promise<string> {
-    console.log(discussion);
-    return 'update discussion metadata'
+  async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
+    // Check that the ids match
+    if(discussionId !== discussion.id.toString()) {
+      throw new HttpException("Discussion being updated is not discussion", HttpStatus.BAD_REQUEST)
+    }
+    // Check that discussion exists
+    const found = await this.discussionModel.findOne({_id: discussionId});
+    if(!found) {
+      throw new HttpException("Discussion not found", HttpStatus.NOT_FOUND);
+    }
+
+    // If there are new facilitators verify they exist and push them into the existing array
+    for await (const user of discussion.facilitators) {
+      let found = await this.userModel.findOne({_id: user});
+      if(!found) {
+        throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+      }
+    }
+    discussion.facilitators = discussion.facilitators.concat(found.facilitators);
+    // Update the discussion and return the new value
+    return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
 
   @Get('discussion/:discussionId')
@@ -79,8 +98,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
-    console.log(discussionId);
-    return 'update discussion metadata'
+    return 'wowo';
   }
 
   @Get('discussions')
