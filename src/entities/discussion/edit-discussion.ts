@@ -1,7 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class DiscussionEditDTO {
@@ -16,13 +15,7 @@ export class DiscussionEditDTO {
     })
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Discussion Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
+    @IsMongoId()
     public id: Types.ObjectId;
 
     @ApiProperty({
@@ -63,13 +56,7 @@ export class DiscussionEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Settings Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
+    @IsMongoId()
     public settings: Types.ObjectId;
 
     @ApiProperty({
@@ -83,15 +70,7 @@ export class DiscussionEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-      const ids = id.value.map(id => {
-        if (!Types.ObjectId.isValid(id)) {
-            throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
-        }
-        return new Types.ObjectId(id);
-      });
-      return ids;
-    })
+    @IsMongoId()
     public facilitators: Types.ObjectId [];
     
     @ApiProperty({
@@ -105,13 +84,7 @@ export class DiscussionEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
+    @IsMongoId()
     public set: Types.ObjectId;
 
     
