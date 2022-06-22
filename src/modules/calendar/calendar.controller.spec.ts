@@ -1,11 +1,10 @@
-import { HttpException, HttpStatus, INestApplication, HttpServer, ConsoleLogger } from '@nestjs/common';
+import { HttpException, HttpStatus, INestApplication } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Connection, Model, connect, Types } from 'mongoose';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { CalendarController } from './calendar.controller';
-import * as request from 'supertest';
 import { validCalendar, openDateInPast, openDateNotADate, openDateEmpty,
          closeDateInPast, closeDateNotADate, closeDateEmpty, postingEmpty,
          postingOpenPast, postingOpenNotDate, postingOpenEmpty, postingClosePast, 
@@ -18,9 +17,6 @@ import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { User, UserSchema } from 'src/entities/user/user';
-import { stringify } from 'querystring';
-import { doesNotThrow } from 'assert';
-import { error } from 'console';
 
 describe('AppController', () => {
   let appController: CalendarController;
