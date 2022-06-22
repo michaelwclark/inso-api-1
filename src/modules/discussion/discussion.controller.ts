@@ -30,11 +30,6 @@ export class DiscussionController {
     if(!user) {
       throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
     }
-
-    if(!Types.ObjectId){
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
-      return;
-    }
     
     // Add the poster to the facilitators
     if(discussion.facilitators === undefined) {

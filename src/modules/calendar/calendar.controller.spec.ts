@@ -107,14 +107,14 @@ describe('AppController', () => {
       // done()
       // });
 
-      // //VALID USERID, OPEN DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
-      // it('Test case open is undefined', done => {
-      // const openEmptyCal = plainToInstance(CalendarCreateDTO, openDateEmpty);
-      // const openEmptyErrors = async () => { await validate(openEmptyCal);
-      // expect(openEmptyErrors.length).not.toBe(0);
-      // expect(JSON.stringify(openEmptyErrors)).toContain('open must be a Date');}
-      // done()
-      // });
+      //VALID USERID, OPEN DATE IS EMPTY NULL OR UNDEFINED, SHOULD RETURN 400 STATUS
+      it('Test case open is undefined', done => {
+      const openEmptyCal = plainToInstance(CalendarCreateDTO, openDateEmpty);
+      const openEmptyErrors = async () => { await validate(openEmptyCal);
+      expect(openEmptyErrors.length).not.toBe(0);
+      expect(JSON.stringify(openEmptyErrors)).toContain('open must be a Date');}
+      done()
+      });
       
   });
 
