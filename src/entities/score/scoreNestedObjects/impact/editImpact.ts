@@ -2,19 +2,18 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsNotEmpty } from "class-validator";
 
-export class CreateImpact {
+export class ImpactEditDTO{
+
     @ApiProperty({
         name: 'max',
         required: true,
-        type: Number,
-        isArray: false
+        type: Number
     })
     @IsNotEmpty()
-    @Type(() => Number)
-    max: number;
+    @Type(()=> Number)
+    public max: number;
 
-    
-    constructor(partial: Partial<CreateImpact>) {
+    constructor (partial: Partial<ImpactEditDTO>){
         Object.assign(this, partial);
     }
 }

@@ -33,4 +33,4 @@ export class Score {
     }
 }
 
-export const DiscussionSchema = SchemaFactory.createForClass(Score);
+export const ScoreSchema = SchemaFactory.createForClass(Score);

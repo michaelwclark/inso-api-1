@@ -1,7 +1,6 @@
-import { Type, Transform } from 'class-transformer';
-import { IsNotEmpty, IsString, isString, ValidateNested } from 'class-validator';
-import { ApiProperty, ApiTags } from '@nestjs/swagger';
-import { json } from 'express';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { instructions } from './scoreNestedObjects/instructions/instructions';
 import { interactions } from './scoreNestedObjects/interactions/interactions';
 import { impact } from './scoreNestedObjects/impact/impact';
@@ -74,13 +73,20 @@ export class ScoreCreateDTO {
         required: true,
         type: rubric,
         isArray: false,
-        example: {
-            'max': 10,
-        }
+        example:{
+        'max': 10,
+        'criteria': [ {
+            'description': 'This is an example',
+            'max': 10
+            } ]
+         }
     })
     @IsNotEmpty()
     @ValidateNested()
     @Type(() => rubric)
     public rubric: rubric;
 
+    constructor(partial: Partial<ScoreCreateDTO>) {
+        Object.assign(this, partial);
+    }
 }
