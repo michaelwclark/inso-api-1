@@ -1,0 +1,46 @@
+{
+    "target": {
+        "type": "rubric",
+        "instructions": {
+            "posting": null,
+            "responding": 10,
+            "synthesizing": 10
+        },
+        "interactions": {
+            "max": 10
+        },
+        "impact": {
+            "max": 10
+        },
+        "rubric": {
+            "max": 10,
+            "criteria": [
+                {
+                    "description": "This is an example",
+                    "max": 10
+                }
+            ]
+        }
+    },
+    "value": {
+        "posting": null,
+        "responding": 10,
+        "synthesizing": 10
+    },
+    "property": "instructions",
+    "children": [
+        {
+            "target": {
+                "posting": null,
+                "responding": 10,
+                "synthesizing": 10
+            },
+            "value": null,
+            "property": "posting",
+            "children": [],
+            "constraints": {
+                "isNumber": "posting must be a number conforming to the specified constraints"
+            }
+        }
+    ]
+}

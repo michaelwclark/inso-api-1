@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, IsNumber } from "class-validator";
 
 export class CreateInteractions {
     @ApiProperty({
@@ -10,7 +10,7 @@ export class CreateInteractions {
         isArray: false
     })
     @IsNotEmpty()
-    @Type(() => Number)
+    @IsNumber()
     max: number;
 
     constructor(partial: Partial<CreateInteractions>) {

@@ -5,6 +5,8 @@ import { instructions } from './scoreNestedObjects/instructions/instructions';
 import { interactions } from './scoreNestedObjects/interactions/interactions';
 import { impact } from './scoreNestedObjects/impact/impact';
 import { rubric } from './scoreNestedObjects/rubric/rubric';
+import { CreateInstructions } from './scoreNestedObjects/instructions/createInstructions';
+import { CreateInteractions } from './scoreNestedObjects/interactions/createInteractions';
 
 
 export class ScoreCreateDTO {
@@ -24,7 +26,7 @@ export class ScoreCreateDTO {
         name: 'instructions',
         description: 'scoring instructions which should include posting, responding and synthesizing',
         required: true,
-        type: instructions,
+        type: CreateInstructions,
         isArray: false,
         example: {
             'posting': 10,
@@ -34,14 +36,14 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => instructions)
-    public instructions: instructions;
+    @Type(() => CreateInstructions)
+    public instructions: CreateInstructions;
 
     @ApiProperty({
         name: 'interactions',
         description: 'interactions which should only include one number as a variable',
         required: true,
-        type: interactions,
+        type: CreateInteractions,
         isArray: false,
         example: {
             'max': 10,
@@ -49,8 +51,8 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => interactions)
-    public interactions: interactions;
+    @Type(() => CreateInteractions)
+    public interactions: CreateInteractions;
 
     @ApiProperty({
         name: 'impact',

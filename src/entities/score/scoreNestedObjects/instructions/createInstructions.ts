@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, IsNumber } from "class-validator";
 
 export class CreateInstructions {
     @ApiProperty({
@@ -11,7 +11,7 @@ export class CreateInstructions {
         isArray: false
     })
     @IsNotEmpty()
-    @Type(() => Number)
+    @IsNumber()
     posting: number;
 
 
@@ -22,7 +22,7 @@ export class CreateInstructions {
         isArray: false
     })
     @IsNotEmpty()
-    @Type(() => Number)
+    @IsNumber()
     responding: number;
 
     @ApiProperty({
@@ -32,7 +32,7 @@ export class CreateInstructions {
         isArray: false
     })
     @IsNotEmpty()
-    @Type(() => Number)
+    @IsNumber()
     synthesizing: number;
 
     constructor(partial: Partial<CreateInstructions>) {
