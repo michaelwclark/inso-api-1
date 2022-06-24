@@ -2,18 +2,10 @@ import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpExc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { model, Model, mongo, Types, Schema } from 'mongoose';
-<<<<<<< HEAD
 import { User, UserDocument } from '../../../src/entities/user/user';
 import { Calendar, CalendarDocument } from '../../../src/entities/calendar/calendar';
 import { CalendarCreateDTO } from '../../../src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from '../../../src/entities/calendar/edit-calendar';
-=======
-import { User, UserDocument } from 'src/entities/user/user';
-import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
-import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
-import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
-import { CalendarDTO } from 'src/entities/calendar/read-calendar';
->>>>>>> d8a902e373a2575a6dd2f09848f987b37fea6114
 
 
 @Controller()

@@ -13,7 +13,6 @@ import { CreateRubric } from './scoreNestedObjects/rubric/createRubric';
 
 export class ScoreCreateDTO {
 
-<<<<<<< HEAD
     @ApiProperty({
         name: 'type',
         description: 'Auto or Rubric',
@@ -41,34 +40,6 @@ export class ScoreCreateDTO {
     @ValidateNested()
     @Type(() => CreateInstructions)
     public instructions: CreateInstructions;
-=======
-//     @ApiProperty({
-//         name: 'type',
-//         description: 'Auto or Rubric',
-//         required: true,
-//         type: String,
-//         isArray: false,
-//     })
-//     @IsNotEmpty()
-//     @Type(() => String)
-//     public type: String;
-
-//     @ApiProperty({
-//         name: 'instructions',
-//         description: 'scoring instructions which should include posting, responding and synthesizing',
-//         required: true,
-//         type: json,
-//         isArray: false,
-//         example: {
-//             'posting': 10,
-//             'responding': 10,
-//             'synthesizing': 10
-//         }
-//     })
-//     @IsNotEmpty()
-//     @Type(() => json)
-//     public instructions: JSON;
->>>>>>> d8a902e373a2575a6dd2f09848f987b37fea6114
 
     @ApiProperty({
         name: 'interactions',
