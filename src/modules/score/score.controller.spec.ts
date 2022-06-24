@@ -102,8 +102,8 @@ describe('AppController', () => {
 
   describe('POST /users/{userId}/score 200 STATUS', () => {
     it('Test case valid request', async ()=> {
-      expect( await appController.createScore('629a3aaa17d028a1f19f0e5c', testScore)).toBe('Score created successfullyyy');
-    })
+      expect( await appController.createScore('629a3aaa17d028a1f19f0e5c', testScore)).toBe('Score created successfully');
+    }) // FINISHED
   });
 
   describe('POST /users/{userId}/score 400 STATUS', () => {
@@ -158,7 +158,7 @@ describe('AppController', () => {
        const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
        expect(message).toBe('instructions posting should not be empty');
       
-    }) // NOT FINISHED, ISEMPTY DECORATOR DOESN'T FUNCTION WHEN POSTING IS EMPTY STRING
+    }) // FINISHED
 
     it('Test case instructions responding is not a number', async() => {
       const Score = plainToInstance(ScoreCreateDTO, instRespondingNotNum);
@@ -311,15 +311,15 @@ describe('AppController', () => {
       expect(errors.length).not.toBe(0);
       const message = errors[0].property + ' ' + errors[0].children[0].property + ' ' + errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
       expect(message).toBe('rubric criteria max should not be empty');
-    })
+    }) // FINISHED
   });
 
   // PATCH TESTS
 
   describe('PATCH /users/{userId}/score/{scoreId} 200 STATUS', () => {
     it('Patch test', async ()=> {
-      expect( await appController.updateScore('629a3aaa17d028a1f19f0e5c', '629a3aaa17d028a1f19f0888', testScoreUpdate)).toBe('Score Updateddd');
-    })
+      expect( await appController.updateScore('629a3aaa17d028a1f19f0e5c', '629a3aaa17d028a1f19f0888', testScoreUpdate)).toBe('Score Updated');
+    }) // FINISHED
   });
 
   afterAll(async() => {
