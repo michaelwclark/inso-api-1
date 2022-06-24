@@ -87,7 +87,12 @@ describe('AppController', () => {
         "_id": new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
          "username" : "mockuser1234"
       });
-    await userModel.insertMany([tempUser]);
+    const tempUser2 = new userModel(
+      {
+        "_id": new Types.ObjectId('444a3aaa17d028a1f19f9999'),
+         "username" : "mockuser5678"
+      });
+    await userModel.insertMany([tempUser, tempUser2]);
     await scoreModel.insertMany([testScore, testScoreUpdate]);
 
     const app: TestingModule = await Test.createTestingModule({
@@ -322,10 +327,52 @@ describe('AppController', () => {
   // PATCH TESTS
 
   describe('PATCH /users/{userId}/score/{scoreId} 200 STATUS', () => {
-    it('Patch test', async ()=> {
+    it('Test case valid request', async ()=> {
       expect( await appController.updateScore('629a3aaa17d028a1f19f0e5c', '629a3aaa17d028a1f19f0888', testScoreUpdate)).toBe('Score Updated');
     }) // FINISHED
   });
+
+  describe('PATCH /users/{userId}/score/{scoreId} 400 STATUS', () => {
+    it('Test case invalid user id', () => {
+      const error = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore('User id is not valid', '629a3aaa17d028a1f19f0888', testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+
+    it('Test case no user id', () => {
+      const error = new HttpException("No user id provided", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore(null, '629a3aaa17d028a1f19f0888', testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+
+    it('Test case invalid score id', () => {
+      const error = new HttpException("Score id is not valid", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore('629a3aaa17d028a1f19f0e5c', 'Score id is not valid', testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+
+    it('Test case no score id', () => {
+      const error = new HttpException("No score id provided", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore('629a3aaa17d028a1f19f0e5c', null, testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+  })
+
+  describe('PATCH /users/{userId}/score/{scoreId} 404 STATUS', () => {
+    it('Test case non existent user', () => {
+      const error = new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore('629a3aaa17d028a1f19f0888', '629a3aaa17d028a1f19f0888', testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+
+    it('Test case non existent score', () => {
+      const error = new HttpException("Score does not exist", HttpStatus.BAD_REQUEST);
+      return expect( appController.updateScore('629a3aaa17d028a1f19f0e5c', '629a3aaa17d028a1f19f0e5c', testScoreUpdate)).rejects.toThrow(error);
+    }) // FINISHED
+  })
+
+  describe('PATCH /users/{userId}/score/{scoreId} 403 STATUS', () => {
+    it('Test case user id and creator id do not match', () => {
+      const error = new HttpException("do not match", HttpStatus.FORBIDDEN);
+      expect ( appController.updateScore('444a3aaa17d028a1f19f9999', '629a3aaa17d028a1f19f0888', testScoreUpdate)).rejects.toThrow(error);
+      
+    })
+  })
 
   afterAll(async() => {
      await mongoConnection.close();

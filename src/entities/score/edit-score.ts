@@ -3,10 +3,10 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from 'mongoose';
-import { impact } from "./scoreNestedObjects/impact/impact";
-import { instructions } from "./scoreNestedObjects/instructions/instructions";
-import { interactions } from "./scoreNestedObjects/interactions/interactions";
-import { rubric } from "./scoreNestedObjects/rubric/rubric";
+import { InstructionsEditDTO } from "../../entities/score/scoreNestedObjects/instructions/editInstructions"
+import { CreateInteractions } from "./scoreNestedObjects/interactions/createInteractions";
+import { CreateImpact } from "./scoreNestedObjects/impact/createImpact";
+import { CreateRubric } from "./scoreNestedObjects/rubric/createRubric";
 
 export class ScoreEditDTO {
     @ApiProperty({
@@ -42,7 +42,7 @@ export class ScoreEditDTO {
         name: 'instructions',
         description: 'scoring instructions which should include posting, responding and synthesizing',
         required: false,
-        type: instructions,
+        type: InstructionsEditDTO,
         isArray: false,
         example: {
             'posting': 10,
@@ -53,45 +53,45 @@ export class ScoreEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => instructions)
-    public instructions: instructions;
+    @Type(() => InstructionsEditDTO)
+    public instructions: InstructionsEditDTO;
 
     @ApiProperty({
         name: 'interactions',
         description: 'interactions which should only include one number as a variable',
         required: false,
-        type: interactions,
+        type: CreateInteractions,
         isArray: false
     })
     @IsOptional()
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => interactions)
-    public interactions: interactions;
+    @Type(() => CreateInteractions)
+    public interactions: CreateInteractions;
 
     @ApiProperty({
         name: 'impact',
         description: 'impact which should only include one number as a variable',
         required: false,
-        type: impact,
+        type: CreateImpact,
         isArray: false
     })
     @IsOptional()
     @ValidateNested()
-    @Type(() => impact)
-    public impact: impact;
+    @Type(() => CreateImpact)
+    public impact: CreateImpact;
 
     @ApiProperty({
         name: 'rubric',
         description: 'consists of a max number variable and an array of criteria information',
         required: false,
-        type: rubric,
+        type: CreateRubric,
         isArray: false
     })
     @IsOptional()
     @ValidateNested()
-    @Type(() => rubric)
-    public rubric: rubric;
+    @Type(() => CreateRubric)
+    public rubric: CreateRubric;
 
     @ApiProperty({
         name: 'creatorId',
