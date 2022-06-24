@@ -2,10 +2,18 @@ import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpExc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { model, Model, mongo, Types, Schema } from 'mongoose';
+<<<<<<< HEAD
 import { User, UserDocument } from '../../../src/entities/user/user';
 import { Calendar, CalendarDocument } from '../../../src/entities/calendar/calendar';
 import { CalendarCreateDTO } from '../../../src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from '../../../src/entities/calendar/edit-calendar';
+=======
+import { User, UserDocument } from 'src/entities/user/user';
+import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
+import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
+import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
+import { CalendarDTO } from 'src/entities/calendar/read-calendar';
+>>>>>>> d8a902e373a2575a6dd2f09848f987b37fea6114
 
 
 @Controller()
@@ -137,6 +145,9 @@ export class CalendarController {
   
 }
 
+
+//function to validate a set including an open date and a close date, useful for validating regular open
+//close dates and the sets inside posting, responding, or synthesize, which is specified as the type string
 function ValidateSetOfDates( openDate: Date, closeDate: Date, type: String) { 
     var now = new Date();
     if(openDate < now){

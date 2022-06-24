@@ -9,8 +9,13 @@ import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { Score, ScoreSchema } from 'src/entities/score/score';
 import { User, UserSchema } from 'src/entities/user/user';
 import { ScoreController } from './score.controller';
-import { criteriaDescEmpty, criteriaDescNotString, criteriaMaxEmpty, criteriaMaxNotNum, impactEmpty, impactMaxEmpty, impactMaxNotNum, instPostingEmpty, instPostingNotNum, instRespondingEmpty, instRespondingNotNum,
-         instructionsEmpty, instSynthesizingEmpty, instSynthesizingNotNum, interactionsEmpty, interMaxEmpty, interMaxNotNum, rubricCriteriaArrayWrongType, rubricCriteriaEmpty, rubricCriteriaEmptyArray, rubricEmpty, rubricMaxEmpty, rubricMaxNotNum, typeNotString, typeNull, validScore } from './scoreMocks';
+import { criteriaDescEmpty, criteriaDescNotString, criteriaMaxEmpty, criteriaMaxNotNum,
+         impactEmpty, impactMaxEmpty, impactMaxNotNum, instPostingEmpty, instPostingNotNum,
+         instRespondingEmpty, instRespondingNotNum, instructionsEmpty, instSynthesizingEmpty,
+         instSynthesizingNotNum, interactionsEmpty, interMaxEmpty, interMaxNotNum,
+         rubricCriteriaArrayWrongType, rubricCriteriaEmpty, rubricCriteriaEmptyArray, 
+         rubricEmpty, rubricMaxEmpty, rubricMaxNotNum, typeNotString, typeNull, validScore }
+       from './scoreMocks';
 
 
   const testScore = {

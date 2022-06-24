@@ -11,7 +11,6 @@ export class CalendarDTO {
     public synthesizing?: ReadStartEnd;
 
     constructor(partial: Partial<CalendarDTO>) {
-        console.log(partial)
         Object.assign(this, partial);
     }
 }
