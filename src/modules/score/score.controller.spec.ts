@@ -9,8 +9,8 @@ import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { Score, ScoreSchema } from 'src/entities/score/score';
 import { User, UserSchema } from 'src/entities/user/user';
 import { ScoreController } from './score.controller';
-import { instPostingEmpty, instPostingNotNum, instRespondingEmpty, instRespondingNotNum,
-         instructionsEmpty, instSynthesizingEmpty, instSynthesizingNotNum, interactionsEmpty, interMaxEmpty, interMaxNotNum, typeNotString, typeNull, validScore } from './scoreMocks';
+import { criteriaDescEmpty, criteriaDescNotString, criteriaMaxEmpty, criteriaMaxNotNum, impactEmpty, impactMaxEmpty, impactMaxNotNum, instPostingEmpty, instPostingNotNum, instRespondingEmpty, instRespondingNotNum,
+         instructionsEmpty, instSynthesizingEmpty, instSynthesizingNotNum, interactionsEmpty, interMaxEmpty, interMaxNotNum, rubricCriteriaArrayWrongType, rubricCriteriaEmpty, rubricCriteriaEmptyArray, rubricEmpty, rubricMaxEmpty, rubricMaxNotNum, typeNotString, typeNull, validScore } from './scoreMocks';
 
 
   const testScore = {
@@ -213,8 +213,105 @@ describe('AppController', () => {
       expect(errors.length).not.toBe(0);
       const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
       expect(message).toBe('interactions max should not be empty');
-    })
+    }) // FINISHED
 
+    it('Test case impact is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, impactEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      expect(JSON.stringify(errors)).toContain('impact should not be empty');
+    }) // FINISHED
+
+    it('Test case impact max is not a number', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, impactMaxNotNum);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
+      expect(message).toBe('impact max must be a number conforming to the specified constraints');
+    }) // FINISHED
+
+    it('Test case impact max is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, impactMaxEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
+      expect(message).toBe('impact max should not be empty');
+    }) // FINISHED
+
+    it('Test case rubric is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, rubricEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      expect(JSON.stringify(errors)).toContain('rubric should not be empty');
+    }) // FINISHED
+
+    it('Test case rubric max is not a number', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, rubricMaxNotNum);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
+      expect(message).toBe('rubric max must be a number conforming to the specified constraints');
+    }) // FINISHED
+
+    it('Test case rubric max is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, rubricMaxEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
+      expect(message).toBe('rubric max should not be empty');
+    }) // FINISHED
+
+    it('Test case rubric criteria is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, rubricCriteriaEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
+      expect(message).toBe('rubric criteria should not be empty');
+    }) // FINISHED
+
+    it('Test case rubric criteria is empty array', () => {
+      const error = new HttpException("Array length for criteria cannot be 0", HttpStatus.BAD_REQUEST);
+      return expect( appController.createScore('629a3aaa17d028a1f19f0e5c', rubricCriteriaEmptyArray)).rejects.toThrow(error);
+    }) // FINISHED
+
+    it('Test case rubric criteria array is of wrong type', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, rubricCriteriaArrayWrongType);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      expect(JSON.stringify(errors)).toContain('nested property criteria must be either object or array');
+    }) // FINISHED
+
+    it('Test case criteria description is not a string', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, criteriaDescNotString);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].property + ' ' + errors[0].children[0].children[0].children[0].constraints.isString;
+      expect(message).toBe('rubric criteria description must be a string');
+    }) // FINISHED
+
+    it('Test case criteria description is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, criteriaDescEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].property + ' ' + errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
+      expect(message).toBe('rubric criteria description should not be empty');
+    }) // FINISHED
+
+    it('Test case criteria max is not a number', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, criteriaMaxNotNum);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].property + ' ' + errors[0].children[0].children[0].children[0].constraints.isNumber;
+      expect(message).toBe('rubric criteria max must be a number conforming to the specified constraints');
+    }) // FINISHED
+
+    it('Test case criteria max is empty', async() => {
+      const Score = plainToInstance(ScoreCreateDTO, criteriaMaxEmpty);
+      const errors = await validate(Score);
+      expect(errors.length).not.toBe(0);
+      const message = errors[0].property + ' ' + errors[0].children[0].property + ' ' + errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
+      expect(message).toBe('rubric criteria max should not be empty');
+    })
   });
 
   // PATCH TESTS

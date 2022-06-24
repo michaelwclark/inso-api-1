@@ -43,6 +43,10 @@ export class ScoreController {
       throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
     }
 
+    if(score.rubric.criteria.length == 0){
+      throw new HttpException("Array length for criteria cannot be 0", HttpStatus.BAD_REQUEST);
+    }
+
     const createdScore = new this.ScoreModel({...score, creator: id});
     await createdScore.save();
 
@@ -87,6 +91,10 @@ export class ScoreController {
 
     if(!score.creatorId.equals(id)){
       throw new HttpException("Parameter id for user and creator id in body do not match", HttpStatus.FORBIDDEN);
+    }
+
+    if(score.rubric.criteria.length == 0){
+      throw new HttpException("Array length for criteria cannot be 0", HttpStatus.BAD_REQUEST);
     }
 
     const foundScore = await this.ScoreModel.findOne({_id: scoreId});

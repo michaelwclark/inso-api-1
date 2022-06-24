@@ -7,6 +7,8 @@ import { impact } from './scoreNestedObjects/impact/impact';
 import { rubric } from './scoreNestedObjects/rubric/rubric';
 import { CreateInstructions } from './scoreNestedObjects/instructions/createInstructions';
 import { CreateInteractions } from './scoreNestedObjects/interactions/createInteractions';
+import { CreateImpact } from './scoreNestedObjects/impact/createImpact';
+import { CreateRubric } from './scoreNestedObjects/rubric/createRubric';
 
 
 export class ScoreCreateDTO {
@@ -58,7 +60,7 @@ export class ScoreCreateDTO {
         name: 'impact',
         description: 'impact which should only include one number as a variable',
         required: true,
-        type: impact,
+        type: CreateImpact,
         isArray: false,
         example: {
             'max': 10,
@@ -66,14 +68,14 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => impact)
-    public impact: impact;
+    @Type(() => CreateImpact)
+    public impact: CreateImpact;
 
     @ApiProperty({
         name: 'rubric',
         description: 'consists of a max number variable and an array of criteria information',
         required: true,
-        type: rubric,
+        type: CreateRubric,
         isArray: false,
         example:{
         'max': 10,
@@ -85,8 +87,8 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => rubric)
-    public rubric: rubric;
+    @Type(() => CreateRubric)
+    public rubric: CreateRubric;
 
     constructor(partial: Partial<ScoreCreateDTO>) {
         Object.assign(this, partial);

@@ -2,7 +2,7 @@
     "target": {
         "type": "rubric",
         "instructions": {
-            "posting": null,
+            "posting": 10,
             "responding": 10,
             "synthesizing": 10
         },
@@ -13,33 +13,46 @@
             "max": 10
         },
         "rubric": {
-            "max": 10,
-            "criteria": [
-                {
-                    "description": "This is an example",
-                    "max": 10
-                }
-            ]
+            "max": "10",
+            "criteria": ""
         }
     },
     "value": {
-        "posting": null,
-        "responding": 10,
-        "synthesizing": 10
+        "max": "10",
+        "criteria": ""
     },
-    "property": "instructions",
+    "property": "rubric",
     "children": [
         {
             "target": {
-                "posting": null,
-                "responding": 10,
-                "synthesizing": 10
+                "max": "10",
+                "criteria": ""
             },
-            "value": null,
-            "property": "posting",
+            "value": "10",
+            "property": "max",
             "children": [],
             "constraints": {
-                "isNumber": "posting must be a number conforming to the specified constraints"
+                "isNumber": "max must be a number conforming to the specified constraints"
+            }
+        },
+        {
+            "target": {
+                "max": "10",
+                "criteria": ""
+            },
+            "value": "",
+            "property": "criteria",
+            "children": [
+                {
+                    "value": "",
+                    "property": "criteria",
+                    "constraints": {
+                        "nestedValidation": "nested property criteria must be either object or array"
+                    }
+                }
+            ],
+            "constraints": {
+                "isNotEmpty": "criteria should not be empty"
             }
         }
     ]
