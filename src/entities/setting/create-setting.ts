@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsString, Length } from "class-validator";
 import { Types } from "mongoose";
 import { Score } from "../score/score";
 
@@ -10,6 +10,7 @@ export class SettingsCreateDTO {
     //starter prompt 
     @IsNotEmpty()
     @IsString()
+    @Length(2, 1000)
     public starter_prompt: string;
 
     //post inspiration 

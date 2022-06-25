@@ -1,6 +1,7 @@
 import { Schema, Prop, SchemaFactory } from "@nestjs/mongoose";
 import { Types } from "mongoose";
 
+export type SettingDocument = Setting & Document;
 
 @Schema()
 export class Setting {
@@ -26,4 +27,7 @@ export class Setting {
     constructor(partial: Partial<Setting>) {
         Object.assign(this, partial);
     }
+
 }
+
+export const SettingSchema = SchemaFactory.createForClass(Setting);

@@ -1,18 +1,25 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model } from 'mongoose';
+import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
+import { Inspiration } from 'src/entities/inspiration/inspiration';
+import { Score } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
+import { Setting } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
 
 @Controller()
 export class DiscussionController {
-  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>) {}
-
+  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
+              @InjectModel(Setting.name) private settingModel: Model<Setting>,
+              @InjectModel(Score.name) private scoreModel: Model<Score>,
+              @InjectModel(Inspiration.name) private post_inspirationModel: Model<Inspiration> ) {}
+              
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
   @ApiBody({description: '', type: DiscussionCreateDTO})
@@ -89,8 +96,26 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  updateDiscussionSettings(@Body() discussion: SettingsCreateDTO ): string {
-    console.log(discussion)
+  async updateDiscussionSettings(
+    @Body() setting: SettingsCreateDTO,
+    @Param('discussionId') discussionId: string): Promise<any> {
+    const found = this.discussionModel.findOne({_id: discussionId})
+    
+    if (!found){
+      this.discussionModel.findOneAndUpdate({_id: discussionId}, setting, { new: true });
+    }
+
+    const post_inspiration = await this.post_inspirationModel.findOne({_id: setting.post_inspiration});
+    if (!post_inspiration){
+      throw new HttpException('Post Inspiration id not found', HttpStatus.BAD_REQUEST);
+    }
+
+    const score = await this.scoreModel.findOne({_id: setting.scores});
+    if (!score){
+      throw new HttpException('Score id not found', HttpStatus.BAD_REQUEST);
+    }
+
+    console.log(found)
     return 'update discussion settings'
   }
 
@@ -103,7 +128,8 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  deleteDiscussion(): string {
-    return 'update discussion settings'
+  deleteDiscussion(
+  ): string {
+    return 'deleted discussion settings'
   }
 }
