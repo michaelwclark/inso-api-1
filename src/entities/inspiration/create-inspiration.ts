@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export class OutlineCreateDTO {
@@ -68,6 +69,7 @@ export class InspirationCreateDTO {
     })
     @IsOptional()
     @ValidateNested()
+    @Type(() => OutlineCreateDTO)
     public outline: OutlineCreateDTO [];
 
     constructor(partial: Partial<InspirationCreateDTO>) {

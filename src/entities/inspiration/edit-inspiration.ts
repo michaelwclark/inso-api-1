@@ -1,4 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import { IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from "mongoose";
 
@@ -69,6 +70,7 @@ export class InspirationEditDTO {
     })
     @IsOptional()
     @ValidateNested()
+    @Type(() => OutlineEditDTO)
     public outline: OutlineEditDTO[];
 
     constructor(partial: Partial<InspirationEditDTO>) {

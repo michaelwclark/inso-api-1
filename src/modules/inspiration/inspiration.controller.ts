@@ -1,10 +1,17 @@
-import { Controller, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
+import { Model } from 'mongoose';
+import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';
+import { InspirationEditDTO } from 'src/entities/inspiration/edit-inspiration';
+import { Inspiration } from 'src/entities/inspiration/inspiration';
 
 
 @Controller()
 export class InspirationController {
-  constructor() {}
+  constructor(
+    @InjectModel(Inspiration.name) private inspirationModel: Model<Inspiration>,
+  ) {}
 
   @Post('inspiration')
   @ApiOperation({description: 'Create an inspiration for a discussion'})
@@ -15,8 +22,9 @@ export class InspirationController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')
-  createInspiration(): string {
-    return 'inspiration'
+  async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<any> {
+    const createdInspiration = new this.inspirationModel(inspiration);
+    return createdInspiration.save();
   }
 
   @Patch('inspiration/:inspirationId')
@@ -28,7 +36,7 @@ export class InspirationController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')
-  updateInspiration(): string {
-    return 'inspiration'
+  async updateInspiration(@Param('inspirationId') inspirationId: string, @Body() inspiration: InspirationEditDTO): Promise<any> {
+    return await this.inspirationModel.findOneAndUpdate({_id: inspirationId}, inspiration);
   }
 }
