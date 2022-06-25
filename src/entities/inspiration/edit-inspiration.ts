@@ -48,6 +48,19 @@ export class InspirationEditDTO {
     public id: Types.ObjectId;
 
     @ApiProperty({
+        name: 'name',
+        description: 'The name of the inspiration',
+        required: true,
+        type: String,
+        isArray: false,
+        example: 'poll'
+    })
+    @IsNotEmpty()
+    @IsString()
+    @IsOptional()
+    public name: string;
+
+    @ApiProperty({
         name: 'instructions',
         description: 'The instructions for the post inspiration',
         required: true,

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export class OutlineCreateDTO {
     @ApiProperty({
@@ -44,7 +44,21 @@ export class InspirationCreateDTO {
     })
     @IsNotEmpty()
     @IsString()
+    @IsIn(['responding', 'posting', 'synthesizing'])
     public type: string;
+
+    @ApiProperty({
+        name: 'name',
+        description: 'The name of the inspiration',
+        required: true,
+        type: String,
+        isArray: false,
+        example: 'poll'
+    })
+    @IsNotEmpty()
+    @IsString()
+    public name: string;
+
 
     @ApiProperty({
         name: 'instructions',
