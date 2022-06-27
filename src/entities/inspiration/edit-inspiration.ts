@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsDefined, IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from "mongoose";
 
 export class OutlineEditDTO {
@@ -13,6 +13,7 @@ export class OutlineEditDTO {
         example: 'Outline try 1s'
     })
     @IsNotEmpty()
+    @IsDefined()
     @IsString()
     public header: string;
 
@@ -25,6 +26,7 @@ export class OutlineEditDTO {
         example: 'Outline try 1s'
     })
     @IsNotEmpty()
+    @IsDefined()
     @IsString()
     public prompt: string;
 
@@ -34,18 +36,6 @@ export class OutlineEditDTO {
 }
 
 export class InspirationEditDTO {
-    @ApiProperty({
-        name: 'id',
-        description: 'The id of the post inspiration',
-        required: true,
-        type: String,
-        isArray: false,
-        example: 'valid mongo id'
-    })
-    @IsNotEmpty()
-    @IsString()
-    @IsMongoId()
-    public id: Types.ObjectId;
 
     @ApiProperty({
         name: 'name',
@@ -56,6 +46,7 @@ export class InspirationEditDTO {
         example: 'poll'
     })
     @IsNotEmpty()
+    @IsDefined()
     @IsString()
     @IsOptional()
     public name: string;
@@ -68,9 +59,10 @@ export class InspirationEditDTO {
         isArray: false,
         example: 'Create a poll for your class'
     })
-    @IsNotEmpty()
-    @IsString()
     @IsOptional()
+    @IsNotEmpty()
+    @IsDefined()
+    @IsString()
     public instructions: string;
 
     @ApiProperty({

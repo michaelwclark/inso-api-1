@@ -1,5 +1,4 @@
 import { Body, Controller, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
-import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model } from 'mongoose';
@@ -23,7 +22,7 @@ export class InspirationController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')
-  async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<any> {
+  async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<Inspiration> {
     const createdInspiration = new this.inspirationModel(inspiration);
     return await createdInspiration.save();
   }
