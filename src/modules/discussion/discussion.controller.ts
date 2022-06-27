@@ -55,7 +55,7 @@ export class DiscussionController {
     while(found !== null) {
       found = await this.discussionModel.findOne({ insoCode: code });
       const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
-      return createdDiscussion.save();
+      return await createdDiscussion.save();
     }
   }
 

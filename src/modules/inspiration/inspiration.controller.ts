@@ -1,4 +1,5 @@
-import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model } from 'mongoose';
@@ -24,7 +25,7 @@ export class InspirationController {
   @ApiTags('Inspiration')
   async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<any> {
     const createdInspiration = new this.inspirationModel(inspiration);
-    return createdInspiration.save();
+    return await createdInspiration.save();
   }
 
   @Patch('inspiration/:inspirationId')
@@ -37,6 +38,10 @@ export class InspirationController {
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')
   async updateInspiration(@Param('inspirationId') inspirationId: string, @Body() inspiration: InspirationEditDTO): Promise<any> {
+    const foundInspiration = await this.inspirationModel.findOne({ _id: inspirationId });
+    if(!foundInspiration) {
+      throw new HttpException('The inspiration does not exist', HttpStatus.NOT_FOUND);
+    }
     return await this.inspirationModel.findOneAndUpdate({_id: inspirationId}, inspiration);
   }
 }
