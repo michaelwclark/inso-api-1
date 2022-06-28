@@ -16,51 +16,52 @@ import { validate } from 'class-validator';
 import { SettingsEditDTO } from 'src/entities/setting/edit-setting';
 
 describe('AppController', () => {
-  let appController: SettingController, Sett;
-  let mongod: MongoMemoryServer;
-  let mongoConnection: Connection;
-  let discussionModel: Model<any>;
-  let userModel: Model<any>;
-  let settingModel: Model<any>;
-  let scoreModel: Model<any>;
-  let inspirationModel: Model<any>;
-  let calendarModel: Model<any>;
+    let appController: SettingController, Sett;
+    let mongod: MongoMemoryServer;
+    let mongoConnection: Connection;
+    let discussionModel: Model<any>;
+    let userModel: Model<any>;
+    let settingModel: Model<any>;
+    let scoreModel: Model<any>;
+    let inspirationModel: Model<any>;
+    let calendarModel: Model<any>;
 
-  beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    mongoConnection = (await connect(uri)).connection;
-    discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-    userModel = mongoConnection.model(User.name) //, UserSchema);
-    settingModel = mongoConnection.model(Setting.name, SettingSchema);
-    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
-    inspirationModel = mongoConnection.model(Inspiration.name, InspirationSchema);
+    beforeAll(async () => {
+      mongod = await MongoMemoryServer.create();
+      const uri = mongod.getUri();
+      mongoConnection = (await connect(uri)).connection;
+      discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
+      userModel = mongoConnection.model(User.name) //, UserSchema);
+      settingModel = mongoConnection.model(Setting.name, SettingSchema);
+      scoreModel = mongoConnection.model(Score.name, ScoreSchema);
+      inspirationModel = mongoConnection.model(Inspiration.name, InspirationSchema);
 
 
 
-    await userModel.insertMany([
-      {
-        "_id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        "f_name": "Paige",
-        "l_name": "Zaleppa"
-      }
-    ])
+      await userModel.insertMany([
+        {
+          "_id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+          "f_name": "Paige",
+          "l_name": "Zaleppa"
+        }
+      ])
 
-  });
+    });
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [SettingController],
-      providers: [{provide: getModelToken(Setting.name), useValue: settingModel},
-      {provide: getModelToken(Discussion.name), useValue: discussionModel},
-      {provide: getModelToken(User.name), useValue: userModel},
-      {provide: getModelToken(Score.name), useValue: scoreModel},
-      {provide: getModelToken(Inspiration.name), useValue: inspirationModel},
-      {provide: getModelToken(Calendar.name), useValue: calendarModel}],
-    }).compile();
+    beforeEach(async () => {
+        const app: TestingModule = await Test.createTestingModule({
+          controllers: [SettingController],
+          providers: [{provide: getModelToken(Setting.name), useValue: settingModel},
+          {provide: getModelToken(Discussion.name), useValue: discussionModel},
+          {provide: getModelToken(User.name), useValue: userModel},
+          {provide: getModelToken(Score.name), useValue: scoreModel},
+          {provide: getModelToken(Inspiration.name), useValue: inspirationModel},
+          {provide: getModelToken(Calendar.name), useValue: calendarModel}],
+        }).compile();
 
-    appController = app.get<SettingController>(SettingController);
-
+        appController = app.get<SettingController>(SettingController);
+      });
+    
     describe('root', () => {
       it('should return "Hello World!"', () => {
         expect(appController.getHello()).toBe('Hello World!');
@@ -72,15 +73,18 @@ describe('AppController', () => {
       it('Should return valid Discussion Id', () => {
 
         const validDiscussionId = {
-          'name': 'Kelly',
-          'poster': new Types.ObjectId('62b276fda78b2a00063b1de0'),
-          'facilitators': ['']
-          }
-
+          "id": "62b276fda78b2a00063b1de0",
+          "prompt": "This is a prompt",
+          'post_inspiration': [" "],
+          "Score": "5",
+          "Calendar": "",
+          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          }; 
+          
           return expect(appController.createSetting(validDiscussionId)).resolves.toMatchObject(validDiscussionId);
-        });
-
+        
       }); 
+    }); 
 
     //400 ERROR STATUS
     //invalid discussion id
@@ -88,15 +92,17 @@ describe('AppController', () => {
       it('Should return 400 for invalid Discussion Id in setting', async () => {
 
         const invalidDiscussionId = {
-          'name': 'Kelly',
-          'poster': new Types.ObjectId('62b276fda78b2a00063b1de0'),
-          'facilitators': []
+          "id": "62b276fda78b2a00063b1de0",
+          "prompt": "This is a prompt",
+          'post_inspiration': [" "],
+          "Score": "5",
+          "Calendar": "",
+          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
           };
 
           const invalid = plainToInstance(SettingsCreateDTO, invalidDiscussionId);
           const errors = await validate(invalid);
-          expect(JSON.stringify(errors)).toContain('Discussion Id not valid Id for setting');     
-
+          expect(JSON.stringify(errors)).toContain('Discussion Id not valid Id for setting'); 
         });
 
       //no disccussion id
@@ -110,11 +116,8 @@ describe('AppController', () => {
         const errors = await validate(invalid);
         expect(errors.length).not.toBe(0);
         expect(JSON.stringify(errors)).toContain(' No Discussion Id for setting');
-
       
       });
-    
-      
 
       //valid discussion id, starter prompt not less than 2
       it('should return a 400 for prompt is less than 2 characters', async () => {
@@ -153,10 +156,8 @@ describe('AppController', () => {
       });
       
       //valid discussion id, calendar id is not valid
-      it('should throw a 400 for an undefined poster', async () => {
+      it('should throw a 400 for an undefined calendar', async () => {
         const validDiscussionId = { 
-          "name": "I don't have a poster",
-          "poster": undefined,
           "calendar": null,
         };
   
@@ -168,9 +169,7 @@ describe('AppController', () => {
       
       //valid discussion id, empty object
       it('should throw a 400 for an empty object', async () => {
-        const invalidDiscussion = { 
-          
-        };
+        const invalidDiscussion = {};
   
         const invalid = plainToInstance(SettingsCreateDTO, invalidDiscussion);
         const errors = await validate(invalid);
@@ -183,77 +182,89 @@ describe('AppController', () => {
       describe('PATCH /discussion/:discussionId/setting 404 status', () => {
         it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
           const non_existentDiscussionId = {
-            "name": "This id does not exist",
-            "poster": new Types.ObjectId(),
-            "facilitators": []
-          }
+            "id": null,
+          "prompt": "This is a prompt",
+          'post_inspiration': [" "],
+          "Score": "5",
+          "Calendar": "",
+          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          };
           const error = new HttpException("Discussion Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(non_existentDiscussionId)).rejects.toThrow(error);
         });
     
         it('should throw a 404 error for a post inspiration not found', () => {
           const validDiscussion = {
-            "name": "Power",
-            "poster": new Types.ObjectId(),
-            "facilitators": []
-          }
+            "id": "62b276fda78b2a00063b1de0",
+            "prompt": "This is a prompt",
+            'post_inspiration': [null],
+            "Score": "5",
+            "Calendar": "",
+            "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+            };
           const error = new HttpException("Post inspiration Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
         });
 
         it('should throw a 404 error for a score id not found for setting', () => {
           const validDiscussion = {
-            "name": "Power",
-            "poster": new Types.ObjectId(),
-            "facilitators": [],
-            "score": "",
-          }
+            "id": "62b276fda78b2a00063b1de0",
+          "prompt": "This is a prompt",
+          'post_inspiration': [" "],
+          "Score": null,
+          "Calendar": "",
+          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          };
           const error = new HttpException("Score Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
         });
 
         it('should throw a 404 error for a calendar id not found for setting', () => {
           const validDiscussion = {
-            "name": "Power",
-            "poster": new Types.ObjectId(),
-            "facilitators": [],
-            "Calendar": "",
-          }
+            "id": "62b276fda78b2a00063b1de0",
+          "prompt": "This is a prompt",
+          'post_inspiration': [" "],
+          "Score": "5",
+          "Calendar": null,
+          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          };
           const error = new HttpException("Calendar Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
         });
 
-      });
+      
 
        //non existent discussion id 404
-       it('should throw a 404 for non-existent Discussion Id for Setting', async () => {
-        const non_existentDiscussionId = {
-          "name": "Invalid testing discussion",
-          "poster": "123456"
-        };
-  
-        const invalid = plainToInstance(SettingsCreateDTO, non_existentDiscussionId);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
-      });
+        it('should throw a 404 for non-existent Discussion Id for Setting', async () => {
+          const non_existentDiscussionId = {
+            "id": "62b276fda78b2a00063b1de0",
+            "prompt": "This is a prompt",
+            'post_inspiration': [" "],
+            "Score": "5",
+            "Calendar": "",
+            "userId": new Types.ObjectId()
+            };
+          const invalid = plainToInstance(SettingsCreateDTO, non_existentDiscussionId);
+          const errors = await validate(invalid);
+          expect(errors.length).not.toBe(0);
+          expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
+        
+        });  
     });
 
 
-    
-    function UserSchema(name: any, UserSchema: any): Model<any, {}, {}, {}> {
-      throw new Error('Function not implemented.');
-      }
-    function validSetting(arg0: string, validSetting: any) {
-      throw new Error('Function not implemented.');
-      }
- 
-  });
-
-  afterAll(done => {
+    afterAll(done => {
     // Closing the DB connection allows Jest to exit successfully.
     mongoConnection.close();
     done()
-  });
 
+    // function UserSchema(name: any, UserSchema: any): Model<any, {}, {}, {}> {
+    //   throw new Error('Function not implemented.');
+    //   }
+    // function validSetting(arg0: string, validSetting: any) {
+    //   throw new Error('Function not implemented.');
+    //   }
+  
+  });
+  
 });

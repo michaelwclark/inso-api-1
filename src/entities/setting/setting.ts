@@ -1,11 +1,12 @@
-import { Schema, Prop, SchemaFactory } from "@nestjs/mongoose";
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
 
 export type SettingDocument = Setting & Document;
 
 @Schema()
 export class Setting {
-
     @Prop(Types.ObjectId)
     public id: Types.ObjectId;
 

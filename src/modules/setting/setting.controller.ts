@@ -1,10 +1,9 @@
 import { Controller, Get, Body, Post, Patch } from '@nestjs/common';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 
-//{_id: string, prompt: string, inspiration: string[], score: string, calendar: string, userId: string;} 
 @Controller()
 export class SettingController { 
-  createSetting(validDiscussionSetting: { name: string; poster: import("mongoose").Types.ObjectId; facilitators: any[];}): any {
+  createSetting(validDiscussionId: { id: string, prompt: string, post_inspiration: string[], score: string, calendar: string, userId: string;}): any {
     throw new Error('Method not implemented.');
    
   }
