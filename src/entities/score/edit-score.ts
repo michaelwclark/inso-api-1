@@ -33,7 +33,6 @@ export class ScoreEditDTO {
         type: String,
         isArray: false
     })
-    @IsOptional()
     @IsNotEmpty()
     @IsString()
     public type: string;
@@ -50,7 +49,6 @@ export class ScoreEditDTO {
             'synthesizing': 10
         }
     })
-    @IsOptional()
     @IsNotEmpty()
     @ValidateNested()
     @Type(() => InstructionsEditDTO)
@@ -63,7 +61,6 @@ export class ScoreEditDTO {
         type: CreateInteractions,
         isArray: false
     })
-    @IsOptional()
     @IsNotEmpty()
     @ValidateNested()
     @Type(() => CreateInteractions)
@@ -76,7 +73,7 @@ export class ScoreEditDTO {
         type: CreateImpact,
         isArray: false
     })
-    @IsOptional()
+    @IsNotEmpty()
     @ValidateNested()
     @Type(() => CreateImpact)
     public impact: CreateImpact;
@@ -88,7 +85,7 @@ export class ScoreEditDTO {
         type: CreateRubric,
         isArray: false
     })
-    @IsOptional()
+    @IsNotEmpty()
     @ValidateNested()
     @Type(() => CreateRubric)
     public rubric: CreateRubric;

@@ -75,7 +75,7 @@ export class ScoreController {
     }
     const user = await this.userModel.findOne({_id: id});
     if(!user) {
-      throw new HttpException("User does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
     }
 
     //SCORE ID VALIDATION
@@ -89,19 +89,18 @@ export class ScoreController {
       throw new HttpException("Score id is not valid", HttpStatus.BAD_REQUEST);
     }
 
-    if(!score.creatorId.equals(id)){
-      throw new HttpException("Parameter id for user and creator id in body do not match", HttpStatus.FORBIDDEN);
-    }
-
     if(score.rubric.criteria.length == 0){
       throw new HttpException("Array length for criteria cannot be 0", HttpStatus.BAD_REQUEST);
     }
 
     const foundScore = await this.ScoreModel.findOne({_id: scoreId});
     if(!foundScore){
-      throw new HttpException("Score does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("Score does not exist", HttpStatus.NOT_FOUND);
     }
 
+    if(!score.creatorId.equals(id)){
+      throw new HttpException("Parameter id for user and creator id in body do not match", HttpStatus.FORBIDDEN);
+    }
     const res = await foundScore.updateOne(score);
 
     return 'Score Updated';
