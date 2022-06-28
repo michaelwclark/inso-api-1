@@ -15,8 +15,8 @@ import { criteriaDescEmpty, criteriaDescNotString, criteriaMaxEmpty, criteriaMax
          instRespondingEmpty, instRespondingNotNum, instructionsEmpty, instSynthesizingEmpty,
          instSynthesizingNotNum, interactionsEmpty, interMaxEmpty, interMaxNotNum,
          rubricCriteriaArrayWrongType, rubricCriteriaEmpty, rubricCriteriaEmptyArray, 
-         rubricEmpty, rubricMaxEmpty, rubricMaxNotNum, typeNotString, typeNull, validScore }
-       from './scoreMocks';
+         rubricEmpty, rubricMaxEmpty, rubricMaxNotNum, typeNotString, typeNull, validScore 
+        } from './scoreMocks';
 import { criteriaDescEmptyUpdate, criteriaDescNotStringUpdate, criteriaMaxEmptyUpdate, criteriaMaxNotNumUpdate, impactEmptyUpdate, impactMaxEmptyUpdate, impactMaxNotNumUpdate,
          instPostingEmptyUpdate, instPostingNotNumUpdate, instRespondingEmptyUpdate,
          instRespondingNotNumUpdate, instructionsEmptyUpdate, instSynthesizingEmptyUpdate,
@@ -41,10 +41,16 @@ import { criteriaDescEmptyUpdate, criteriaDescNotStringUpdate, criteriaMaxEmptyU
     },
     'rubric': {
       'max': 10,
-      'criteria': [ {
+      'criteria': [
+         {
           'description': 'This is an example',
           'max': 10
-          } ]
+          },
+          {
+            'description': 'This is another example',
+            'max': 10
+          }
+         ]
        }
 
   }
@@ -112,15 +118,10 @@ describe('AppController', () => {
     appController = app.get<ScoreController>(ScoreController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
-  });
-
   describe('POST /users/{userId}/score 200 STATUS', () => {
     it('Test case valid request', async ()=> {
-      expect( await appController.createScore('629a3aaa17d028a1f19f0e5c', testScore)).toBe('Score created successfully');
+      const result = await appController.createScore('629a3aaa17d028a1f19f0e5c', testScore);
+      expect(Types.ObjectId.isValid(result)).toBe(true);
     }) // FINISHED
   });
 

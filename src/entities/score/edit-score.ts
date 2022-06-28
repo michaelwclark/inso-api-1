@@ -4,9 +4,9 @@ import { Transform, Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from 'mongoose';
 import { InstructionsEditDTO } from "../../entities/score/scoreNestedObjects/instructions/editInstructions"
-import { CreateInteractions } from "./scoreNestedObjects/interactions/createInteractions";
-import { CreateImpact } from "./scoreNestedObjects/impact/createImpact";
-import { CreateRubric } from "./scoreNestedObjects/rubric/createRubric";
+import { CreateInteractionsDTO } from "./scoreNestedObjects/interactions/createInteractions";
+import { CreateImpactDTO } from "./scoreNestedObjects/impact/createImpact";
+import { CreateRubricDTO } from "./scoreNestedObjects/rubric/createRubric";
 
 export class ScoreEditDTO {
     @ApiProperty({
@@ -58,37 +58,37 @@ export class ScoreEditDTO {
         name: 'interactions',
         description: 'interactions which should only include one number as a variable',
         required: false,
-        type: CreateInteractions,
+        type: CreateInteractionsDTO,
         isArray: false
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateInteractions)
-    public interactions: CreateInteractions;
+    @Type(() => CreateInteractionsDTO)
+    public interactions: CreateInteractionsDTO;
 
     @ApiProperty({
         name: 'impact',
         description: 'impact which should only include one number as a variable',
         required: false,
-        type: CreateImpact,
+        type: CreateImpactDTO,
         isArray: false
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateImpact)
-    public impact: CreateImpact;
+    @Type(() => CreateImpactDTO)
+    public impact: CreateImpactDTO;
 
     @ApiProperty({
         name: 'rubric',
         description: 'consists of a max number variable and an array of criteria information',
         required: false,
-        type: CreateRubric,
+        type: CreateRubricDTO,
         isArray: false
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateRubric)
-    public rubric: CreateRubric;
+    @Type(() => CreateRubricDTO)
+    public rubric: CreateRubricDTO;
 
     @ApiProperty({
         name: 'creatorId',

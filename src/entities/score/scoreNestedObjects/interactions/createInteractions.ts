@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber } from "class-validator";
 
-export class CreateInteractions {
+export class CreateInteractionsDTO {
     @ApiProperty({
         name: 'max',
         required: true,
@@ -13,7 +13,7 @@ export class CreateInteractions {
     @IsNumber()
     max: number;
 
-    constructor(partial: Partial<CreateInteractions>) {
+    constructor(partial: Partial<CreateInteractionsDTO>) {
         Object.assign(this, partial);
     }
 }

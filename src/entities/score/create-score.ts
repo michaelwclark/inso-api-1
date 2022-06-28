@@ -5,10 +5,10 @@ import { instructions } from './scoreNestedObjects/instructions/instructions';
 import { interactions } from './scoreNestedObjects/interactions/interactions';
 import { impact } from './scoreNestedObjects/impact/impact';
 import { rubric } from './scoreNestedObjects/rubric/rubric';
-import { CreateInstructions } from './scoreNestedObjects/instructions/createInstructions';
-import { CreateInteractions } from './scoreNestedObjects/interactions/createInteractions';
-import { CreateImpact } from './scoreNestedObjects/impact/createImpact';
-import { CreateRubric } from './scoreNestedObjects/rubric/createRubric';
+import { CreateInstructionsDTO } from './scoreNestedObjects/instructions/createInstructions';
+import { CreateInteractionsDTO } from './scoreNestedObjects/interactions/createInteractions';
+import { CreateImpactDTO } from './scoreNestedObjects/impact/createImpact';
+import { CreateRubricDTO } from './scoreNestedObjects/rubric/createRubric';
 
 
 export class ScoreCreateDTO {
@@ -28,7 +28,7 @@ export class ScoreCreateDTO {
         name: 'instructions',
         description: 'scoring instructions which should include posting, responding and synthesizing',
         required: true,
-        type: CreateInstructions,
+        type: CreateInstructionsDTO,
         isArray: false,
         example: {
             'posting': 10,
@@ -38,14 +38,14 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateInstructions)
-    public instructions: CreateInstructions;
+    @Type(() => CreateInstructionsDTO)
+    public instructions: CreateInstructionsDTO;
 
     @ApiProperty({
         name: 'interactions',
         description: 'interactions which should only include one number as a variable',
         required: true,
-        type: CreateInteractions,
+        type: CreateInteractionsDTO,
         isArray: false,
         example: {
             'max': 10,
@@ -53,14 +53,14 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateInteractions)
-    public interactions: CreateInteractions;
+    @Type(() => CreateInteractionsDTO)
+    public interactions: CreateInteractionsDTO;
 
     @ApiProperty({
         name: 'impact',
         description: 'impact which should only include one number as a variable',
         required: true,
-        type: CreateImpact,
+        type: CreateImpactDTO,
         isArray: false,
         example: {
             'max': 10,
@@ -68,14 +68,14 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateImpact)
-    public impact: CreateImpact;
+    @Type(() => CreateImpactDTO)
+    public impact: CreateImpactDTO;
 
     @ApiProperty({
         name: 'rubric',
         description: 'consists of a max number variable and an array of criteria information',
         required: true,
-        type: CreateRubric,
+        type: CreateRubricDTO,
         isArray: false,
         example:{
         'max': 10,
@@ -87,8 +87,8 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @ValidateNested()
-    @Type(() => CreateRubric)
-    public rubric: CreateRubric;
+    @Type(() => CreateRubricDTO)
+    public rubric: CreateRubricDTO;
 
     constructor(partial: Partial<ScoreCreateDTO>) {
         Object.assign(this, partial);

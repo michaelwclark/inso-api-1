@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class CreateCriteria {
+export class CreateCriteriaDTO {
     @ApiProperty({
         name: 'description',
         required: true,
@@ -27,7 +27,7 @@ export class CreateCriteria {
 
 
 
-    constructor(partial: Partial<CreateCriteria>) {
+    constructor(partial: Partial<CreateCriteriaDTO>) {
         Object.assign(this, partial);
     }
 }

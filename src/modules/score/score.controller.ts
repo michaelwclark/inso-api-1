@@ -16,18 +16,13 @@ export class ScoreController {
     @InjectModel(User.name) private userModel: Model<User>
   ) {}
 
-  @Get('score')
-  getHello(): string {
-    return 'Hello World!'
-  }
-
   @HttpCode(200)
   @Post('users/:userId/score')
   @ApiOperation({description: 'Request will create a Score'})
   @ApiBody({description: '', type: ScoreCreateDTO})
   @ApiOkResponse({description: 'Score created successfully'})
   @ApiTags('Score')
-  async createScore(@Param('userId') id: string, @Body() score: ScoreCreateDTO): Promise<String>{
+  async createScore(@Param('userId') id: string, @Body() score: ScoreCreateDTO){
 
     if(id === undefined){
       throw new HttpException("User id is undefined", HttpStatus.BAD_REQUEST);
@@ -50,8 +45,7 @@ export class ScoreController {
     const createdScore = new this.ScoreModel({...score, creator: id});
     await createdScore.save();
 
-    var value = 'Score created successfully'
-    return value;
+    return createdScore._id;
   }
 
   @Patch('users/:userId/score/:scoreId')

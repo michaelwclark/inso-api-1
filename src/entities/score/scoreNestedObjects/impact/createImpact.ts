@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsNotEmpty, IsNumber } from "class-validator";
 
-export class CreateImpact {
+export class CreateImpactDTO {
     @ApiProperty({
         name: 'max',
         required: true,
@@ -13,7 +13,7 @@ export class CreateImpact {
     max: number;
 
     
-    constructor(partial: Partial<CreateImpact>) {
+    constructor(partial: Partial<CreateImpactDTO>) {
         Object.assign(this, partial);
     }
 }

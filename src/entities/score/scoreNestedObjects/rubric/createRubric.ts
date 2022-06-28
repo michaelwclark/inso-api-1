@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsNotEmpty, IsNumber, ValidateNested } from "class-validator";
-import { CreateCriteria } from "./criteria/createCriteria";
+import { CreateCriteriaDTO } from "./criteria/createCriteria";
 import { criteriaObject } from "./criteria/criteriaObject";
 
-export class CreateRubric {
+export class CreateRubricDTO {
     @ApiProperty({
         name: 'max',
         required: true,
@@ -19,7 +19,7 @@ export class CreateRubric {
     @ApiProperty({
         name: 'criteria',
         required: true,
-        type: CreateCriteria,
+        type: CreateCriteriaDTO,
         isArray: true,
         example: [ {
             'description': 'example description',
@@ -29,13 +29,13 @@ export class CreateRubric {
     @IsNotEmpty()
     @IsArray()
     @ValidateNested()
-    @Type(() => CreateCriteria)
-    criteria: CreateCriteria[];
+    @Type(() => CreateCriteriaDTO)
+    criteria: CreateCriteriaDTO[];
 
 
 
 
-    constructor(partial: Partial<CreateRubric>) {
+    constructor(partial: Partial<CreateRubricDTO>) {
         Object.assign(this, partial);
     }
 }

@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber } from "class-validator";
 
-export class CreateInstructions {
+export class CreateInstructionsDTO {
     @ApiProperty({
         name: 'posting',
         //description: 'The max ',
@@ -35,7 +35,7 @@ export class CreateInstructions {
     @IsNumber()
     synthesizing: number;
 
-    constructor(partial: Partial<CreateInstructions>) {
+    constructor(partial: Partial<CreateInstructionsDTO>) {
         Object.assign(this, partial);
     }
 }
