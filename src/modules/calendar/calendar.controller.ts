@@ -106,6 +106,10 @@ export class CalendarController {
       throw new HttpException("Body id and url id for user do not match", HttpStatus.FORBIDDEN);
     }
 
+    if(!calendar.id.equals(calendarId)){
+      throw new HttpException("Body id and url id for calendar do not match", HttpStatus.FORBIDDEN);
+    }
+
     ValidateSetOfDates(calendar.open, calendar.close, "");
     if(calendar.hasOwnProperty('posting')){
     ValidateSetOfDates(calendar.posting.open, calendar.posting.close, "Posting ");

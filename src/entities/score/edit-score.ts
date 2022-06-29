@@ -20,7 +20,7 @@ export class ScoreEditDTO {
     @Type(() => Types.ObjectId)
     @Transform((id:any) => {
         if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
+          throw new BadRequestException(['Invalid ObjectId for Score Id']);
         }
         return new Types.ObjectId(id.value);
     })
@@ -102,7 +102,7 @@ export class ScoreEditDTO {
     @Type(() => Types.ObjectId)
     @Transform((creatorId:any) => {
         if (!Types.ObjectId.isValid(creatorId.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Score Id']);
+          throw new BadRequestException(['Invalid ObjectId for Creator Id']);
         }
     
         return new Types.ObjectId(creatorId.value);

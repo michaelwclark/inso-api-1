@@ -28,12 +28,9 @@ export class Score {
     @Prop(rubric)
     public rubric: rubric
 
-    // @Prop(Number)
-    // public max: number;
-
-    // constructor(partial: Partial<Criteria>) {
-    //     Object.assign(this, partial);
-    // }
+    @Prop(Types.ObjectId)
+    public creatorId: Types.ObjectId;
+    
 }
 
 export const ScoreSchema = SchemaFactory.createForClass(Score);
