@@ -20,7 +20,7 @@ export class SettingsCreateDTO {
     @Transform((id:any) => {
         const ids = id.value.map(id => {
             if (!Types.ObjectId.isValid(id.value)){
-                throw new BadRequestException (['Invalid ObjectId for Post Inspiration Id ']);
+                throw new BadRequestException (['Invalid ObjectId for Post Inspiration Id']);
             }
             return new Types.ObjectId(id.value)
         })
@@ -38,7 +38,7 @@ export class SettingsCreateDTO {
 
         return new Types.ObjectId(id.value)
     })
-    public scores: Types.ObjectId;
+    public score: Types.ObjectId;
 
     //calendar id 
     @IsNotEmpty()

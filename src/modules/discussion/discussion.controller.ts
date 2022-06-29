@@ -141,7 +141,7 @@ export class DiscussionController {
       throw new HttpException('Post Inspiration id not found', HttpStatus.BAD_REQUEST);
     }
 
-    const score = await this.scoreModel.findOne({_id: setting.scores});
+    const score = await this.scoreModel.findOne({_id: setting.score});
     if (!score){
       throw new HttpException('Score id not found', HttpStatus.BAD_REQUEST);
     }

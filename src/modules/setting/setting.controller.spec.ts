@@ -6,7 +6,7 @@ import { Inspiration, InspirationSchema } from 'src/entities/inspiration/inspira
 import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { Score, ScoreSchema } from 'src/entities/score/score';
-import { User } from 'src/entities/user/user';
+import { User, UserSchema } from 'src/entities/user/user';
 import { getModelToken } from '@nestjs/mongoose';
 import { Calendar } from 'src/entities/calendar/calendar';
 import { HttpException, HttpStatus } from '@nestjs/common';
@@ -31,7 +31,7 @@ describe('AppController', () => {
       const uri = mongod.getUri();
       mongoConnection = (await connect(uri)).connection;
       discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-      userModel = mongoConnection.model(User.name) //, UserSchema);
+      userModel = mongoConnection.model(User.name, UserSchema);
       settingModel = mongoConnection.model(Setting.name, SettingSchema);
       scoreModel = mongoConnection.model(Score.name, ScoreSchema);
       inspirationModel = mongoConnection.model(Inspiration.name, InspirationSchema);
@@ -75,10 +75,10 @@ describe('AppController', () => {
         const validDiscussionId = {
           "id": "62b276fda78b2a00063b1de0",
           "prompt": "This is a prompt",
-          'post_inspiration': [" "],
-          "Score": "5",
-          "Calendar": "",
-          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          'post_inspiration': ["62b276fda78b2a00063b1de0"],
+          "score": "5",
+          "calendar": "",
+          "userId": '62b276fda78b2a00063b1de0'
           }; 
           
           return expect(appController.createSetting(validDiscussionId)).resolves.toMatchObject(validDiscussionId);
@@ -94,9 +94,9 @@ describe('AppController', () => {
         const invalidDiscussionId = {
           "id": "62b276fda78b2a00063b1de0",
           "prompt": "This is a prompt",
-          'post_inspiration': [" "],
-          "Score": "5",
-          "Calendar": "",
+          'post_inspiration': ["62b276fda78b2a00063b1de0"],
+          "score": "5",
+          "calendar": "",
           "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
           };
 
@@ -147,7 +147,7 @@ describe('AppController', () => {
       //valid discussion id, score id is not valid
       it('should throw a 400 for non Valid Score Id', async () => {
         const validDiscussionId = { 
-          "Score": null,
+          "score": null,
         };
   
         const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
@@ -174,33 +174,37 @@ describe('AppController', () => {
         const invalid = plainToInstance(SettingsCreateDTO, invalidDiscussion);
         const errors = await validate(invalid);
         expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name should not be empty');
-        expect(JSON.stringify(errors)).toContain('poster should not be empty');
+        expect(JSON.stringify(errors)).toContain('id should not be empty');
+        expect(JSON.stringify(errors)).toContain('prompt should not be empty');
+        expect(JSON.stringify(errors)).toContain('post_inspiration should not be empty');
+        expect(JSON.stringify(errors)).toContain('score should not be empty');
+        expect(JSON.stringify(errors)).toContain('calendar should not be empty');
+        expect(JSON.stringify(errors)).toContain('userId should not be empty');
       });
   
       //404 error status
       describe('PATCH /discussion/:discussionId/setting 404 status', () => {
         it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
           const non_existentDiscussionId = {
-            "id": null,
+          "id": '62b276fda78b2a00063b1de0',
           "prompt": "This is a prompt",
-          'post_inspiration': [" "],
-          "Score": "5",
-          "Calendar": "",
-          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          "post_inspiration": ['62b276fda78b2a00063b1de0'],
+          "score": "5",
+          "calendar": " ",
+          "userId": '62b276fda78b2a00063b1de0'
           };
-          const error = new HttpException("Discussion Id does not exist", HttpStatus.NOT_FOUND);
+          const error = new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(non_existentDiscussionId)).rejects.toThrow(error);
         });
     
         it('should throw a 404 error for a post inspiration not found', () => {
           const validDiscussion = {
-            "id": "62b276fda78b2a00063b1de0",
-            "prompt": "This is a prompt",
-            'post_inspiration': [null],
-            "Score": "5",
-            "Calendar": "",
-            "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+            "id": '62b276fda78b2a00063b1de0',
+            "prompt":  "This is a prompt",
+            "post_inspiration": [null], 
+            "score": "5",
+            "calendar": "",
+            "userId": '62b276fda78b2a00063b1de0'
             };
           const error = new HttpException("Post inspiration Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
@@ -208,12 +212,12 @@ describe('AppController', () => {
 
         it('should throw a 404 error for a score id not found for setting', () => {
           const validDiscussion = {
-            "id": "62b276fda78b2a00063b1de0",
+          "id": '62b276fda78b2a00063b1de0',
           "prompt": "This is a prompt",
-          'post_inspiration': [" "],
-          "Score": null,
-          "Calendar": "",
-          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+          "post_inspiration": ['62b276fda78b2a00063b1de0'],
+          "score": null,
+          "calendar": " ",
+          "userId": '62b276fda78b2a00063b1de0',
           };
           const error = new HttpException("Score Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
@@ -221,35 +225,17 @@ describe('AppController', () => {
 
         it('should throw a 404 error for a calendar id not found for setting', () => {
           const validDiscussion = {
-            "id": "62b276fda78b2a00063b1de0",
+          "id": '62b276fda78b2a00063b1de0',
           "prompt": "This is a prompt",
-          'post_inspiration': [" "],
-          "Score": "5",
-          "Calendar": null,
-          "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
-          };
+          "post_inspiration": ['62b276fda78b2a00063b1de0'],
+          "score": "5",
+          "calendar": null,
+          "userId": '62b276fda78b2a00063b1de0'
+          }
           const error = new HttpException("Calendar Id does not exist", HttpStatus.NOT_FOUND);
           return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
         });
-
-      
-
-       //non existent discussion id 404
-        it('should throw a 404 for non-existent Discussion Id for Setting', async () => {
-          const non_existentDiscussionId = {
-            "id": "62b276fda78b2a00063b1de0",
-            "prompt": "This is a prompt",
-            'post_inspiration': [" "],
-            "Score": "5",
-            "Calendar": "",
-            "userId": new Types.ObjectId()
-            };
-          const invalid = plainToInstance(SettingsCreateDTO, non_existentDiscussionId);
-          const errors = await validate(invalid);
-          expect(errors.length).not.toBe(0);
-          expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
-        
-        });  
+ 
     });
 
 
@@ -257,7 +243,7 @@ describe('AppController', () => {
     // Closing the DB connection allows Jest to exit successfully.
     mongoConnection.close();
     done()
-
+      });
     // function UserSchema(name: any, UserSchema: any): Model<any, {}, {}, {}> {
     //   throw new Error('Function not implemented.');
     //   }
@@ -266,5 +252,7 @@ describe('AppController', () => {
     //   }
   
   });
-  
+
 });
+  
+

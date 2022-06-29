@@ -33,15 +33,13 @@ export class SettingsEditDTO{
             if (!Types.ObjectId.isValid(id.value)){
             throw new BadRequestException(['Invalid ObjectId for Post Inspiration Id']);
             }
-            
             return new Types.ObjectId(id.value);
-        }) 
-       return ids;
-    
+        })
+        return ids;
     })
     public post_inspiration: Types.ObjectId [];
 
-    //scores
+    //score
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
@@ -51,7 +49,7 @@ export class SettingsEditDTO{
         }
         return new Types.ObjectId(id.value);
     })
-    public scores: Types.ObjectId;
+    public score: Types.ObjectId;
 
     //calendar
     @IsOptional()

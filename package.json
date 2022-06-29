@@ -32,11 +32,7 @@
     "class-validator": "^0.13.2",
     "fakingoose": "^2.3.3",
     "fastify-swagger": "^5.1.0",
-<<<<<<< HEAD
     "mongodb-memory-server": "^8.7.1",
-=======
-    "mongodb-memory-server": "^8.6.0",
->>>>>>> d8a902e373a2575a6dd2f09848f987b37fea6114
     "mongoose": "^6.3.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
