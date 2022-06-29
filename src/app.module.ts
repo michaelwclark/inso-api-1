@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { ScoreModule } from './modules/score/score.module';
@@ -12,6 +11,8 @@ import { DiscussionSetModule } from './modules/discussion-set/discussion-set.mod
 import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { SendGridModule } from "@ntegral/nestjs-sendgrid";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
   imports: [
@@ -25,9 +26,19 @@ import { MongooseModule } from '@nestjs/mongoose';
     DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
-    MongooseModule.forRoot('mongodb://localhost/inso')
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot(
+      process.env.MONGO_CONNECTION_STRING,
+      {
+        useUnifiedTopology: true,
+        useNewUrlParser: true
+      }
+    ),
+    SendGridModule.forRoot({ 
+      apiKey: process.env.SENDGRID_KEY
+    })
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

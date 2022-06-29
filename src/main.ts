@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  console.log(process.env.MONGO_CONNECTION_STRING);
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -12,6 +13,7 @@ async function bootstrap() {
     })
   );
 
+  
   const config = new DocumentBuilder()
     .setTitle('Inso API')
     .setDescription('API for Inso system')

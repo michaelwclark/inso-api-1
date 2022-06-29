@@ -1,7 +1,8 @@
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { IsDate, IsNotEmpty, ValidateNested } from 'class-validator';
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { CreateStartEnd } from './startEnd/create-startEnd';
+
 
 export class CalendarCreateDTO {
 
@@ -63,10 +64,8 @@ export class CalendarCreateDTO {
     @ValidateNested()
     @Type(() => CreateStartEnd)
     public synthesizing?: CreateStartEnd;
-
-    constructor(partial: Partial<CalendarCreateDTO>) {
-        Object.assign(this, partial);
-    }
-
+        
+        constructor(partial: Partial<CalendarCreateDTO>) {
+            Object.assign(this, partial);
+        }
 }
-

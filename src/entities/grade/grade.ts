@@ -1,13 +1,36 @@
+import { Types } from 'mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+
+export type GradeDocument = Grade & Document;
+
+@Schema()
 export class Grade {
-    public id: string;
-    public discussionId: string;
-    public userId: string;
+    @Prop(Types.ObjectId)
+    public id: Types.ObjectId;
+
+    @Prop(Types.ObjectId)
+    public discussionId: Types.ObjectId;
+
+    @Prop(Types.ObjectId)
+    public userId: Types.ObjectId;
+
+    @Prop(Number)
     public grade: number;
+
+    @Prop(Number)
     public maxScore: number;
+
+    @Prop(Number)
     public comment: string;
-    public facilitator: string;
+
+    @Prop(Types.ObjectId)
+    public facilitator: Types.ObjectId;
     
     constructor(partial: Partial<Grade>) {
         Object.assign(this, partial);
     }
 }
+
+export const GradeSchema = SchemaFactory.createForClass(Grade);
