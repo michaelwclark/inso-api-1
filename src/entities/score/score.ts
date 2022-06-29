@@ -1,14 +1,32 @@
-import { Types } from 'mongoose';
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Types } from "mongoose";
+import { impact } from "./scoreNestedObjects/impact/impact";
+import { instructions } from "./scoreNestedObjects/instructions/instructions";
+import { interactions } from "./scoreNestedObjects/interactions/interactions";
+import { rubric } from "./scoreNestedObjects/rubric/rubric";
 
 export type ScoreDocument = Score & Document;
 
 @Schema()
-export class Criteria {
-    // @Prop(String)
-    // public description: string;
+export class Score {
+    @Prop(Types.ObjectId)
+    public id: Types.ObjectId;
+
+
+    @Prop(String)
+    public type: string;
+
+    @Prop(instructions)
+    public instructions: instructions
+
+    @Prop(interactions)
+    public interactions: interactions
+
+    @Prop(impact)
+    public impact: impact
+
+    @Prop(rubric)
+    public rubric: rubric
 
     // @Prop(Number)
     // public max: number;
@@ -17,43 +35,5 @@ export class Criteria {
     //     Object.assign(this, partial);
     // }
 }
-
-@Schema()
-export class Score {
-    // @Prop(Types.ObjectId)
-    // public id: Types.ObjectId;
-
-    // @Prop(String)
-    // public type: string;
-
-    // // TODO See about internal validation
-    // @Prop(Object)
-    // public instructions: {
-    //     posting: number,
-    //     responding: number,
-    //     synthesizing: number
-    // }
-
-    // @Prop(Object)
-    // public interactions: {
-    //     max: number
-    // }
-
-    // @Prop(Object)
-    // public impact: {
-    //     max: number
-    // }
-
-    // @Prop(Object)
-    // public rubric: {
-    //     max: number,
-    //     criteria: Criteria []
-    // }
-
-    // constructor(partial: Partial<Score>) {
-    //     Object.assign(this, partial);
-    // }
-}
-
 
 export const ScoreSchema = SchemaFactory.createForClass(Score);

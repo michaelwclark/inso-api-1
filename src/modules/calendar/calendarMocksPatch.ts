@@ -3,8 +3,8 @@
 
 import { Types } from "mongoose";
 
-var openDate = new Date("2022-06-25");
-var closeDate = new Date("2022-06-30");
+var openDate = new Date("2023-06-25");
+var closeDate = new Date("2023-06-30");
 
 
 export const validCalendar = {

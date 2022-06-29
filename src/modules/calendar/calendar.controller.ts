@@ -2,11 +2,10 @@ import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpExc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { model, Model, mongo, Types, Schema } from 'mongoose';
-import { User, UserDocument } from 'src/entities/user/user';
-import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
-import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
-import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
-import { CalendarDTO } from 'src/entities/calendar/read-calendar';
+import { User, UserDocument } from '../../../src/entities/user/user';
+import { Calendar, CalendarDocument } from '../../../src/entities/calendar/calendar';
+import { CalendarCreateDTO } from '../../../src/entities/calendar/create-calendar';
+import { CalendarEditDTO } from '../../../src/entities/calendar/edit-calendar';
 
 
 @Controller()
@@ -59,6 +58,7 @@ export class CalendarController {
     return newCalendar._id.toString();
   }
 
+  @HttpCode(200)
   @Patch('users/:userId/calendar/:calendarId')
   @ApiOperation({description: 'Update a calendar entity'})
   @ApiBody({description: '', type: CalendarEditDTO})
@@ -103,7 +103,7 @@ export class CalendarController {
     }
 
     if(!calendar.creatorId.equals(id)){
-      throw new HttpException("Body id and url id for user do not match", HttpStatus.BAD_REQUEST);
+      throw new HttpException("Body id and url id for user do not match", HttpStatus.FORBIDDEN);
     }
 
     ValidateSetOfDates(calendar.open, calendar.close, "");

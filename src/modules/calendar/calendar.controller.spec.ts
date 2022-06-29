@@ -74,6 +74,12 @@ describe('AppController', () => {
         return expect(appController.createCalendar(null, validCalendar)).rejects.toThrow(noUserError);
       });
 
+      //TESTING UNDEFINED USER ID
+      it('Undefined User id', () => {
+        const noUserError = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST);
+        return expect(appController.createCalendar(undefined, validCalendar)).rejects.toThrow(noUserError);
+      });
+
       //NON EXISTENT USERID, VALID CALENDAR WRITE DTO, SHOULD RETURN 404 STATUS   not finished??????
       it('Test case nonexistent user id', () => {
         const nonexistingUserError = new HttpException("User does not exist", HttpStatus.BAD_REQUEST)

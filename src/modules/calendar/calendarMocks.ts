@@ -1,8 +1,8 @@
 
 // MOCK DATA USED FOR TESTING
 
- var open = new Date("2022-06-25");
- var close = new Date("2022-06-30");
+ var open = new Date("2023-07-25");
+ var close = new Date("2023-07-30");
 
 export const validCalendar = {
     'open': open,
