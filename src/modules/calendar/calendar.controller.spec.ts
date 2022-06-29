@@ -76,7 +76,7 @@ describe('AppController', () => {
 
       //TESTING UNDEFINED USER ID
       it('Undefined User id', () => {
-        const noUserError = new HttpException("No user id provided", HttpStatus.BAD_REQUEST);
+        const noUserError = new HttpException("User id is not valid", HttpStatus.BAD_REQUEST);
         return expect(appController.createCalendar(undefined, validCalendar)).rejects.toThrow(noUserError);
       });
 
