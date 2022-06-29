@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Inspiration, InspirationSchema } from 'src/entities/inspiration/inspiration';
 import { InspirationController } from './inspiration.controller';
 
 @Module({
-    // TODO Add Schema
-    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
+    imports: [MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }])],
     controllers: [InspirationController],
     providers: [],
 })

@@ -8,12 +8,16 @@ import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { makeInsoId } from '../shared/generateInsoCode';
 import { User } from 'src/entities/user/user';
+import { IsMongoId, IsString } from 'class-validator';
+import { DiscussionPost } from 'src/entities/post/post';
+import { Transform, Type } from 'class-transformer';
 
 @Controller()
 export class DiscussionController {
   constructor(
     @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
   ) {}
 
   @Post('discussion')
@@ -51,7 +55,7 @@ export class DiscussionController {
     while(found !== null) {
       found = await this.discussionModel.findOne({ insoCode: code });
       const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
-      return createdDiscussion.save();
+      return await createdDiscussion.save();
     }
   }
 
@@ -134,7 +138,14 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  deleteDiscussion(): string {
-    return 'update discussion settings'
+  async deleteDiscussion(@Param('discussionId') discussionId: string): Promise<void> {
+    // Check if there are any posts before deleting
+    let discussion = new Types.ObjectId(discussionId);
+    const posts = await this.postModel.find({ discussionId: discussion });
+    if(posts.length > 0) {
+      throw new HttpException("Cannot delete a discussion that has posts", HttpStatus.CONFLICT);
+    }
+    await this.discussionModel.deleteOne({ _id: discussion });
+    return;
   }
 }

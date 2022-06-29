@@ -1,11 +1,11 @@
-import { Types } from 'mongoose';
+
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 
 export type InspirationDocument = Inspiration & Document;
 
-@Schema()
+@Schema({ _id : false })
 export class Outline {
     @Prop(String)
     public header: string;
@@ -18,13 +18,13 @@ export class Outline {
     }
 }
 
-@Schema()
+@Schema({ _id: true })
 export class Inspiration {
-    @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
-
     @Prop(String)
     public type: string;
+
+    @Prop(String)
+    public name: string;
 
     @Prop(String)
     public instructions: string;
