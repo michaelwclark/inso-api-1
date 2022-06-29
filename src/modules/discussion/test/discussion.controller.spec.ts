@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Post } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
@@ -7,6 +7,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connect, Connection, Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion';
+import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
 
@@ -16,6 +17,7 @@ describe('AppController', () => {
   let mongoConnection: Connection;
   let discussionModel: Model<any>;
   let userModel: Model<any>;
+  let postModel: Model<any>;
   
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -23,6 +25,7 @@ describe('AppController', () => {
     mongoConnection = (await connect(uri)).connection;
     discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
     userModel = mongoConnection.model(User.name, UserSchema);
+    postModel = mongoConnection.model(DiscussionPost.name, DiscussionPostSchema)
 
     await userModel.insertMany([
       {
@@ -38,7 +41,9 @@ describe('AppController', () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [DiscussionController],
       providers: [{provide: getModelToken(Discussion.name), useValue: discussionModel},
-        {provide: getModelToken(User.name), useValue: userModel}],
+        {provide: getModelToken(User.name), useValue: userModel},
+        {provide: getModelToken(DiscussionPost.name), useValue: postModel},
+      ],
     }).compile();
 
     appController = app.get<DiscussionController>(DiscussionController);
