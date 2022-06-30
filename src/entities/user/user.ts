@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { IsBoolean, IsString } from 'class-validator';
 
 
 export type UserDocument = User & Document;
@@ -9,12 +10,15 @@ export type UserDocument = User & Document;
 export class Contact {
 
     @Prop(String)
+    @IsString()
     email: string;
 
     @Prop(Boolean)
+    @IsBoolean()
     verified: boolean;
 
     @Prop(Boolean)
+    @IsBoolean()
     primary: boolean;
 
     constructor(partial: Partial<Contact>) {
