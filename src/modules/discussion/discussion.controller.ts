@@ -146,6 +146,16 @@ export class DiscussionController {
       throw new HttpException('Score id not found', HttpStatus.BAD_REQUEST);
     }
 
+    const calendar = await this.scoreModel.findOne({_id: setting.calendar});
+    if (!calendar){
+      throw new HttpException('Calendar id not found', HttpStatus.BAD_REQUEST);
+    }
+
+    const prompt = await this.scoreModel.findOne({_id: setting.prompt});
+    if (!prompt){
+      throw new HttpException('Prompt id not found', HttpStatus.BAD_REQUEST);
+    }
+
     console.log(found)
     return 'update discussion settings'
   }

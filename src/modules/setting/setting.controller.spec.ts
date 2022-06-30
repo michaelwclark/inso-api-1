@@ -46,6 +46,17 @@ describe('AppController', () => {
         }
       ])
 
+      await settingModel.insertMany([
+        {
+          "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+          "prompt": "This is a prompt",
+          'post_inspiration': ["62b276fda78b2a00063b1de0"],
+          "score": "5",
+          "calendar": "",
+          "userId": '62b276fda78b2a00063b1de0'
+        }
+      ])
+
     });
 
     beforeEach(async () => {
@@ -62,12 +73,6 @@ describe('AppController', () => {
         appController = app.get<SettingController>(SettingController);
       });
     
-    describe('root', () => {
-      it('should return "Hello World!"', () => {
-        expect(appController.getHello()).toBe('Hello World!');
-      });
-    });
-
     //Valid Discussion ID. Valid discussion settings write DTO. Return 200 status
     describe('PATCH /discussion/:discussionId/settings 200 Status' , () => {
       it('Should return valid Discussion Id', () => {
@@ -81,8 +86,7 @@ describe('AppController', () => {
           "userId": '62b276fda78b2a00063b1de0'
           }; 
           
-          return expect(appController.createSetting(validDiscussionId)).resolves.toMatchObject(validDiscussionId);
-        
+          return expect(appController.createSetting('62b276fda78b2a00063b1de0', validDiscussionId)).resolves.toMatchObject(validDiscussionId);
       }); 
     }); 
 
@@ -194,7 +198,7 @@ describe('AppController', () => {
           "userId": '62b276fda78b2a00063b1de0'
           };
           const error = new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
-          return expect(appController.createSetting(non_existentDiscussionId)).rejects.toThrow(error);
+          return expect(appController.updateDiscussionMetadata('62b276fda78b2a00063b1de0', non_existentDiscussionId)).rejects.toThrow(error);
         });
     
         it('should throw a 404 error for a post inspiration not found', () => {
@@ -207,7 +211,7 @@ describe('AppController', () => {
             "userId": '62b276fda78b2a00063b1de0'
             };
           const error = new HttpException("Post inspiration Id does not exist", HttpStatus.NOT_FOUND);
-          return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
+          return expect(appController.updateDiscussionSettings(validDiscussion)).rejects.toThrow(error);
         });
 
         it('should throw a 404 error for a score id not found for setting', () => {
@@ -220,7 +224,7 @@ describe('AppController', () => {
           "userId": '62b276fda78b2a00063b1de0',
           };
           const error = new HttpException("Score Id does not exist", HttpStatus.NOT_FOUND);
-          return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
+          return expect(appController.updateDiscussionSettings(validDiscussion)).rejects.toThrow(error);
         });
 
         it('should throw a 404 error for a calendar id not found for setting', () => {
@@ -233,7 +237,7 @@ describe('AppController', () => {
           "userId": '62b276fda78b2a00063b1de0'
           }
           const error = new HttpException("Calendar Id does not exist", HttpStatus.NOT_FOUND);
-          return expect(appController.createSetting(validDiscussion)).rejects.toThrow(error);
+          return expect(appController.updateDiscussionSettings(validDiscussion)).rejects.toThrow(error);
         });
  
     });

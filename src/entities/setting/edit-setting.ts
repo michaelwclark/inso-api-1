@@ -21,7 +21,7 @@ export class SettingsEditDTO{
     @IsOptional()
     @IsNotEmpty()
     @IsString()
-    public starter_prompt: string;
+    public prompt: string;
 
     //post inspiration 
     @IsOptional()

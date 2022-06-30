@@ -11,7 +11,7 @@ export class SettingsCreateDTO {
     @IsNotEmpty()
     @IsString()
     @Length(2, 1000)
-    public starter_prompt: string;
+    public prompt: string;
 
     //post inspiration 
     @IsNotEmpty()

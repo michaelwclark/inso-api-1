@@ -1,24 +1,22 @@
-import { Controller, Get, Body, Post, Patch } from '@nestjs/common';
+import { Controller, Get, Body, Post, Patch, Param } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { ApiBody } from '@nestjs/swagger';
+import { Model } from 'mongoose';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
+import { SettingsEditDTO } from 'src/entities/setting/edit-setting';
+import { Setting } from 'src/entities/setting/setting';
 
 @Controller()
 export class SettingController { 
-  createSetting(validDiscussionId: { id: string, prompt: string, post_inspiration: string[], score: string, calendar: string, userId: string;}): any {
-    throw new Error('Method not implemented.');
-   
-  }
-  constructor() {}
+    
+   constructor(
+    @InjectModel(Setting.name) private settingModel: Model<Setting>,
 
-  @Get('setting')
-  getHello(): string {
-    return 'setting'
-  }
+   ) {}
+  
+  // async createSetting(@Param('validDiscussionId')  id: string, prompt: string, post_inspiration: string[], score: string, calendar: string, userId: string;): any {
+  //   throw new Error('Method not implemented.');
+  // }
 
-
-  @Patch('setting')
-  async updateDiscussionMetadata(@Body() discussion: Partial<SettingsCreateDTO>): Promise<string> {
-    console.log(discussion);
-    return 'update discussion metadata'
   }
 
-}
