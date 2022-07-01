@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model } from 'mongoose';
-import { UserCreateDTO } from 'src/entities/user/create-user';
+import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { UserEditDTO } from 'src/entities/user/edit-user';
 import { User, UserDocument } from 'src/entities/user/user';
 
@@ -43,29 +43,48 @@ export class UserController {
   @ApiTags('User')
   async createUser(@Body() user: UserCreateDTO){
 
-    var Filter = require('bad-words'),
-    filter = new Filter();
-
-    // var test = filter.clean("Dont be an asshole");
-    // if (test.includes('*')){
-    //   console.log('this has a bad word');
-    // } else {
-    //   console.log("this was clean");
-    // }
-
-    if(user.username.length < 5 || user.username.length > 32){
-      throw new HttpException('Username length must be at least 5 characters and no more than 32', HttpStatus.BAD_REQUEST);
-    }
-    var badUsernameCheck = filter.clean(user.username);
-    if(badUsernameCheck.includes('*')){
-      throw new HttpException('Username cannot contain obscene or profain language', HttpStatus.BAD_REQUEST);
-    }
+    ValidateUsername(user.username);
+    
     const SameUsername = await this.userModel.findOne({username: user.username})
     if(!(SameUsername == undefined)){
       throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
     }
     
+    for(var i = 0; i < user.contact.length; i++){
+      for(var j = i + 1; j < user.contact.length; j++){
+        if(user.contact[i].email === user.contact[j].email){
+          throw new HttpException('Cannot have duplicate emails in array', HttpStatus.BAD_REQUEST);
+        }
+      }
+    }
+
+    for(var i = 0; i < user.contact.length; i++){
+      if(i == 0){
+        user.contact[i] = {
+          'email': user.contact[i].email,
+          'verified': false,
+          'primary': true
+        }
+      } else {
+        user.contact[i] = {
+          'email': user.contact[i].email,
+          'verified': false,
+          'primary': false
+        }
+      }
+      if(isEmail(user.contact[i].email) == false ){
+        throw new HttpException('Email: ' + user.contact[i].email + ', is not a valid email address', HttpStatus.BAD_REQUEST);
+      }
+      const sameEmail = await this.userModel.findOne({'contact.email': user.contact[i].email})
+      if(sameEmail != undefined){
+        throw new HttpException('Email ' + user.contact[i].email + ' already is associated with an account', HttpStatus.BAD_REQUEST);
+      }
+    }
+
+
     ValidatePassword(user.password);
+
+    user.dateJoined = new Date();
 
     const newUser = new this.userModel({...user})
     await newUser.save()
@@ -85,23 +104,46 @@ export class UserController {
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
     }
 
-    var Filter = require('bad-words'),
-    filter = new Filter();
-
     if(user.hasOwnProperty('username')){
-      if(user.username.length < 5 || user.username.length > 32){
-        throw new HttpException('Username length must be at least 5 characters and no more than 32', HttpStatus.BAD_REQUEST);
-      }
+      ValidateUsername(user.username);
       const SameUsername = await this.userModel.findOne({username: user.username})
       if(!(SameUsername == undefined)){
         throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
       }
-      var badUsernameCheck = filter.clean(user.username);
-      if(badUsernameCheck.includes('*')){
-        throw new HttpException('Username cannot contain obscene or profain language', HttpStatus.BAD_REQUEST);
-      }
     }
 
+    if(user.hasOwnProperty('contact')){
+
+      for(var i = 0; i < user.contact.length; i++){
+        for(var j = i + 1; j < user.contact.length; j++){
+          if(user.contact[i].email === user.contact[j].email){
+            throw new HttpException('Cannot have duplicate emails in array', HttpStatus.BAD_REQUEST);
+          }
+        }
+      }
+
+      for(var i = 0; i < user.contact.length; i++){
+        user.contact[i] = {
+          'email': user.contact[i].email,
+          'verified': false,
+          'primary': user.contact[i].primary
+        }
+        if(isEmail(user.contact[i].email) == false ){
+          throw new HttpException('Email: ' + user.contact[i].email + ', is not a valid email address', HttpStatus.BAD_REQUEST);
+        }
+        const sameEmail = await this.userModel.findOne({'contact.email': user.contact[i].email})
+        if(sameEmail != undefined){
+          throw new HttpException('Email ' + user.contact[i].email + ' already is associated with an account', HttpStatus.BAD_REQUEST);
+        }
+      }
+
+      var newContacts = foundUser.contact;
+      foundUser.contact.forEach((contact, i) => {
+        newContacts.push(contact);
+      })
+      user.contact = newContacts;
+    }
+    
     const res = await foundUser.updateOne(user);
 
     return 'User Updated';
@@ -118,7 +160,8 @@ function ValidatePassword( password: string){
   var hasUppercaseCheck = false;
   var hasNumberCheck = false;
   var hasSpecialCharCheck = false;
-  var specialCharArr = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'];
+  var specialCharArr = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '{', '}', '<', '>',
+                        '?', '/', ';', ':', '-', '=', '+', '|', '`', '~', ',', '.', '[', ']'];
 
   var i = 0;
   var character = '';
@@ -181,3 +224,31 @@ function ValidatePassword( password: string){
     throw new HttpException('Password must contain at least one special character', HttpStatus.BAD_REQUEST);
   }
 }
+
+function ValidateUsername( userName: string){
+
+  if(userName.length < 5 || userName.length > 32){
+    throw new HttpException('Username length must be at least 5 characters and no more than 32', HttpStatus.BAD_REQUEST);
+  }
+
+  if(isEmail(userName) == true ){
+    throw new HttpException('Username cannot be an email address', HttpStatus.BAD_REQUEST);
+  }
+
+  var Filter = require('bad-words'),
+  filter = new Filter();
+  filter.addWords('shithead', 'fuckingking');
+  var badUsernameCheck = filter.clean(userName);
+  if(badUsernameCheck.includes('*')){
+    throw new HttpException('Username cannot contain obscene or profain language', HttpStatus.BAD_REQUEST);
+  }
+}
+
+function isEmail(search: string){
+  var searchFind: boolean;
+  var regexp = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)
+
+  searchFind = regexp.test(search);
+  return searchFind;
+}
+

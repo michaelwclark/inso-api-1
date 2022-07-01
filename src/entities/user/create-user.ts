@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsDate, IsNotEmpty, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
 import { Contact } from "./user";
 
 export class ContactCreateDTO{
@@ -10,6 +10,8 @@ export class ContactCreateDTO{
         required: true,
         type: String
     })
+    @IsNotEmpty()
+    @IsString()
     public email: string;
 
     @ApiProperty({
@@ -17,6 +19,8 @@ export class ContactCreateDTO{
         required: true,
         type: Boolean
     })
+    @IsOptional()
+    @IsBoolean()
     public verified: boolean
 
     @ApiProperty({
@@ -24,6 +28,8 @@ export class ContactCreateDTO{
         required: true,
         type: Boolean
     })
+    @IsOptional()
+    @IsBoolean()
     public primary: boolean
 
     constructor(partial: Partial<ContactCreateDTO>) {
@@ -47,30 +53,31 @@ export class UserCreateDTO {
     public username: string;
 
     @ApiProperty({
-        name: 'fname',
+        name: 'f_name',
         required: true,
         type: String
     })
     @IsNotEmpty()
     @IsString()
-    public fname: string;
+    public f_name: string;
 
     @ApiProperty({
-        name: 'lname',
+        name: 'l_name',
         required: true,
         type: String
     })
     @IsNotEmpty()
     @IsString()
-    public lname: string;
+    public l_name: string;
 
     @ApiProperty({
         name: 'dateJoined',
-        required: true,
+        required: false,
         type: Date,
         example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
     })
     @IsNotEmpty()
+    @IsOptional()
     @Type(() => Date)
     @IsDate()
     public dateJoined: Date;
@@ -89,6 +96,7 @@ export class UserCreateDTO {
     @IsNotEmpty()
     @IsArray()
     @ValidateNested()
+    @Type(() => ContactCreateDTO)
     public contact: ContactCreateDTO[];
 
     @ApiProperty({
@@ -99,6 +107,7 @@ export class UserCreateDTO {
     })
     @IsNotEmpty()
     @IsArray()
+    @IsString({each: true})
     public sso: string[];
 
     @ApiProperty({
