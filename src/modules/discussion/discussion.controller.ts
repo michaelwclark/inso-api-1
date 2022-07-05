@@ -74,6 +74,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
