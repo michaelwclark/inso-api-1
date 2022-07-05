@@ -10,24 +10,6 @@ import { CreateRubricDTO } from "./scoreNestedObjects/rubric/createRubric";
 
 export class ScoreEditDTO {
     @ApiProperty({
-        name: 'id',
-        description: 'The ObjectId of the score entity being edited',
-        required: true,
-        type: Types.ObjectId,
-        isArray: false
-    })
-    @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @IsIn(['auto', 'rubric'])
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Score Id']);
-        }
-        return new Types.ObjectId(id.value);
-    })
-    public id: Types.ObjectId;
-
-    @ApiProperty({
         name: 'type',
         description: 'Auto or Rubric',
         required: false,
