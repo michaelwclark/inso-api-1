@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from 'mongoose';
 import { InstructionsEditDTO } from "../../entities/score/scoreNestedObjects/instructions/editInstructions"
 import { CreateInteractionsDTO } from "./scoreNestedObjects/interactions/createInteractions";
@@ -18,6 +18,7 @@ export class ScoreEditDTO {
     })
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
+    @IsIn(['auto', 'rubric'])
     @Transform((id:any) => {
         if (!Types.ObjectId.isValid(id.value)) {
           throw new BadRequestException(['Invalid ObjectId for Score Id']);
