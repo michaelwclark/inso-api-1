@@ -70,10 +70,6 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
   async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
-    // Check that the ids match
-    if(discussionId !== discussion.id.toString()) {
-      throw new HttpException("Discussion being updated is not discussion", HttpStatus.BAD_REQUEST)
-    }
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
     if(!found) {

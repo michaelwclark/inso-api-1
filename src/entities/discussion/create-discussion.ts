@@ -1,7 +1,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsMongoId, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class DiscussionCreateDTO {
@@ -34,15 +34,15 @@ export class DiscussionCreateDTO {
         name: 'facilitators',
         description: 'The ObjectId of the users that is are facilitators of the discussion',
         required: true,
-        type: Types.ObjectId,
+        type: [Types.ObjectId],
         isArray: false,
         example: [ '507f1f77bcf86cd799439011' ]
     })
     @IsOptional()
-    @Type(() => Types.ObjectId)
     @IsArray()
-    @IsMongoId()
-    public facilitators: Types.ObjectId [];
+    @Type(() => Types.ObjectId)
+    @IsMongoId({ each: true })
+    public facilitators: Types.ObjectId[];
     
     constructor(partial: Partial<DiscussionCreateDTO>) {
         Object.assign(this, partial);
