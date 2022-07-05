@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model } from 'mongoose';
-import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
+import { UserCreateDTO } from 'src/entities/user/create-user';
 import { UserEditDTO } from 'src/entities/user/edit-user';
 import { User, UserDocument } from 'src/entities/user/user';
 
@@ -106,8 +106,9 @@ export class UserController {
 
     if(user.hasOwnProperty('username')){
       ValidateUsername(user.username);
+      var previousUsername = foundUser.username; 
       const SameUsername = await this.userModel.findOne({username: user.username})
-      if(!(SameUsername == undefined)){
+      if(!(SameUsername == undefined) && (!(SameUsername.username === previousUsername))){
         throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
       }
     }
@@ -138,9 +139,32 @@ export class UserController {
       }
 
       var newContacts = foundUser.contact;
-      foundUser.contact.forEach((contact, i) => {
-        newContacts.push(contact);
-      })
+      // foundUser.contact.forEach((contact, i) => {
+      //   newContacts.push(contact);
+      // })
+      // user.contact = newContacts;      WAS NOT WORKING
+
+      for(var i = 0; i < user.contact.length; i++){
+        newContacts.push(user.contact[i]);
+      }
+
+      var hasNewPrimary: boolean = false;
+      for(var count = 0; count < user.contact.length && hasNewPrimary == false; count++){
+        if(user.contact[count].hasOwnProperty('primary')){
+          if(user.contact[count].primary == true){
+            for(var j = 0; j < newContacts.length; j++){
+              
+              if(!(newContacts[j].email === user.contact[count].email)){
+                newContacts[j].primary = false;
+              } else {
+                newContacts[j].primary = true;
+              }
+              hasNewPrimary = true;
+            }
+          }
+        }
+      }
+
       user.contact = newContacts;
     }
     
