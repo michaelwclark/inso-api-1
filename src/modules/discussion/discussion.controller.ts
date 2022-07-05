@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -28,6 +28,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: 'The user does not have permission to create a discussion'})
   @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
@@ -40,6 +41,10 @@ export class DiscussionController {
       discussion.facilitators = [];
     }
     discussion.facilitators.push(discussion.poster);
+    // Filter out any duplicate Ids
+    discussion.facilitators = discussion.facilitators.filter((c, index) => {
+      return discussion.facilitators.indexOf(c) === index;
+    });
 
     // Verify that all facilitators exist
     for await (const user of discussion.facilitators) {
@@ -83,7 +88,10 @@ export class DiscussionController {
         throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       }
     }
-    discussion.facilitators = discussion.facilitators.concat(found.facilitators);
+    // Filter out any duplicate Ids
+    discussion.facilitators = discussion.facilitators.filter((c, index) => {
+      return discussion.facilitators.indexOf(c) === index;
+    });
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }

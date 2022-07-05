@@ -41,8 +41,8 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
-    @Type(() => Types.ObjectId)
     @IsMongoId()
+    @Type(() => Types.ObjectId)
     public settings: Types.ObjectId;
 
     @ApiProperty({
@@ -55,8 +55,8 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
-    @Type(() => Types.ObjectId)
     @IsMongoId({ each: true })
+    @Type(() => Types.ObjectId)
     public facilitators: Types.ObjectId[];
     
     @ApiProperty({
