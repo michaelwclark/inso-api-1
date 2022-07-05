@@ -1,7 +1,7 @@
-import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
-import { model, Model, mongo, Types, Schema } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
@@ -12,7 +12,7 @@ import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
 export class CalendarController {
   constructor(
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<UserDocument>
      ) {}
 
   @HttpCode(200)  
