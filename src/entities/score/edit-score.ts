@@ -18,6 +18,7 @@ export class ScoreEditDTO {
     })
     @IsNotEmpty()
     @IsString()
+    @IsIn(['auto', 'rubric'])
     public type: string;
 
     @ApiProperty({

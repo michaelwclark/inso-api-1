@@ -96,7 +96,7 @@ export class ScoreController {
       throw new HttpException("Parameter id for user and creator id in body do not match", HttpStatus.FORBIDDEN);
     }
 
-    const res = await foundScore.updateOne(score);
+    await foundScore.updateOne(score);
 
     return 'Score Updated';
 
