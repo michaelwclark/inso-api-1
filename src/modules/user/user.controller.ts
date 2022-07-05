@@ -70,7 +70,7 @@ export class UserController {
           'email': user.contact[i].email,
           'verified': false,
           'primary': false
-        }
+        }                     // Sets first contact as primary, all others are false, all are not verified
       }
       if(isEmail(user.contact[i].email) == false ){
         throw new HttpException('Email: ' + user.contact[i].email + ', is not a valid email address', HttpStatus.BAD_REQUEST);
@@ -84,7 +84,7 @@ export class UserController {
 
     ValidatePassword(user.password);
 
-    user.dateJoined = new Date();
+    user.dateJoined = new Date(); // Date Joined is always the current date when user is created
 
     const newUser = new this.userModel({...user})
     await newUser.save()
@@ -110,7 +110,7 @@ export class UserController {
       const SameUsername = await this.userModel.findOne({username: user.username})
       if(!(SameUsername == undefined) && (!(SameUsername.username === previousUsername))){
         throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
-      }
+      } // Will allow if username is property but there is no change in value of username
     }
 
     if(user.hasOwnProperty('contact')){
@@ -151,7 +151,7 @@ export class UserController {
       var hasNewPrimary: boolean = false;
       for(var count = 0; count < user.contact.length && hasNewPrimary == false; count++){
         if(user.contact[count].hasOwnProperty('primary')){
-          if(user.contact[count].primary == true){
+          if(user.contact[count].primary == true){  
             for(var j = 0; j < newContacts.length; j++){
               
               if(!(newContacts[j].email === user.contact[count].email)){
@@ -163,7 +163,7 @@ export class UserController {
             }
           }
         }
-      }
+      }   // Overrides the old primary email if user sets new email as primary
 
       user.contact = newContacts;
     }
