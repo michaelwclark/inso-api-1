@@ -137,7 +137,8 @@ export class DiscussionController {
     if (!found){
       throw new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
     }
- const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
+    
+    const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
     if (!score){
       throw new HttpException('Score Id does not exist', HttpStatus.NOT_FOUND);
     }
@@ -157,7 +158,6 @@ export class DiscussionController {
     setting.post_inspiration = setting.post_inspiration.concat(setting.post_inspiration);
     return await this.post_inspirationModel.findOneAndUpdate({_id: discussionId}, setting.post_inspiration, {new: true});
 
-   
     console.log(found)
     return 'update discussion settings'
   }

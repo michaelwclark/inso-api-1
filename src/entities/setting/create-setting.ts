@@ -1,32 +1,58 @@
-import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform, Type } from "class-transformer";
+import { Type } from "class-transformer";
 import { IsArray, IsMongoId, IsNotEmpty, IsString, Length } from "class-validator";
 import { Types } from "mongoose";
-import { Score } from "../score/score";
 
 export class SettingsCreateDTO {
 
-    //starter prompt 
+    @ApiProperty({
+        name: 'prompt',
+        description: 'The starter prompt for the discussion',
+        required: true,
+        type: String,
+        isArray: false,
+        example: ''
+    })
     @IsNotEmpty()
     @IsString()
     @Length(2, 1000)
     public prompt: string;
 
-    //post inspiration 
+    @ApiProperty({
+        name: 'post_inspiration',
+        description: 'This will be an ObjectId to a post inspiration entity',
+        required: true,
+        type: Types.ObjectId,
+        isArray: true,
+        example: ['629e4f4bf4f393cf1e534b20']
+    })
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsArray()
     @IsMongoId({ each: true })
     public post_inspiration: Types.ObjectId[];
 
-    //score id 
+    @ApiProperty({
+        name: 'score',
+        description: 'This will be an ObjectId to a score entity',
+        required: true,
+        type: Types.ObjectId,
+        isArray: false,
+        example: '629e4f4bf4f393cf1e534b20'
+    })
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsMongoId()
     public score: Types.ObjectId;
 
-    //calendar id 
+    @ApiProperty({
+        name: 'calendar',
+        description: 'This will be an ObjectId to a calendar entity',
+        required: true,
+        type: Types.ObjectId,
+        isArray: false,
+        example: '629e4f4bf4f393cf1e534b20'
+    }) 
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsMongoId()

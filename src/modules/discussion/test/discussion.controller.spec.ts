@@ -132,7 +132,7 @@ describe('AppController', () => {
         "userId": new Types.ObjectId ('62b276fda78b2a00063b1de0')
         }; 
         
-        return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0' )).resolves.toBe('update discussion settings')
+        return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.toBe('update discussion settings')
       
     }); 
   }); 
