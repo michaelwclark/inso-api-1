@@ -24,7 +24,7 @@ export class SettingsEditDTO{
         required: true,
         type: String,
         isArray: false,
-        example: ' '
+        example: 'Create a discussion'
     })
     @IsOptional()
     @IsNotEmpty()

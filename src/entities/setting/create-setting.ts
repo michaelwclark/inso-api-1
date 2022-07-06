@@ -11,7 +11,7 @@ export class SettingsCreateDTO {
         required: true,
         type: String,
         isArray: false,
-        example: ''
+        example: 'Create a discussion'
     })
     @IsNotEmpty()
     @IsString()
