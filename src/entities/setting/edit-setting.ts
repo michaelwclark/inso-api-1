@@ -7,7 +7,7 @@ export class SettingsEditDTO{
 
     @ApiProperty({
         name: 'id',
-        description: 'This will be a unique ObjectId for the discussion',
+        description: 'This will be a unique ObjectId for this set of settings',
         required: true,
         type: Types.ObjectId,
         isArray: false,
@@ -76,7 +76,7 @@ export class SettingsEditDTO{
 
     @ApiProperty({
         name: 'userId',
-        description: 'This will be an ObjectId to a user entity',
+        description: 'This will be an ObjectId for a user',
         required: true,
         type: Types.ObjectId,
         isArray: false,

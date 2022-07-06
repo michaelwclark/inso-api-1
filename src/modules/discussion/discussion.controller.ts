@@ -133,6 +133,11 @@ export class DiscussionController {
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
 
+    //check discussionId is valid]
+    if(!Types.ObjectId.isValid(discussionId)){
+      throw new HttpException('DiscsussionId does not exist', HttpStatus.BAD_REQUEST)
+    }
+
     const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
     if (!found){
       throw new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
@@ -156,10 +161,7 @@ export class DiscussionController {
       }
     }
     setting.post_inspiration = setting.post_inspiration.concat(setting.post_inspiration);
-    return await this.post_inspirationModel.findOneAndUpdate({_id: discussionId}, setting.post_inspiration, {new: true});
-
-    console.log(found)
-    return 'update discussion settings'
+    return await this.settingModel.findOneAndUpdate({_id: discussionId}, setting.post_inspiration, {new: true});
   }
 
   @Delete('discussion/:discussionId')
