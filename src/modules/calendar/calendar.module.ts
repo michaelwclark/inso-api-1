@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/entities/user/user';
-import { Calendar, CalendarSchema } from '../../entities/calendar/calendar';
+import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { CalendarController } from './calendar.controller';
 
 

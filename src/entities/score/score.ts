@@ -1,59 +1,36 @@
-import { Types } from 'mongoose';
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Types } from "mongoose";
+import { impact } from "./scoreNestedObjects/impact/impact";
+import { instructions } from "./scoreNestedObjects/instructions/instructions";
+import { interactions } from "./scoreNestedObjects/interactions/interactions";
+import { rubric } from "./scoreNestedObjects/rubric/rubric";
 
 export type ScoreDocument = Score & Document;
 
 @Schema()
-export class Criteria {
-    // @Prop(String)
-    // public description: string;
-
-    // @Prop(Number)
-    // public max: number;
-
-    // constructor(partial: Partial<Criteria>) {
-    //     Object.assign(this, partial);
-    // }
-}
-
-@Schema()
 export class Score {
-    // @Prop(Types.ObjectId)
-    // public id: Types.ObjectId;
+    @Prop(Types.ObjectId)
+    public id: Types.ObjectId;
 
-    // @Prop(String)
-    // public type: string;
 
-    // // TODO See about internal validation
-    // @Prop(Object)
-    // public instructions: {
-    //     posting: number,
-    //     responding: number,
-    //     synthesizing: number
-    // }
+    @Prop(String)
+    public type: string;
 
-    // @Prop(Object)
-    // public interactions: {
-    //     max: number
-    // }
+    @Prop(instructions)
+    public instructions: instructions
 
-    // @Prop(Object)
-    // public impact: {
-    //     max: number
-    // }
+    @Prop(interactions)
+    public interactions: interactions
 
-    // @Prop(Object)
-    // public rubric: {
-    //     max: number,
-    //     criteria: Criteria []
-    // }
+    @Prop(impact)
+    public impact: impact
 
-    // constructor(partial: Partial<Score>) {
-    //     Object.assign(this, partial);
-    // }
+    @Prop(rubric)
+    public rubric: rubric
+
+    @Prop(Types.ObjectId)
+    public creatorId: Types.ObjectId;
+    
 }
-
 
 export const ScoreSchema = SchemaFactory.createForClass(Score);

@@ -96,8 +96,8 @@ describe('AppController', () => {
 
   // DATA TO PASS THROUGH TEST CASES 
 
-  var open = new Date("2022-06-25");
-  var close = new Date("2022-06-30");
+  var open = new Date("2023-06-25");
+  var close = new Date("2023-06-30");
 
   const patchCalendarReq = {
     'id': new Types.ObjectId('629a69deaa8494f552c89cd9'), //Calendar Object Id
@@ -563,5 +563,4 @@ describe('AppController', () => {
   //afterAll(async () => {
   //  return await mongod.stop({doCleanup: true});
   //});
-
 });
