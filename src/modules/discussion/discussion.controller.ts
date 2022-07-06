@@ -7,20 +7,22 @@ import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
-import { Inspiration } from 'src/entities/inspiration/inspiration';
-import { Score } from 'src/entities/score/score';
+import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
+import { Score, ScoreDocument } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
-import { Setting } from 'src/entities/setting/setting';
+import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
-import { User } from 'src/entities/user/user';
+import { User, UserDocument } from 'src/entities/user/user';
+import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 
 @Controller()
 export class DiscussionController {
   constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
-              @InjectModel(Setting.name) private settingModel: Model<Setting>,
-              @InjectModel(Score.name) private scoreModel: Model<Score>,
-              @InjectModel(Inspiration.name) private post_inspirationModel: Model<Inspiration>,
-              @InjectModel(User.name) private userModel: Model<Inspiration> ) {}
+              @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
+              @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+              @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
+              @InjectModel(User.name) private userModel: Model<UserDocument>,
+              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>) {}
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -130,32 +132,32 @@ export class DiscussionController {
   async updateDiscussionSettings(
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
-    const found = this.discussionModel.findOne({_id: discussionId})
-    
+
+    const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
     if (!found){
-      this.discussionModel.findOneAndUpdate({_id: discussionId}, setting, { new: true });
+      throw new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
     }
-
-    const post_inspiration = await this.post_inspirationModel.findOne({_id: setting.post_inspiration});
-    if (!post_inspiration){
-      throw new HttpException('Post Inspiration id not found', HttpStatus.BAD_REQUEST);
-    }
-
-    const score = await this.scoreModel.findOne({_id: setting.score});
+ const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
     if (!score){
-      throw new HttpException('Score id not found', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Score Id does not exist', HttpStatus.NOT_FOUND);
     }
 
-    const calendar = await this.scoreModel.findOne({_id: setting.calendar});
+    const calendar = await this.calendarModel.findOne({_id: new Types.ObjectId(setting.calendar)});
     if (!calendar){
-      throw new HttpException('Calendar id not found', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Calendar Id does not exist', HttpStatus.NOT_FOUND);
     }
 
-    const prompt = await this.scoreModel.findOne({_id: setting.prompt});
-    if (!prompt){
-      throw new HttpException('Prompt id not found', HttpStatus.BAD_REQUEST);
+    //Loop through the setting.post_inspiration
+    for await (const post_inspiration of setting.post_inspiration){
+      let found = await this.post_inspirationModel.findOne({_id: [new Types.ObjectId(post_inspiration)]});
+      if(!found){
+        throw new HttpException('Post inspiration Id does not exist', HttpStatus.NOT_FOUND);
+      }
     }
+    setting.post_inspiration = setting.post_inspiration.concat(setting.post_inspiration);
+    return await this.post_inspirationModel.findOneAndUpdate({_id: discussionId}, setting.post_inspiration, {new: true});
 
+   
     console.log(found)
     return 'update discussion settings'
   }

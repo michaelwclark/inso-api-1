@@ -15,7 +15,8 @@ import { DiscussionController } from './discussion.controller';
         MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema}]),
         MongooseModule.forFeature([{name: Score.name, schema: ScoreSchema}]),
         MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema}]),
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }])
     ],
     controllers: [DiscussionController],
     providers: [],
