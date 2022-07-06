@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Post } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance, Type } from 'class-transformer';
@@ -12,6 +12,7 @@ import { Inspiration, InspirationSchema } from 'src/entities/inspiration/inspira
 import { Score, ScoreSchema } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
+import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
 
@@ -25,6 +26,7 @@ describe('AppController', () => {
   let scoreModel: Model<any>;
   let inspirationModel: Model<any>;
   let calendarModel: Model<any>;
+  let postModel: Model<any>;
   
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -36,6 +38,7 @@ describe('AppController', () => {
     scoreModel = mongoConnection.model(Score.name, ScoreSchema);
     inspirationModel = mongoConnection.model(Inspiration.name, InspirationSchema);
     calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
+    postModel = mongoConnection.model(DiscussionPost.name, DiscussionPostSchema)
 
     await userModel.insertMany([
       {
@@ -101,7 +104,8 @@ describe('AppController', () => {
         {provide: getModelToken(Setting.name), useValue: settingModel},
         {provide: getModelToken(Score.name), useValue: scoreModel},
         {provide: getModelToken(Inspiration.name), useValue: inspirationModel},
-        {provide: getModelToken(Calendar.name), useValue: calendarModel}
+        {provide: getModelToken(Calendar.name), useValue: calendarModel},
+        {provide: getModelToken(DiscussionPost.name), useValue: postModel},
       ],
     }).compile();
 

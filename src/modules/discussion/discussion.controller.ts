@@ -12,6 +12,7 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
+import { DiscussionPost } from 'src/entities/post/post';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 
@@ -22,7 +23,8 @@ export class DiscussionController {
               @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
               @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
               @InjectModel(User.name) private userModel: Model<UserDocument>,
-              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>) {}
+              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+              @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>) {}
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -59,7 +61,7 @@ export class DiscussionController {
     while(found !== null) {
       found = await this.discussionModel.findOne({ insoCode: code });
       const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
-      return createdDiscussion.save();
+      return await createdDiscussion.save();
     }
   }
 
@@ -173,8 +175,14 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  deleteDiscussion(
-  ): string {
-    return 'deleted discussion settings'
+  async deleteDiscussion(@Param('discussionId') discussionId: string): Promise<void> {
+    // Check if there are any posts before deleting
+    let discussion = new Types.ObjectId(discussionId);
+    const posts = await this.postModel.find({ discussionId: discussion });
+    if(posts.length > 0) {
+      throw new HttpException("Cannot delete a discussion that has posts", HttpStatus.CONFLICT);
+    }
+    await this.discussionModel.deleteOne({ _id: discussion });
+    return;
   }
 }
