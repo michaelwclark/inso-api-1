@@ -7,6 +7,7 @@ export class ContactCreateDTO{
 
     @ApiProperty({
         name: 'email',
+        description: 'The contact email the user would like to register for their account',
         required: true,
         type: String
     })
@@ -41,7 +42,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'username',
-        description: 'String identifier for users',
+        description: 'String identifier for users, must be unique',
         required: true,
         type: String,
         isArray: false
@@ -54,6 +55,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'f_name',
+        description: 'The users first name',
         required: true,
         type: String
     })
@@ -63,6 +65,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'l_name',
+        description: 'The users last name',
         required: true,
         type: String
     })
@@ -70,20 +73,21 @@ export class UserCreateDTO {
     @IsString()
     public l_name: string;
 
-    @ApiProperty({
-        name: 'dateJoined',
-        required: false,
-        type: Date,
-        example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
-    })
-    @IsNotEmpty()
-    @IsOptional()
-    @Type(() => Date)
-    @IsDate()
-    public dateJoined: Date;
+    // @ApiProperty({
+    //     name: 'dateJoined',
+    //     required: false,
+    //     type: Date,
+    //     example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
+    // })
+    // @IsOptional()
+    // @IsNotEmpty()
+    // @Type(() => Date)
+    // @IsDate()
+    // public dateJoined: Date;
 
     @ApiProperty({
         name: 'contact',
+        description: 'The users list of contact emails',
         required: true,
         type: ContactCreateDTO,
         isArray: true,
@@ -95,7 +99,7 @@ export class UserCreateDTO {
     })
     @IsNotEmpty()
     @IsArray()
-    @ValidateNested()
+    @ValidateNested({ each: true})
     @Type(() => ContactCreateDTO)
     public contact: ContactCreateDTO[];
 
@@ -112,6 +116,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'password',
+        description: 'User authentication key',
         required: true,
         type: String
     })
@@ -123,6 +128,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'level',
+        description: 'The users level of authorization',
         required: true,
         type: String
     })
@@ -132,6 +138,7 @@ export class UserCreateDTO {
 
     @ApiProperty({
         name: 'subject',
+        description: 'The users class subject',
         required: true,
         type: String
     })

@@ -9,6 +9,7 @@ export class ContactEditDTO{
 
     @ApiProperty({
         name: 'email',
+        description: 'The contact email the user would like to register for their account',
         required: true,
         type: String
     })
@@ -34,6 +35,15 @@ export class ContactEditDTO{
     @IsBoolean()
     public primary: boolean
 
+    @ApiProperty({
+        name: 'delete',
+        required: false,
+        type: Boolean
+    })
+    @IsOptional()
+    @IsBoolean()
+    public delete: boolean
+
     constructor(partial: Partial<ContactEditDTO>) {
         Object.assign(this, partial);
     }
@@ -41,27 +51,9 @@ export class ContactEditDTO{
 
 export class UserEditDTO {
 
-    // @ApiProperty({
-    //     name: 'id',
-    //     description: 'The ObjectId of the user being edited',
-    //     required: true,
-    //     type: Types.ObjectId,
-    //     isArray: false,
-    //     example: '507f1f77bcf86cd799439011'
-    // })
-    // @IsNotEmpty()
-    // @Type(() => Types.ObjectId)
-    // @Transform((id:any) => {
-    //     if (!Types.ObjectId.isValid(id.value)) {
-    //       throw new BadRequestException(['Invalid ObjectId for User Id']);
-    //     }
-    //     return new Types.ObjectId(id.value);
-    // })
-    // public id: Types.ObjectId
-
     @ApiProperty({
         name: 'username',
-        description: 'String identifier for users',
+        description: 'String identifier for users, must be unique',
         required: true,
         type: String,
         isArray: false
@@ -73,6 +65,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'f_name',
+        description: 'The users first name',
         required: true,
         type: String
     })
@@ -83,6 +76,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'l_name',
+        description: 'The users last name',
         required: true,
         type: String
     })
@@ -93,6 +87,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'contact',
+        description: 'List of contact emails the user would like to add',
         required: true,
         type: ContactEditDTO,
         isArray: true,
@@ -104,7 +99,7 @@ export class UserEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @IsArray()
-    @ValidateNested()
+    @ValidateNested({each: true})
     @Type(() => ContactEditDTO)
     public contact: ContactEditDTO[];
 
@@ -122,6 +117,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'level',
+        description: 'The users level of authorization',
         required: true,
         type: String
     })
@@ -132,6 +128,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'subject',
+        description: 'The users class subject',
         required: true,
         type: String
     })
