@@ -137,7 +137,7 @@ export class DiscussionController {
 
     //check discussionId is valid]
     if(!Types.ObjectId.isValid(discussionId)){
-      throw new HttpException('DiscsussionId does not exist', HttpStatus.BAD_REQUEST)
+      throw new HttpException('DiscsussionId is invalid', HttpStatus.BAD_REQUEST)
     }
 
     const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
@@ -162,8 +162,7 @@ export class DiscussionController {
         throw new HttpException('Post inspiration Id does not exist', HttpStatus.NOT_FOUND);
       }
     }
-    setting.post_inspiration = setting.post_inspiration.concat(setting.post_inspiration);
-    return await this.settingModel.findOneAndUpdate({_id: discussionId}, setting.post_inspiration, {new: true});
+    return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
   @Delete('discussion/:discussionId')
