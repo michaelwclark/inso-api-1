@@ -142,7 +142,7 @@ export class DiscussionController {
 
     //check discussionId is valid]
     if(!Types.ObjectId.isValid(discussionId)){
-      throw new HttpException('DiscsussionId is invalid', HttpStatus.BAD_REQUEST)
+      throw new HttpException('Discussion Id is invalid', HttpStatus.BAD_REQUEST)
     }
 
     const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
