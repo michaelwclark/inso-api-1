@@ -50,7 +50,7 @@ describe('AppController', () => {
 
     await calendarModel.insertMany([
       {
-        "_id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "_id": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "open": new Date(),
         "close": new Date()
       }
@@ -58,11 +58,11 @@ describe('AppController', () => {
 
     await settingModel.insertMany([
       {
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
-        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de0')],
-        "score": new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'), 
       }
     ]);
@@ -74,7 +74,7 @@ describe('AppController', () => {
         name: "string",
         created: new Date(),
         archived: null,
-        settings: [new Types.ObjectId()],
+        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         facilitators: [new Types.ObjectId()],
         poster: new Types.ObjectId(),
         set: [new Types.ObjectId()]
@@ -85,13 +85,36 @@ describe('AppController', () => {
       {
         _id: new Types.ObjectId('62b276fda78b2a00063b1de2'),
         name: "inspo",
-        type: "responding"
+        type: "responding",
+        instructions: "string",
+        outline: [{
+          header: "string",
+          prompt: "string",
+        }]
       }
     ]);
 
     await scoreModel.insertMany([
       {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de2')
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        type: "string",
+        instructions: {
+          posting: "number",
+          responding: "number",
+          synthesizing: "number"},
+        interactions: {
+          max: "number"},
+        impact: {
+          max: "number"
+        },
+        rubric: { 
+          max: "number",
+          criteria: [{
+            description: "string",
+            max: "number"}],
+        },
+
+
       }
     ])
   });
@@ -128,16 +151,14 @@ describe('AppController', () => {
     it('should return valid Discussion Id', () => {
 
       const validDiscussionId = {
-        "id": new Types.ObjectId ('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": ("This is a prompt"),
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        "score": new Types.ObjectId ('62b276fda78b2a00063b1de2'),
-        "calendar": new Types.ObjectId ('62b276fda78b2a00063b1de0'),
-        "userId": new Types.ObjectId ('62b276fda78b2a00063b1de0')
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
         }; 
-        
-        return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.toBe('update discussion settings')
-      
+        return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
     }); 
   }); 
 
@@ -275,22 +296,18 @@ describe('AppController', () => {
       const error = new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       return expect(appController.createDiscussion(validDiscussion)).rejects.toThrow(error);
     });
-  });
-
-  // add 400 status error settings here checks against SettingsDTO
-  
+  });  
 
   //400 ERROR STATUS
-  //invalid discussion id
    describe('PATCH discussion/:discussionId/settings 400 Status',  () => {
     //valid discussion id, starter prompt not less than 2
     it('should return a 400 for prompt is less than 2 characters', async () => {
       const validDiscussionId = {
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "T",
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        "score": new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
        };
 
@@ -303,11 +320,11 @@ describe('AppController', () => {
     //valid discussion id, post inspiration id not valid
     it('should throw a 400 for post inspiration not valid', async () => {
       const validDiscussionId = { 
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
         "post_inspiration": [null],
-        "score": new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
       };
 
@@ -320,11 +337,11 @@ describe('AppController', () => {
     //valid discussion id, score id is not valid
     it('should throw a 400 for Score Id not valid', async () => {
       const validDiscussionId = { 
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         "score": null,
-        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
       };
 
@@ -336,10 +353,10 @@ describe('AppController', () => {
     //valid discussion id, calendar id is not valid
     it('should throw a 400 for an undefined calendar', async () => {
       const validDiscussionId = { 
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        "score": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
         "calendar":null,
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
       };
@@ -374,8 +391,8 @@ describe('AppController', () => {
       "id": new Types.ObjectId('62b276fda78b2a00063b1de4'),
       "prompt": "This is a prompt",
       "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-      "score": new Types.ObjectId(),
-      "calendar": new Types.ObjectId(),
+      "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+      "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
       "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
       };
       const error = new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
@@ -384,11 +401,11 @@ describe('AppController', () => {
 
     it('should throw a 404 error for a post inspiration not found', () => {
       const validDiscussion = {
-      "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
       "prompt": "This is a prompt",
       "post_inspiration": [undefined],
-      "score": new Types.ObjectId(),
-      "calendar": new Types.ObjectId(),
+      "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+      "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
       "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
         };
       const error = new HttpException("Post inspiration Id does not exist", HttpStatus.NOT_FOUND);
@@ -397,11 +414,11 @@ describe('AppController', () => {
 
     it('should throw a 404 error for a score id not found for setting', () => {
       const validDiscussion = {
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         "score": undefined,
-        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
       };
       const error = new HttpException("Score Id does not exist", HttpStatus.NOT_FOUND);
@@ -410,10 +427,10 @@ describe('AppController', () => {
 
     it('should throw a 404 error for a calendar id not found for setting', () => {
       const validDiscussion = {
-        "id": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "prompt": "This is a prompt",
         "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        "score": new Types.ObjectId('62b276fda78b2a00063b1de2'),
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
         "calendar": null,
         "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
       }
