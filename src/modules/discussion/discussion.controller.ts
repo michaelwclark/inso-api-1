@@ -1,25 +1,31 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
+import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
+import { Score, ScoreDocument } from 'src/entities/score/score';
+import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
+import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
-import { User } from 'src/entities/user/user';
-import { IsMongoId, IsString } from 'class-validator';
 import { DiscussionPost } from 'src/entities/post/post';
-import { Transform, Type } from 'class-transformer';
+import { User, UserDocument } from 'src/entities/user/user';
+import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 
 @Controller()
 export class DiscussionController {
-  constructor(
-    @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
-    @InjectModel(User.name) private userModel: Model<User>,
-    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
-  ) {}
-
+  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
+              @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
+              @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+              @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
+              @InjectModel(User.name) private userModel: Model<UserDocument>,
+              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+              @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>) {}
+              
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
   @ApiBody({description: '', type: DiscussionCreateDTO})
@@ -130,8 +136,38 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  updateDiscussionSettings(): string {
-    return 'update discussion settings'
+  async updateDiscussionSettings(
+    @Body() setting: SettingsCreateDTO,
+    @Param('discussionId') discussionId: string): Promise<any> {
+
+    //check discussionId is valid]
+    if(!Types.ObjectId.isValid(discussionId)){
+      throw new HttpException('DiscsussionId is invalid', HttpStatus.BAD_REQUEST)
+    }
+
+    const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
+    if (!found){
+      throw new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
+    }
+    
+    const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
+    if (!score){
+      throw new HttpException('Score Id does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    const calendar = await this.calendarModel.findOne({_id: new Types.ObjectId(setting.calendar)});
+    if (!calendar){
+      throw new HttpException('Calendar Id does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    //Loop through the setting.post_inspiration
+    for await (const post_inspiration of setting.post_inspiration){
+      let found = await this.post_inspirationModel.findOne({_id: [new Types.ObjectId(post_inspiration)]});
+      if(!found){
+        throw new HttpException('Post inspiration Id does not exist', HttpStatus.NOT_FOUND);
+      }
+    }
+    return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
   @Delete('discussion/:discussionId')

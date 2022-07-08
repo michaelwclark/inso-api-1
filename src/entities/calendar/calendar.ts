@@ -6,6 +6,7 @@ export type CalendarDocument = Calendar & Document;
 
 @Schema()
 export class Calendar {
+
     @Prop(Types.ObjectId)
     public id: Types.ObjectId;
     @Prop({Date, default: Date.now})

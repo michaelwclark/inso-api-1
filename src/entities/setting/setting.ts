@@ -11,20 +11,24 @@ export class Setting {
     public id: Types.ObjectId;
 
     @Prop(String)
-    public starter_prompt: string;
+    public prompt: string;
 
-    @Prop(Types.ObjectId)
-    public post_inspiration: Types.ObjectId;
+    @Prop([Types.ObjectId])
+    public inspiration: Types.ObjectId[];
 
     @Prop(Types.ObjectId)
     public score: Types.ObjectId;
 
     @Prop(Types.ObjectId)
     public calendar: Types.ObjectId;
-    
+
+    @Prop(Types.ObjectId)
+    public userId: Types.ObjectId;
+
     constructor(partial: Partial<Setting>) {
         Object.assign(this, partial);
     }
+
 }
 
 export const SettingSchema = SchemaFactory.createForClass(Setting);
