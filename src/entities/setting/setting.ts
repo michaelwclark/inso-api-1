@@ -7,22 +7,19 @@ export type SettingDocument = Setting & Document;
 
 @Schema()
 export class Setting {
-    @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
-
-    @Prop(String)
+    @Prop({ type: Types.ObjectId, default: '' })
     public prompt: string;
 
     @Prop([Types.ObjectId])
     public inspiration: Types.ObjectId[];
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, default: null })
     public score: Types.ObjectId;
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, default: null })
     public calendar: Types.ObjectId;
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, default: null })
     public userId: Types.ObjectId;
 
     constructor(partial: Partial<Setting>) {

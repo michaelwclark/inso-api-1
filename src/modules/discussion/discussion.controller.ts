@@ -68,7 +68,6 @@ export class DiscussionController {
       if(!found) {
         const setting = new this.settingModel();
         const settingId = await setting.save();
-        console.log(settingId);
 
         const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
       return await createdDiscussion.save();
