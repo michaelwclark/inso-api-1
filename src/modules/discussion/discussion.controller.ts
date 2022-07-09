@@ -65,8 +65,14 @@ export class DiscussionController {
     let found = new this.discussionModel();
     while(found !== null) {
       found = await this.discussionModel.findOne({ insoCode: code });
-      const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
+      if(!found) {
+        const setting = new this.settingModel();
+        const settingId = await setting.save();
+        console.log(settingId);
+
+        const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
       return await createdDiscussion.save();
+      }
     }
   }
 
