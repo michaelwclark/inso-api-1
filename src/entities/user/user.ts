@@ -21,9 +21,9 @@ export class Contact {
     @IsBoolean()
     primary: boolean;
 
-    @Prop(Boolean)
-    @IsBoolean()
-    delete: boolean;
+    // @Prop(Boolean)
+    // @IsBoolean()
+    // delete: boolean;
 
     constructor(partial: Partial<Contact>) {
         Object.assign(this, partial);

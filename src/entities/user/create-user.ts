@@ -73,18 +73,6 @@ export class UserCreateDTO {
     @IsString()
     public l_name: string;
 
-    // @ApiProperty({
-    //     name: 'dateJoined',
-    //     required: false,
-    //     type: Date,
-    //     example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
-    // })
-    // @IsOptional()
-    // @IsNotEmpty()
-    // @Type(() => Date)
-    // @IsDate()
-    // public dateJoined: Date;
-
     @ApiProperty({
         name: 'contact',
         description: 'The users list of contact emails',
@@ -104,17 +92,6 @@ export class UserCreateDTO {
     public contact: ContactCreateDTO[];
 
     @ApiProperty({
-        name: 'sso',
-        required: true,
-        type: String,
-        isArray: true
-    })
-    @IsNotEmpty()
-    @IsArray()
-    @IsString({each: true})
-    public sso: string[];
-
-    @ApiProperty({
         name: 'password',
         description: 'User authentication key',
         required: true,
@@ -125,26 +102,6 @@ export class UserCreateDTO {
     @MinLength(8)
     @MaxLength(32)
     public password: string;
-
-    @ApiProperty({
-        name: 'level',
-        description: 'The users level of authorization',
-        required: true,
-        type: String
-    })
-    @IsNotEmpty()
-    @IsString()
-    public level: string;
-
-    @ApiProperty({
-        name: 'subject',
-        description: 'The users class subject',
-        required: true,
-        type: String
-    })
-    @IsNotEmpty()
-    @IsString()
-    public subject: string;
 
     constructor(partial: Partial<UserCreateDTO>) {
         Object.assign(this, partial);

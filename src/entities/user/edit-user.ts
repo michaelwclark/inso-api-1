@@ -35,14 +35,14 @@ export class ContactEditDTO{
     @IsBoolean()
     public primary: boolean
 
-    @ApiProperty({
-        name: 'delete',
-        required: false,
-        type: Boolean
-    })
-    @IsOptional()
-    @IsBoolean()
-    public delete: boolean
+    // @ApiProperty({
+    //     name: 'delete',
+    //     required: false,
+    //     type: Boolean
+    // })
+    // @IsOptional()
+    // @IsBoolean()
+    // public delete: boolean
 
     constructor(partial: Partial<ContactEditDTO>) {
         Object.assign(this, partial);
@@ -110,7 +110,7 @@ export class UserEditDTO {
         isArray: true
     })
     @IsOptional()
-    @IsNotEmpty()
+    @IsNotEmpty({each: true})
     @IsArray()
     @IsString({each: true})
     public sso: string[];

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
@@ -52,6 +52,8 @@ export class UserController {
       throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
     }
     
+    hasDuplicateContacts(user.contact);
+
     var array = user.contact.map(x => {
       x.verified = false; 
       x.primary = false;
@@ -59,8 +61,6 @@ export class UserController {
     })
     array[0].primary = true;    
     user.contact = array;
-
-    hasDuplicateContacts(user.contact);
 
     for(var i = 0; i < user.contact.length; i++){       
      if(isEmail(user.contact[i].email) == false ){
@@ -87,6 +87,13 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'The calendar is not of the correct format.'})
   async updateUser(@Param('userId') userId: string, @Body() user: UserEditDTO){
 
+    if(userId === null){
+      throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST);
+    }
+    if(!Types.ObjectId.isValid(userId)){
+      throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST);
+    }
+
     const foundUser = await this.userModel.findOne({_id: userId});
     if(!foundUser){
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND);
@@ -108,41 +115,49 @@ export class UserController {
       for(var i = 0; i < user.contact.length; i++){
         if(isEmail(user.contact[i].email) == false ){ throw new HttpException('Email: ' + user.contact[i].email + ', is not a valid email address', HttpStatus.BAD_REQUEST)};
         const sameEmail = await this.userModel.findOne({'contact.email': user.contact[i].email})
-        if(sameEmail != undefined && user.contact[i].delete != true){ throw new HttpException('Email ' + user.contact[i].email + ' already is associated with an account', HttpStatus.BAD_REQUEST)};
+        if(sameEmail != undefined ){ throw new HttpException('Email ' + user.contact[i].email + ' already is associated with an account', HttpStatus.BAD_REQUEST) };
       }
 
       var oldContacts = foundUser.contact;
       var hasNewPrimary: boolean = false;
 
-      for(var _i = 0; _i < user.contact.length && hasNewPrimary == false; _i++){
-        if(user.contact[_i].primary == true){
-          var primaryIndex = _i;
-          hasNewPrimary = true;
-          }
-      }
+      // for(var _i = 0; _i < user.contact.length && hasNewPrimary == false; _i++){
+      //   if(user.contact[_i].primary == true){
+      //     var primaryIndex = _i;
+      //     hasNewPrimary = true;
+      //     }
+      // }
 
       oldContacts.map(x => { x.verified = false; x.primary = false; return x; })
       user.contact.map(x => { x.verified = false; x.primary = false; return x; })
 
-      if(hasNewPrimary == true)
-      user.contact[primaryIndex].primary = true;
+      // if(hasNewPrimary == true)
+      // user.contact[primaryIndex].primary = true;
 
-      for(var d = 0; d < user.contact.length; d++){
-        if(user.contact[d].delete == true){
-          for(var f = 0; f < oldContacts.length; f++){
-            if(user.contact[d].email === oldContacts[f].email){ 
-              oldContacts.splice(f, 1);
-            }
-          }
-          user.contact.splice(d, 1);
-        }
-      }
+      // for(var d = 0; d < user.contact.length; d++){
+      //   if(user.contact[d].delete == true){
+      //     for(var f = 0; f < oldContacts.length; f++){
+      //       if(user.contact[d].email === oldContacts[f].email){ 
+      //         oldContacts.splice(f, 1);
+      //       }
+      //     }
+      //   }
+      // }
+      // for(var _d = 0; _d < user.contact.length; _d++){
+      //   if(user.contact[_d].delete == true){
+      //     user.contact.splice(d, 1);
+      //   }
+      // }          FOR WHEN I TRIED IMPLEMENTING DELETE
 
       var newContacts = user.contact.concat(oldContacts);
 
       user.contact = newContacts;
     }
     
+    if(user.hasOwnProperty('sso')){
+      if(user.sso.length == 0){throw new HttpException('Array length for SSO cannot be 0', HttpStatus.BAD_REQUEST)};
+    }
+
     const res = await foundUser.updateOne(user);
 
     return 'User Updated';
@@ -196,6 +211,8 @@ function validatePassword(password: string){
 }
 
 function hasDuplicateContacts(array: ContactCreateDTO[]){
+
+  if(array.length == 0){throw new HttpException('Array length for contacts cannot be 0', HttpStatus.BAD_REQUEST)}
 
   let contactsArray = array;
   let unique = contactsArray.filter((c, index, self) => 
