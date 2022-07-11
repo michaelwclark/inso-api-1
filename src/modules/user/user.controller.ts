@@ -121,18 +121,18 @@ export class UserController {
       var oldContacts = foundUser.contact;
       var hasNewPrimary: boolean = false;
 
-      // for(var _i = 0; _i < user.contact.length && hasNewPrimary == false; _i++){
-      //   if(user.contact[_i].primary == true){
-      //     var primaryIndex = _i;
-      //     hasNewPrimary = true;
-      //     }
-      // }
+      for(var _i = 0; _i < user.contact.length && hasNewPrimary == false; _i++){
+        if(user.contact[_i].primary == true){
+          var primaryIndex = _i;
+          hasNewPrimary = true;
+          }
+      }
 
       oldContacts.map(x => { x.verified = false; x.primary = false; return x; })
       user.contact.map(x => { x.verified = false; x.primary = false; return x; })
 
-      // if(hasNewPrimary == true)
-      // user.contact[primaryIndex].primary = true;
+      if(hasNewPrimary == true)
+      user.contact[primaryIndex].primary = true;
 
       // for(var d = 0; d < user.contact.length; d++){
       //   if(user.contact[d].delete == true){
