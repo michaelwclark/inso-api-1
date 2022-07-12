@@ -9,7 +9,7 @@ import { UserCreateDTO } from "src/entities/user/create-user";
 import { UserEditDTO } from "src/entities/user/edit-user";
 import { User, UserSchema } from "src/entities/user/user";
 import { UserController } from "./user.controller";
-import { contactArrayWrongType, contactEmailNotAnEmail, contactEmailNotString, contactEmpty, contactEmptyArray, contactEmptyEmail, contactNotArray, dummy, existingUsername, existingUsernamePatch, fnameEmpty, fnameNotString, levelEmpty, levelNotString, lnameEmpty, lnameNotString, newValidBody, passwordEmpty, passwordNoLowercase, passwordNoNumber, passwordNoSpecialChar, passwordNotString, passwordNoUppercase, passwordTooShort, ssoArrayElementsEmpty, ssoArrayWrongType, ssoEmpty, ssoEmptyArray, ssoNotArray, subjectEmpty, subjectNotString, userInvalidCharactersAmt, usernameBadWord, usernameEmailAdd, usernameEmpty, userNotString, validUser } from "./userMocks";
+import { contactArrayWrongType, contactEmailNotAnEmail, contactEmailNotAnEmailPatch, contactEmailNotString, contactEmpty, contactEmptyArray, contactEmptyEmail, contactNotArray, dummy, existingUsername, existingUsernamePatch, existingUsernamePatch2, fnameEmpty, fnameNotString, levelEmpty, levelNotString, lnameEmpty, lnameNotString, newValidBody, passwordEmpty, passwordNoLowercase, passwordNoNumber, passwordNoSpecialChar, passwordNotString, passwordNoUppercase, passwordTooShort, ssoArrayElementsEmpty, ssoArrayWrongType, ssoEmpty, ssoEmptyArray, ssoEmptyArrayPatch, ssoNotArray, subjectEmpty, subjectNotString, userInvalidCharactersAmt, userInvalidCharactersAmtPatch, usernameBadWord, usernameBadWordPatch, usernameEmailAdd, usernameEmailAddPatch, usernameEmpty, userNotString, validUser } from "./userMocks";
 
 describe('AppController', () => {
 
@@ -254,22 +254,22 @@ describe('AppController', () => {
 
         it('Test case invalid amount of characters in username', ()=> {
             const error = new HttpException("Username length must be at least 5 characters and no more than 32", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', userInvalidCharactersAmt)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', userInvalidCharactersAmtPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case username is a bad word', ()=> {
             const error = new HttpException("Username cannot contain obscene or profain language", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', usernameBadWord)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', usernameBadWordPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case username is an email address', ()=> {
             const error = new HttpException("Username cannot be an email address", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', usernameEmailAdd)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', usernameEmailAddPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case username already exists', ()=> {
             const error = new HttpException("Username already exists, please choose another", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', existingUsernamePatch)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', existingUsernamePatch2)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case f_name not a string', async () => {
@@ -314,11 +314,6 @@ describe('AppController', () => {
             expect(JSON.stringify(errors)).toContain('contact must be an array');
         })  // FINISHED
 
-        it('Test case contact is an empty array', async () => {
-            const error = new HttpException("Array length for contacts cannot be 0", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', contactEmptyArray)).rejects.toThrow(error);
-        }) // FINISHED
-
         it('Test case contact array is of wrong type', async () => {
             const user = plainToInstance(UserEditDTO, contactArrayWrongType);
             const errors = await validate(user);
@@ -342,7 +337,7 @@ describe('AppController', () => {
 
         it('Test case contact email is not a valid email address', async () => {
             const error = new HttpException("Email: " + contactEmailNotAnEmail.contact[0].email + ", is not a valid email address", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', contactEmailNotAnEmail)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', contactEmailNotAnEmailPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case sso is empty', async () => {
@@ -361,7 +356,7 @@ describe('AppController', () => {
 
         it('Test case sso is an empty array', async () => {
             const error = new HttpException("Array length for SSO cannot be 0", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', ssoEmptyArray)).rejects.toThrow(error);
+            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', ssoEmptyArrayPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case sso array is of wrong type', async () => {

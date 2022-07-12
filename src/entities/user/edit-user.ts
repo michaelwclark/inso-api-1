@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsOptional, IsString, ValidateNested  } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested  } from "class-validator";
 import { Types } from "mongoose";
 import { ContactCreateDTO } from "./create-user";
 
@@ -14,6 +14,7 @@ export class ContactEditDTO{
         type: String
     })
     @IsNotEmpty()
+    @IsEmail()
     @IsString()
     public email: string;
 
@@ -35,14 +36,14 @@ export class ContactEditDTO{
     @IsBoolean()
     public primary: boolean
 
-    // @ApiProperty({
-    //     name: 'delete',
-    //     required: false,
-    //     type: Boolean
-    // })
-    // @IsOptional()
-    // @IsBoolean()
-    // public delete: boolean
+    @ApiProperty({
+        name: 'delete',
+        required: false,
+        type: Boolean
+    })
+    @IsOptional()
+    @IsBoolean()
+    public delete: boolean
 
     constructor(partial: Partial<ContactEditDTO>) {
         Object.assign(this, partial);
@@ -112,6 +113,7 @@ export class UserEditDTO {
     @IsOptional()
     @IsNotEmpty({each: true})
     @IsArray()
+    @ArrayMinSize(1)
     @IsString({each: true})
     public sso: string[];
 

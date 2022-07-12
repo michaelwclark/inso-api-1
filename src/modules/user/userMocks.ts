@@ -832,12 +832,14 @@ export const dummy = {
     {
       "email": "testing@gmail.com",
       "verified": false,
-      "primary": true
+      "primary": true,
+      "delete": false,
     },
     {
       "email": "testing@yahoo.com",
       'verified': false,
-      'primary': false
+      'primary': false,
+      "delete": false,
     }
   ],
   "sso": [
@@ -858,12 +860,14 @@ export const newValidBody = {
     {
       "email": "differentEmail@gmail.com",
       "verified": false,
-      "primary": true
+      "primary": true,
+      "delete": false,
     },
     {
       "email": "thisEmailIsFake@yahoo.com",
       'verified': false,
-      'primary': false
+      'primary': false,
+      "delete": false,
     }
   ],
   "sso": [
@@ -980,109 +984,117 @@ export const existingUsernamePatch = {
 // "subject": "string"
 // }
 
-// export const userInvalidCharactersAmt = {
-// "username": "ThisUsernameIsWayTooLonggggggggggg",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "testing@gmail.com",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [
-//   "string",
-//   "s",
-//   "string"
-// ],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const userInvalidCharactersAmtPatch = {
+"username": "ThisUsernameIsWayTooLonggggggggggg",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "testing@gmail.com",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [
+  "string",
+  "s",
+  "string"
+],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
-// export const usernameBadWord = {
-// "username": "Asshole",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "testing@gmail.com",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [
-//   "string",
-//   "s",
-//   "string"
-// ],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const usernameBadWordPatch = {
+"username": "Asshole",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "testing@gmail.com",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [
+  "string",
+  "s",
+  "string"
+],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
-// export const usernameEmailAdd = {
-// "username": "thisIsAnEmail@gmail.com",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "testing@gmail.com",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [
-//   "string",
-//   "s",
-//   "string"
-// ],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const usernameEmailAddPatch = {
+"username": "thisIsAnEmail@gmail.com",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "testing@gmail.com",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [
+  "string",
+  "s",
+  "string"
+],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
-// export const existingUsername = {
-// "username": "NewUser",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "testing@gmail.com",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [
-//   "string",
-//   "s",
-//   "string"
-// ],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const existingUsernamePatch2 = {
+"username": "NewUser",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "testing@gmail.com",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [
+  "string",
+  "s",
+  "string"
+],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
 // export const fnameNotString = {
 // "username": "TestUser",
@@ -1482,31 +1494,33 @@ export const existingUsernamePatch = {
 // "subject": "string"
 // }
 
-// export const contactEmailNotAnEmail = {
-// "username": "TestUser",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "thisIsNotAnEmailAddress",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [
-//   "string",
-//   "s",
-//   "string"
-// ],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const contactEmailNotAnEmailPatch = {
+"username": "TestUser",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "thisIsNotAnEmailAddress",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [
+  "string",
+  "s",
+  "string"
+],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
 // export const ssoEmpty = {
 // "username": "TestUser",
@@ -1552,27 +1566,29 @@ export const existingUsernamePatch = {
 // "subject": "string"
 // }
 
-// export const ssoEmptyArray = {
-// "username": "TestUser",
-// "f_name": "FirstName",
-// "l_name": "LastName",
-// "contact": [
-//   {
-//     "email": "testing@gmail.com",
-//     "verified": false,
-//     "primary": true
-//   },
-//   {
-//     "email": "testing@yahoo.com",
-//     'verified': false,
-//     'primary': false
-//   }
-// ],
-// "sso": [],
-// "password": "sgjzkKJD)e9ff",
-// "level": "string",
-// "subject": "string"
-// }
+export const ssoEmptyArrayPatch = {
+"username": "TestUser",
+"f_name": "FirstName",
+"l_name": "LastName",
+"contact": [
+  {
+    "email": "testing@gmail.com",
+    "verified": false,
+    "primary": true,
+    "delete": false,
+  },
+  {
+    "email": "testing@yahoo.com",
+    'verified': false,
+    'primary': false,
+    "delete": false,
+  }
+],
+"sso": [],
+"password": "sgjzkKJD)e9ff",
+"level": "string",
+"subject": "string"
+}
 
 // export const ssoArrayWrongType = {
 // "username": "TestUser",

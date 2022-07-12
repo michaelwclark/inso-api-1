@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsDate, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty,
+         IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
 import { Contact } from "./user";
 
 export class ContactCreateDTO{
@@ -12,11 +13,13 @@ export class ContactCreateDTO{
         type: String
     })
     @IsNotEmpty()
+    @IsEmail()
     @IsString()
     public email: string;
 
     @ApiProperty({
         name: 'verified',
+        description: 'Boolean to indicate whether or not the given email has been verified',
         required: true,
         type: Boolean
     })
@@ -26,6 +29,7 @@ export class ContactCreateDTO{
 
     @ApiProperty({
         name: 'primary',
+        description: 'Boolean to indicate whether the email is their primary email address, only one can be true',
         required: true,
         type: Boolean
     })
