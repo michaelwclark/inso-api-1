@@ -119,7 +119,7 @@ export class UserEditDTO {
 
     @ApiProperty({
         name: 'level',
-        description: 'The users level of authorization',
+        description: 'The users level of education',
         required: true,
         type: String
     })

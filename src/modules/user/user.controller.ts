@@ -19,10 +19,16 @@ export class UserController {
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
     
-    if(userId === null){ throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST) }
-    if(!Types.ObjectId.isValid(userId)){ throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST) }
+    if(userId === null){ 
+      throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST); 
+    }
+    if(!Types.ObjectId.isValid(userId)){ 
+      throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); 
+    }
     const foundUser = await this.userModel.findOne({_id: userId});
-    if(!foundUser){ throw new HttpException("User does not exist", HttpStatus.NOT_FOUND) }
+    if(!foundUser){ 
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
+    }
 
     const returnUser = new UserReadDTO(foundUser);
 
@@ -136,7 +142,7 @@ export class UserController {
   }
 }
 
-//////// validates the username for a new user or when updating a username, the value meets all  required conditions ////////
+/** validates the username for a new user or when updating a username, the value meets all  required conditions */
 function validateUsername( userName: string){
 
   if(userName.length < 5 || userName.length > 32){
@@ -156,7 +162,7 @@ function validateUsername( userName: string){
   }
 }
 
-//////// uses regex to ensure a string is a valid email address ////////
+/** uses regex to ensure a string is a valid email address */
 function isEmail(search: string){
   var searchFind: boolean;
   var regexp = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)
@@ -165,7 +171,7 @@ function isEmail(search: string){
   return searchFind;
 }
 
-//////// validates the password for a new user meets all the required conditions to ensure password strength ////////
+/** validates the password for a new user meets all the required conditions to ensure password strength */
 function validatePassword(password: string){
 
   if(password.length < 8 || password.length > 32){
@@ -200,7 +206,7 @@ function validatePassword(password: string){
 
 }
 
-//////// checks if array of new contacts in User create or edit DTOs, contains duplicate emails ////////
+/** checks if array of new contacts in User create or edit DTOs, contains duplicate emails */
 function checkForDuplicateContacts(array: ContactCreateDTO[]){
 
   let contactsArray = array;
@@ -214,7 +220,7 @@ function checkForDuplicateContacts(array: ContactCreateDTO[]){
 
 }
 
-//////// removes contacts with delete boolean marker as true, for patch route ////////
+/** removes contacts with delete boolean marker as true, for patch route */
 function removeUnwantedContacts(array: ContactEditDTO[], oldArray: Contact[]){
 
   var contactsToDelete = array.filter(function (e) {

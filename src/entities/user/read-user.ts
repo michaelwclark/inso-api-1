@@ -10,7 +10,7 @@ export class UserReadDTO {
     subject: string;
 
     constructor(partial: Partial<UserReadDTO>) {
-        //Object.assign(this, partial);
+        // Object.assign(this, partial);
         this.id = partial.id;
         this.username = partial.username;
         this.f_name = partial.f_name;

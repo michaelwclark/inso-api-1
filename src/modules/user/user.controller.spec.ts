@@ -188,11 +188,6 @@ describe('AppController', () => {
             expect(JSON.stringify(errors)).toContain('contact must be an array');
         })  // FINISHED
 
-        it('Test case contact is an empty array', async () => {
-            const error = new HttpException("Array length for contacts cannot be 0", HttpStatus.BAD_REQUEST);
-            return expect( appController.createUser(contactEmptyArray)).rejects.toThrow(error);
-        }) // FINISHED
-
         it('Test case contact array is of wrong type', async () => {
             const user = plainToInstance(UserCreateDTO, contactArrayWrongType);
             const errors = await validate(user);
@@ -215,8 +210,12 @@ describe('AppController', () => {
         }) // FINISHED
 
         it('Test case contact email is not a valid email address', async () => {
-            const error = new HttpException("Email: " + contactEmailNotAnEmail.contact[0].email + ", is not a valid email address", HttpStatus.BAD_REQUEST);
-            return expect( appController.createUser(contactEmailNotAnEmail)).rejects.toThrow(error);
+            const user = plainToInstance(UserCreateDTO, contactEmailNotAnEmail);
+            const errors = await validate(user);
+            expect(errors.length).not.toBe(0);
+            expect(JSON.stringify(errors)).toContain('email must be an email');
+            // const error = new HttpException("Email: " + contactEmailNotAnEmail.contact[0].email + ", is not a valid email address", HttpStatus.BAD_REQUEST);
+            // return expect( appController.createUser(contactEmailNotAnEmail)).rejects.toThrow(error);
         }) // FINISHED
     })
 
@@ -336,8 +335,10 @@ describe('AppController', () => {
         }) // FINISHED
 
         it('Test case contact email is not a valid email address', async () => {
-            const error = new HttpException("Email: " + contactEmailNotAnEmail.contact[0].email + ", is not a valid email address", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', contactEmailNotAnEmailPatch)).rejects.toThrow(error);
+            const user = plainToInstance(UserEditDTO, contactEmailNotAnEmailPatch);
+            const errors = await validate(user);
+            expect(errors.length).not.toBe(0);
+            expect(JSON.stringify(errors)).toContain('email must be an email');
         }) // FINISHED
 
         it('Test case sso is empty', async () => {
@@ -352,11 +353,6 @@ describe('AppController', () => {
             const errors = await validate(user);
             expect(errors.length).not.toBe(0);
             expect(JSON.stringify(errors)).toContain('sso must be an array');
-        }) // FINISHED
-
-        it('Test case sso is an empty array', async () => {
-            const error = new HttpException("Array length for SSO cannot be 0", HttpStatus.BAD_REQUEST);
-            return expect( appController.updateUser('62c455f417ad4b255d93cb3a', ssoEmptyArrayPatch)).rejects.toThrow(error);
         }) // FINISHED
 
         it('Test case sso array is of wrong type', async () => {
