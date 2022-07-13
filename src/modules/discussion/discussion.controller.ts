@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
@@ -129,8 +129,8 @@ export class DiscussionController {
   }
 
   @Post('discussion/:discussionId/archive')
-  @ApiOperation({description: 'Gets discussions for a user from the database'})
-  @ApiOkResponse({ description: 'Discussions'})
+  @ApiOperation({description: 'Archive a discussion'})
+  @ApiOkResponse({ description: 'Newly archived discussion'})
   @ApiBadRequestResponse({ description: 'The discussionId is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
@@ -143,6 +143,25 @@ export class DiscussionController {
     return await this.discussionModel.findOneAndUpdate({ _id: discussionId }, { archived: archivedDate });
   }
 
+  @Post('discussion/:discussionId/duplicate')
+  @ApiOperation({description: 'Duplicate a discussion with all settings'})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: 'The discussionId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
+  @ApiTags('Discussion')
+  async duplicateDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
+    }
+    // duplicate a discussion 
+    // duplicate the settings 
+    // duplicate the calendar
+    // duplicate the post inspirations
+    // duplicate the score
+    return;
+  }
+
 
   @Get('discussions')
   @ApiOperation({description: 'Gets discussions for a user from the database'})
@@ -150,6 +169,11 @@ export class DiscussionController {
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
+  @ApiQuery({ description: ''})
+  @ApiQuery({ description: ''})
+  @ApiQuery({ description: ''})
+  @ApiQuery({ description: ''})
+  @ApiQuery({ description: ''})
   @ApiTags('Discussion')
   async getDiscussions(): Promise<Discussion[]> {
     return;
