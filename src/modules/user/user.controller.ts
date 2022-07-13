@@ -1,7 +1,9 @@
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
+import { plainToClass } from 'class-transformer';
 import { Model, Types } from 'mongoose';
+import { authenticate } from 'passport';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
@@ -15,6 +17,14 @@ export class UserController {
     @InjectModel(User.name) private userModel: Model<UserDocument>
     ) {}
 
+  /** For Authentication service, needed to verify password */
+  async returnUser(userName: string){
+    const found = await this.userModel.findOne({username: userName});
+    if(!found){ 
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
+    }
+    return found;
+  }
 
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
@@ -25,13 +35,13 @@ export class UserController {
     if(!Types.ObjectId.isValid(userId)){ 
       throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); 
     }
-    const foundUser = await this.userModel.findOne({_id: userId});
+    const foundUser = await this.userModel.findOne({_id: userId}, {password: 0, sso: 0},).lean();
     if(!foundUser){ 
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
     }
 
     const returnUser = new UserReadDTO(foundUser);
-
+    
     return returnUser;
   }
 
@@ -69,8 +79,14 @@ export class UserController {
 
     validatePassword(user.password);
 
+    const bcrypt = require('bcrypt');
+    const saltRounds = 10;
+
+    const salt = await bcrypt.genSalt(saltRounds);
+    user.password = await bcrypt.hash(user.password, salt);
+
     const newUser = new this.userModel({...user, 'dateJoined': new Date()})
-    await newUser.save()
+    await newUser.save();
 
     return 'User Created!';
   }

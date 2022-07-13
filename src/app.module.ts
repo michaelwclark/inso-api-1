@@ -13,6 +13,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 import { ConfigModule } from "@nestjs/config";
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -36,7 +37,8 @@ import { ConfigModule } from "@nestjs/config";
     ),
     SendGridModule.forRoot({ 
       apiKey: process.env.SENDGRID_KEY
-    })
+    }),
+    AuthModule
   ],
   controllers: [AppController],
   providers: [],
