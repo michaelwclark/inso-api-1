@@ -5,7 +5,7 @@ export class DiscussionReadDTO {
   public name: string;
   public created: string;
   public archived: string;
-  public setting: {
+  public settings: {
     id: string;
     starterPrompt: string;
     postInspiration: {

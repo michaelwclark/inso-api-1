@@ -117,9 +117,32 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
-    return 'wowo';
+  async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
+    }
+    const discussion = await this.discussionModel.findOne({ _id: discussionId }).exec();
+    console.log(discussion);
+    const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
+    // const discussionRead = new DiscussionReadDTO({...discussion, settings: settings});
+    return { ...discussion, settings: settings };
   }
+
+  @Post('discussion/:discussionId/archive')
+  @ApiOperation({description: 'Gets discussions for a user from the database'})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: 'The discussionId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
+  @ApiTags('Discussion')
+  async archiveDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
+    }
+    const archivedDate = new Date();
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId }, { archived: archivedDate });
+  }
+
 
   @Get('discussions')
   @ApiOperation({description: 'Gets discussions for a user from the database'})
