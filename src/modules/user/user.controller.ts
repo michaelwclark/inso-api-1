@@ -4,6 +4,7 @@ import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } 
 import { plainToClass } from 'class-transformer';
 import { Model, Types } from 'mongoose';
 import { authenticate } from 'passport';
+import { async } from 'rxjs';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
@@ -132,30 +133,80 @@ export class UserController {
         } // checks and throws error if any of the given emails are already in use
       }
 
-      var oldContacts = foundUser.contact; // old set of contacts from existing user that was found
+      var oldContacts = foundUser.contact; // old set of contacts from existing user that was retrieved
+
+      var contactsToDelete = user.contact.filter(function (e) {
+        return e.delete == true;
+      }); // new array of elements to remove from current contacts
+      var contactsToKeep = user.contact.filter(function (e) {
+        return e.delete != true;
+      }); // new array of new elements to add to current contacts
+
+      for (var i = 0; i < contactsToDelete.length; i++) {
+        await this.userModel.updateMany({}, { $pull: { contact : {email: contactsToDelete[i].email} } })
+      } // removing all contacts from the delete array, that are present in the database
 
       var hasNewPrimary: boolean = false;
-      for(var _i = 0; _i < user.contact.length && hasNewPrimary == false; _i++){
-        if(user.contact[_i].primary == true){
+      for(var _i = 0; _i < contactsToKeep.length && hasNewPrimary == false; _i++){
+        if(contactsToKeep[_i].primary == true){
           var primaryIndex = _i;
           hasNewPrimary = true;
         }
       } // checks if there is a new primary contact to overwrite the old, and stores the index value
 
-      user.contact.map(x => { x.verified = false; x.primary = false; return x; })
+      var updatedFoundContacts = (await this.userModel.findOne({_id: userId})).contact;
+      contactsToKeep.map(x => { x.verified = false; x.primary = false; return x; })
 
       if(hasNewPrimary == true){
-        user.contact[primaryIndex].primary = true;
-        oldContacts.map(x => { x.verified = false; x.primary = false; return x; })
-      } // overwrites old primary contact if a new one was given
+        contactsToKeep[primaryIndex].primary = true;
+        updatedFoundContacts.map(x => { x.verified = false; x.primary = false; return x; })
+      }// overwrites old primary contact if a new one was given
+      
+      user.contact = updatedFoundContacts.concat(contactsToKeep);
 
-      user.contact = removeUnwantedContacts(user.contact, oldContacts); // deletes contacts with delete value true
+      if(user.contact.length == 0){
+        await this.userModel.updateOne({_id: userId}, {$set: {contact: oldContacts}});
+        throw new HttpException('You must have at least one email contact', HttpStatus.BAD_REQUEST);
+      } // checks that not all contacts were removed
+
+      var primaryTest = user.contact.filter(function (e) {
+        return e.primary == true;
+      }) // returns the contacts with primary as true
+      if(primaryTest.length != 1){
+        await this.userModel.updateOne({_id: userId}, {$set: {contact: oldContacts}});
+        throw new HttpException('You must have only one primary email contact', HttpStatus.BAD_REQUEST);
+      } // checks that only one contact is set as primary
+  
     }
 
     const res = await foundUser.updateOne(user);
 
     return 'User Updated';
   }
+
+
+//////////////////////////////////
+
+/** removes contacts with delete boolean marker as true, for patch route */
+  public removeUnwantedContacts(array: ContactEditDTO[]){
+
+    var contactsToDelete = array.filter(function (e) {
+      return e.delete == true;
+    }); // new array of elements to remove from current contacts
+    var contactsToKeep = array.filter(function (e) {
+      return e.delete != true;
+    }); // new array of new elements to add to current contacts
+
+    for (var i = 0; i < contactsToDelete.length; i++) {
+    this.userModel.updateMany(
+      {},
+      { $pull: { contact : {email: contactsToDelete[i].email} } }
+      )
+    }
+
+    return contactsToKeep;
+  }
+
 }
 
 /** validates the username for a new user or when updating a username, the value meets all  required conditions */
@@ -236,43 +287,3 @@ function checkForDuplicateContacts(array: ContactCreateDTO[]){
 
 }
 
-/** removes contacts with delete boolean marker as true, for patch route */
-function removeUnwantedContacts(array: ContactEditDTO[], oldArray: Contact[]){
-
-  var contactsToDelete = array.filter(function (e) {
-    return e.delete == true;
-  }); // new array of elements to remove from current contacts
-  var contactsToKeep = array.filter(function (e) {
-    return e.delete != true;
-  }); // new array of new elements to add to current contacts
-
-  var flag: boolean = false;
-  for(var _i = 0; _i < oldArray.length; _i++){
-    flag = false;
-    for(var d = 0; d < contactsToDelete.length && flag == false; d++){
-      if(oldArray[_i].email == contactsToDelete[d].email){
-        oldArray[_i].delete = true;
-        flag = true;
-      }
-    }
-  }
-
-  var updatedPreviousContacts = oldArray.filter(function (e) {
-    return e.delete != true; 
-  }) // current contacts after removing the unwanted emails
-
-  var newContacts = updatedPreviousContacts.concat(contactsToKeep); // current contacts plus new emails
-
-  if(newContacts.length == 0){
-    throw new HttpException('You must have at least one email contact', HttpStatus.BAD_REQUEST);
-  } // checks that not all contacts were removed
-
-  var primaryTest = newContacts.filter(function (e) {
-    return e.primary == true;
-  }) // returns the contacts with primary as true
-  if(primaryTest.length != 1){
-    throw new HttpException('You must have one and only one primary email contact', HttpStatus.BAD_REQUEST);
-  } // checks that only one contact is set as primary
-  
-  return newContacts;
-}
