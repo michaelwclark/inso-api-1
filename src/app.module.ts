@@ -14,6 +14,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from './auth/auth.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -38,9 +40,13 @@ import { AuthModule } from './auth/auth.module';
     SendGridModule.forRoot({ 
       apiKey: process.env.SENDGRID_KEY
     }),
-    AuthModule
+    AuthModule,
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 10
+    })
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [ { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
