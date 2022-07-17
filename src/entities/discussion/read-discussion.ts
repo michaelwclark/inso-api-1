@@ -1,15 +1,17 @@
+import { Date } from "mongoose";
+
 export class DiscussionReadDTO {
     
-  public id: string;
+  public _id: string;
   public insoCode: string;
   public name: string;
   public created: string;
   public archived: string;
   public settings: {
-    id: string;
+    _id: string;
     starterPrompt: string;
     postInspiration: {
-      id: string;
+      _id: string;
       type: string;
       instructions: string;
       outline: [{
@@ -18,7 +20,7 @@ export class DiscussionReadDTO {
       }]
     };
     scores: {
-      id: string;
+      _id: string;
       instructions: {
         posting: number;
         responding: number;
@@ -40,38 +42,38 @@ export class DiscussionReadDTO {
     };
     calendar: {
       id: string;
-      open: string;
-      close: string;
+      open: Date;
+      close: Date;
       posting: {
-        open: string;
-        close: string;
+        open: Date;
+        close: Date;
       };
       responding: {
-        open: string;
-        close: string;
+        open: Date;
+        close: Date;
       };
       synthesizing: {
-        open: string;
-        close: string;
+        open: Date;
+        close: Date;
       }
     };
   };
   public facilitators: {
-      id: string;
+      _id: string;
       username: string;
       f_name: string;
       l_name: string;
   } [];
   public poster: {
-      id: string;
+      _id: string;
       username: string;
       f_name: string;
       l_name: string;
   };
   public posts: {
-      id: string;
+      _id: string;
       user: {
-        id: string;
+        _id: string;
         username: string;
         f_name: string;
         l_name: string;
@@ -84,5 +86,20 @@ export class DiscussionReadDTO {
   
   constructor(partial: Partial<DiscussionReadDTO>) {
       Object.assign(this, partial);
+      // Map the users to what we want
+      this.poster = {
+        _id: partial.poster._id,
+        username: partial.poster.username,
+        f_name: partial.poster.f_name,
+        l_name: partial.poster.l_name
+      };
+      this.facilitators = partial.facilitators.map(fac => {
+        return {
+          _id: fac._id,
+          username: fac.username,
+          f_name: fac.f_name,
+          l_name: fac.l_name
+        }
+      });
   }
 }

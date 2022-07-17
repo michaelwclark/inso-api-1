@@ -59,18 +59,17 @@ export class DiscussionController {
         throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       }
     }
-    // Create Inso Code 
-    const code = makeInsoId(5);
     // Check that the code is not active in the database
     let found = new this.discussionModel();
     while(found !== null) {
+      const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if(!found) {
         const setting = new this.settingModel();
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
-      return await createdDiscussion.save();
+        return await createdDiscussion.save();
       }
     }
   }
@@ -112,20 +111,56 @@ export class DiscussionController {
   @ApiOperation({description: 'Update the metadata for the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: 'discussionId', description: 'The id of the discussion'})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: 'The discussion Id is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
-  @ApiNotFoundResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion was not found'})
   @ApiTags('Discussion')
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: discussionId }).exec();
-    console.log(discussion);
+
+    if(!discussion) {
+      throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
+    }
+
     const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
-    // const discussionRead = new DiscussionReadDTO({...discussion, settings: settings});
-    return { ...discussion, settings: settings };
+    const dSettings = {
+      _id: settings._id,
+      starterPrompt: settings.prompt,
+      calendar: null,
+      postInspiration: null,
+      scores: null,
+    }
+    const calendar = await this.calendarModel.findOne({ _id: settings.calendar});
+    dSettings.calendar = calendar;
+
+    const scores = await this.scoreModel.findOne({ _id: settings.score });
+    dSettings.scores = scores;
+
+    const postInspiration = await this.post_inspirationModel.find({ _id: { $in: settings.inspiration}});
+    dSettings.postInspiration = postInspiration;
+
+    const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
+    const poster = await this.userModel.findOne({ _id: discussion.poster });
+
+    // TODO Get posts 
+    const posts = [];
+    const discussionRead = new DiscussionReadDTO({
+      _id: discussion._id,
+      insoCode: discussion.insoCode,
+      name: discussion.name,
+      archived: discussion.archived !== null ? discussion.archived.toString(): null,
+      created: discussion.created.toString(),
+      settings: dSettings,
+      facilitators: facilitators,
+      poster: poster,
+      posts: posts
+    });
+
+    return discussionRead;
   }
 
   @Post('discussion/:discussionId/archive')
@@ -154,12 +189,61 @@ export class DiscussionController {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
     }
-    // duplicate a discussion 
+    const discussion = await this.discussionModel.findOne({ _id: discussionId });
+    if(!discussion) {
+      throw new HttpException('Discussion does not exist!', HttpStatus.NOT_FOUND);
+    }
+    const settings = await this.settingModel.findOne({ _id: discussion.settings });
+
+    // Duplicate the calendar
+    const calendar = await this.calendarModel.findOne({ _id: settings.calendar });
+    delete calendar._id;
+    const newCal = new this.calendarModel(calendar);
+    const newCalId = await newCal.save();
+
+    //Duplicate the score
+    const score = await this.scoreModel.findOne({ _id: settings.score });
+    delete score._id;
+    const newScore = new this.scoreModel(score);
+    const newScoreId = await newScore.save();
+
+    //Duplicate the post inspirations
+    const newInspoIds = [];
+    for await(const inspo of settings.inspiration) {
+      const postInspiration = await this.post_inspirationModel.findOne({ _id: inspo });
+      delete postInspiration._id;
+      const newInspo = new this.post_inspirationModel(postInspiration);
+      const newInspoId = await newInspo.save();
+      newInspoIds.push(newInspoId._id);
+    }
+
     // duplicate the settings 
-    // duplicate the calendar
-    // duplicate the post inspirations
-    // duplicate the score
-    return;
+    delete settings._id;
+    const newSetting = new this.settingModel({ 
+      userId: settings.userId,
+      prompt: settings.prompt,
+      inspiration: newInspoIds,
+      score: newScoreId._id,
+      calendar: newCalId._id 
+    });
+    const settingId = await newSetting.save();
+
+     // duplicate a discussion
+    let found = new this.discussionModel();
+    while(found !== null) {
+      const code = makeInsoId(5);
+      found = await this.discussionModel.findOne({ insoCode: code });
+      if(!found) {
+        const createdDiscussion = new this.discussionModel({ 
+          name: discussion.name,
+          facilitators: discussion.facilitators,
+          insoCode: code,
+          settings: settingId._id,
+          poster: discussion.poster,
+        });
+        return await createdDiscussion.save();
+      }
+    }
   }
 
 
