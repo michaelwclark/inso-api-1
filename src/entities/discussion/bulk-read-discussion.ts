@@ -11,7 +11,10 @@ export class BulkReadDiscussionDTO {
         l_name: string;
     };
     public participants: {
-        // TODO once participants are in
+        _id: string,
+        username: string,
+        f_name: string,
+        l_name: string
     } [];
 
     constructor(partial: Partial<BulkReadDiscussionDTO>) {
