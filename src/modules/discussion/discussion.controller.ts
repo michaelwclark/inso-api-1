@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
@@ -15,6 +15,7 @@ import { makeInsoId } from '../shared/generateInsoCode';
 import { DiscussionPost } from 'src/entities/post/post';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
+import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
 
 @Controller()
 export class DiscussionController {
@@ -247,20 +248,57 @@ export class DiscussionController {
   }
 
 
-  @Get('discussions')
+  @Get('users/:userId/discussions')
   @ApiOperation({description: 'Gets discussions for a user from the database'})
   @ApiOkResponse({ description: 'Discussions'})
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiQuery({ description: ''})
-  @ApiQuery({ description: ''})
-  @ApiQuery({ description: ''})
-  @ApiQuery({ description: ''})
-  @ApiQuery({ description: ''})
   @ApiTags('Discussion')
-  async getDiscussions(): Promise<Discussion[]> {
-    return;
+  async getDiscussions(
+    @Param('userId') userId: string,
+    @Query('participant') participant: boolean,
+    @Query('facilitator') facilitator: boolean,
+    @Query('text') text: string,
+    @Query('archived') archived: boolean
+  ): Promise<any []> {
+
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+    }
+
+    const aggregation = [];
+    if(participant === undefined && facilitator === undefined) {
+      // aggregation.push({ $match: { participants._id: new Types.ObjectId(userId)}});
+      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
+    }
+    if(participant === true) {
+      // aggregation.push({ $match: { participants._id: new Types.ObjectId(userId)}});
+    }
+    if(facilitator === true) {
+      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }})
+    }
+    if(archived !== undefined) {
+      if(archived === false) {
+        aggregation.push({ $match: { archived: null }});
+      } else if (archived === true) {
+        aggregation.push({ $match: { archived: { $ne: null }}});
+      }
+    }
+
+    console.log(aggregation);
+
+    const discussions = await this.discussionModel.aggregate(
+      aggregation
+    );
+
+    const returnDiscussions = [];
+    for await(const discuss of discussions) {
+      discuss.poster = await this.userModel.findOne({ _id: discuss.poster});
+      returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
+    }
+    return returnDiscussions;
   }
 
   @Patch('discussion/:discussionId/settings')

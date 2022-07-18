@@ -83,10 +83,13 @@ export class DiscussionReadDTO {
       tags: string [];
       post: string;
   } [];
+  public participants: {
+    // TO DO Add the participants of the discussion
+  } [];
   
   constructor(partial: Partial<DiscussionReadDTO>) {
       Object.assign(this, partial);
-      // Map the users to what we want
+      // Map the users to what we want to return
       this.poster = {
         _id: partial.poster._id,
         username: partial.poster.username,
