@@ -287,8 +287,7 @@ export class DiscussionController {
       }
     }
 
-    console.log(aggregation);
-
+    console.log(aggregation)
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
