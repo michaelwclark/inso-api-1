@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -11,6 +11,7 @@ import { User } from 'src/entities/user/user';
 import { IsMongoId, IsString } from 'class-validator';
 import { DiscussionPost } from 'src/entities/post/post';
 import { Transform, Type } from 'class-transformer';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller()
 export class DiscussionController {
@@ -28,6 +29,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: 'The user does not have permission to create a discussion'})
   @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});

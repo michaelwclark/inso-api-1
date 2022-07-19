@@ -9,6 +9,7 @@ import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
 import { Contact, User, UserDocument } from 'src/entities/user/user';
+import * as bcrypt from 'bcrypt';
 
 
 
@@ -19,8 +20,8 @@ export class UserController {
     ) {}
 
   /** For Authentication service, needed to verify password */
-  async returnUser(userName: string){
-    const found = await this.userModel.findOne({username: userName});
+  async returnUser(email: string){
+    const found = await this.userModel.findOne({'contact.email': email});
     if(!found){ 
       throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
     }
@@ -80,11 +81,8 @@ export class UserController {
 
     validatePassword(user.password);
 
-    const bcrypt = require('bcrypt');
     const saltRounds = 10;
-
-    const salt = await bcrypt.genSalt(saltRounds);
-    user.password = await bcrypt.hash(user.password, salt);
+    user.password = await bcrypt.hash(user.password, saltRounds);
 
     const newUser = new this.userModel({...user, 'dateJoined': new Date()})
     await newUser.save();
