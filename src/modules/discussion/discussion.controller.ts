@@ -195,12 +195,7 @@ export class DiscussionController {
       throw new HttpException('Discussion does not exist!', HttpStatus.NOT_FOUND);
     }
     const settings = await this.settingModel.findOne({ _id: discussion.settings });
-
-    // Duplicate the calendar
-    const calendar = await this.calendarModel.findOne({ _id: settings.calendar });
-    delete calendar._id;
-    const newCal = new this.calendarModel(calendar);
-    const newCalId = await newCal.save();
+  
 
     //Duplicate the score
     const score = await this.scoreModel.findOne({ _id: settings.score });
@@ -219,13 +214,14 @@ export class DiscussionController {
     }
 
     // duplicate the settings 
+    // calendar is set to null because the calendar needs to be set
     delete settings._id;
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
       prompt: settings.prompt,
       inspiration: newInspoIds,
       score: newScoreId._id,
-      calendar: newCalId._id 
+      calendar: null 
     });
     const settingId = await newSetting.save();
 
