@@ -268,6 +268,7 @@ export class DiscussionController {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
     }
 
+    // TODO add search for inso code and text
     const aggregation = [];
     if(participant === undefined && facilitator === undefined) {
       // aggregation.push({ $match: { participants._id: new Types.ObjectId(userId)}});
@@ -287,7 +288,6 @@ export class DiscussionController {
       }
     }
 
-    console.log(aggregation)
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
