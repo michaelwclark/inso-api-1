@@ -1,7 +1,8 @@
-import { Body, Controller, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model } from 'mongoose';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';
 import { InspirationEditDTO } from 'src/entities/inspiration/edit-inspiration';
 import { Inspiration } from 'src/entities/inspiration/inspiration';
@@ -22,6 +23,7 @@ export class InspirationController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')
+  @UseGuards(JwtAuthGuard)
   async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<Inspiration> {
     const createdInspiration = new this.inspirationModel(inspiration);
     return await createdInspiration.save();

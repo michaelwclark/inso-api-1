@@ -6,7 +6,7 @@ import { connect, Connection, Model, Types } from 'mongoose';
 import { User, UserSchema } from 'src/entities/user/user';
 import { UserController } from 'src/modules/user/user.controller';
 import { AuthService } from './auth.service';
-import { jwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './jwt.strategy';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -30,7 +30,7 @@ describe('AuthService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthService], // flipped from providers
-      providers: [UserController, JwtService, jwtStrategy, {provide: getModelToken(User.name), useValue: userModel}],
+      providers: [UserController, JwtService, JwtStrategy, {provide: getModelToken(User.name), useValue: userModel}],
     }).compile();
 
     service = module.get<AuthService>(AuthService);

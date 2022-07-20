@@ -1,9 +1,6 @@
-import { Controller, HttpException, HttpStatus, Injectable, Post, UseGuards, Request, Get, Body } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Post, UseGuards, Request, Get, Body } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserController } from 'src/modules/user/user.controller';
-import { jwtConstants } from './constants';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { LocalAuthGuard } from './local-auth.guard';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()

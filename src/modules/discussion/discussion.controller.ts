@@ -71,6 +71,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
     // Check that the ids match
     if(discussionId !== discussion.id.toString()) {
@@ -140,6 +141,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async deleteDiscussion(@Param('discussionId') discussionId: string): Promise<void> {
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
