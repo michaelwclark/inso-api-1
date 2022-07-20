@@ -165,42 +165,49 @@ export class DiscussionController {
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
-  @Patch('/users/:userId/discussions/:discussionId/join')
+  @Patch('/users/:userId/discussions/:insoCode/join')
   @ApiOperation({description: 'Add the user to the participants array on the discussion'})
   @ApiBody({description: ''})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: ''})
-  async addParticipant(@Param('participantid') participantID: string, @Body() discussion: DiscussionEditDTO): Promise<any>{
+  async joinDiscussion(
+    @Param('userId') userId: string,
+    @Param('insoCode') insoCode: string): Promise<any>{
     
-    //check for userId 
-    const user = await this.userModel.findOne({_id: discussion.participants});
-      if(!user) {
-        throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
-      }
+    if(insoCode.length !== 5) {
+      throw new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST);
+    }
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
+    }
 
-      //check for discusiionId 
-    const fouund = await this.discussionModel.findOne({_id: discussion.participants});
+    //check for user
+    const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
+    if(!findUser){
+      throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+    }
+
+    //check for discusionId 
+    const found = await this.discussionModel.findOne({ insoCode: insoCode });
     if(!found) {
-      throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
     }
 
-    // //check for userId 
-    // for await (const user of discussion.participants) {
-    //   let found = await this.discussionModel.exists({_id: user});
-    //   if(!found) {
-    //     throw new HttpException("A user does not exist in the participants array", HttpStatus.NOT_FOUND);
-    //   }
-    // }
-
-
-    //Add participant
-    if(discussion.participants === undefined) {
-      discussion.participants = [];
+    // Add the participants to the discussion
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    if(foundParticipant) {
+      throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
     }
+
+    const newParticipant = {
+    user: new Types.ObjectId(userId),
+    joined: new Date,
+    muted: false,
+    grade: null
+    } 
+    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
     
-
-
-
   }
 
   @Delete('discussion/:discussionId')

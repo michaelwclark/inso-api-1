@@ -77,7 +77,13 @@ describe('AppController', () => {
         settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         facilitators: [new Types.ObjectId()],
         poster: new Types.ObjectId(),
-        set: [new Types.ObjectId()]
+        set: [new Types.ObjectId()],
+        participants: [{
+          user: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+          joined: Date(),
+          muted: Boolean,
+          grade: new Types.ObjectId('62b276fda78b2a00063b1de0')
+        }]
       }
     ]);
 
@@ -162,23 +168,23 @@ describe('AppController', () => {
     }); 
   });
   
-  
+ /** --------------------------- */ 
 
 //200 status for participant 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
-    it('should return valid Discussion Id', () => {
+    it('should return valid ParticipantID added', () => {
 
-      const validParticipantId = {
+      const vailidParticipant = {
         "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "joined": new Date(),
         "muted": Boolean,
         "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
         }; 
-        return expect(appController.addParticipant(validParticipantId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+        return expect(appController.joinDiscussion(vailidParticipant, )).resolves.not.toThrow()
     }); 
   }); 
 
-
+/** --------------------------- */
 
   describe('POST /discussion 401 Response', () => {
     // TODO AFTER AUTHENTICATION IS WRITTEN
@@ -399,6 +405,7 @@ describe('AppController', () => {
       expect(JSON.stringify(errors)).toContain('calendar should not be empty');
     });
   });
+/** --------------------------- */
 
   //400 status for participant 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
@@ -410,12 +417,13 @@ describe('AppController', () => {
         "muted": Boolean,
         "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
         }; 
-        return expect(appController.addParticipant(validParticipantId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+        return expect(appController.joinDiscussion(validParticipantId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
     }); 
   }); 
-  
-  // add 404 status aerrors for settings checks agains mongoo db
+  /** --------------------------- */
 
+
+  // add 404 status errors for settings checks agains mongoo db
   //404 error status
   describe('PATCH /discussion/:discussionId/setting 404 status', () => {
     it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
@@ -470,20 +478,22 @@ describe('AppController', () => {
       return expect(appController.updateDiscussionSettings(validDiscussion, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
     });
   });
+/** --------------------------- */
 
   //404 status for participant 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
     it('should return valid Discussion Id', () => {
 
-      const validParticipantId = {
+      const validParticipant = {
         "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "joined": new Date(),
         "muted": new Boolean(),
         "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
         }; 
-        return expect(appController.addParticipant(validParticipantId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
-    }); 
+        const error = new HttpException("User Id or discussion does not exist", HttpStatus.NOT_FOUND);
+        return expect(appController.joinDiscussion(validParticipant, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);    }); 
   }); 
+/** --------------------------- */
 
   afterAll(done => {
     // Closing the DB connection allows Jest to exit successfully.

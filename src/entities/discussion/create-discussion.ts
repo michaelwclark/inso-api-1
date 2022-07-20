@@ -43,6 +43,13 @@ export class DiscussionCreateDTO {
     @IsArray()
     @IsMongoId()
     public facilitators: Types.ObjectId [];
+
+
+    @IsOptional()
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @IsMongoId()
+    public participants: Types.ObjectId[];
     
     constructor(partial: Partial<DiscussionCreateDTO>) {
         Object.assign(this, partial);

@@ -81,6 +81,13 @@ export class DiscussionReadDTO {
       tags: string [];
       post: string;
   } [];
+
+  // public participants:{
+  //   user: string,
+  //   joined: string,
+  //   muted: string,
+  //   grade: string
+  // }
   
   constructor(partial: Partial<DiscussionReadDTO>) {
       Object.assign(this, partial);

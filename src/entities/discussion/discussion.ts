@@ -32,8 +32,13 @@ export class Discussion {
     @Prop([Types.ObjectId])
     public set: Types.ObjectId[];
 
-    @Prop([Types.ObjectId])
-    public participants: Types.ObjectId[];
+    @Prop()
+    public participants: {
+        user: Types.ObjectId,
+        joined: Date,
+        muted: Boolean,
+        grade: Types.ObjectId
+    }[]
     
     constructor(partial: Partial<Discussion>) {
         Object.assign(this, partial);
