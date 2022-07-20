@@ -165,6 +165,44 @@ export class DiscussionController {
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
+  @Patch('/users/:userId/discussions/:discussionId/join')
+  @ApiOperation({description: 'Add the user to the participants array on the discussion'})
+  @ApiBody({description: ''})
+  @ApiOkResponse({ description: ''})
+  @ApiBadRequestResponse({ description: ''})
+  async addParticipant(@Param('participantid') participantID: string, @Body() discussion: DiscussionEditDTO): Promise<any>{
+    
+    //check for userId 
+    const user = await this.userModel.findOne({_id: discussion.participants});
+      if(!user) {
+        throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+      }
+
+      //check for discusiionId 
+    const fouund = await this.discussionModel.findOne({_id: discussion.participants});
+    if(!found) {
+      throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+    }
+
+    // //check for userId 
+    // for await (const user of discussion.participants) {
+    //   let found = await this.discussionModel.exists({_id: user});
+    //   if(!found) {
+    //     throw new HttpException("A user does not exist in the participants array", HttpStatus.NOT_FOUND);
+    //   }
+    // }
+
+
+    //Add participant
+    if(discussion.participants === undefined) {
+      discussion.participants = [];
+    }
+    
+
+
+
+  }
+
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})

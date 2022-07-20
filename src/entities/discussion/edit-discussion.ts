@@ -87,6 +87,12 @@ export class DiscussionEditDTO {
     @IsMongoId()
     public set: Types.ObjectId;
 
+    @IsOptional()
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @IsMongoId()
+    public participants: Types.ObjectId [];
+
     
     constructor(partial: Partial<DiscussionEditDTO>) {
         Object.assign(this, partial);
