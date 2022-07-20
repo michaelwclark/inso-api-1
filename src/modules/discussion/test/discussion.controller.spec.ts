@@ -70,7 +70,24 @@ describe('AppController', () => {
     await discussionModel.insertMany([
       {
         _id: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        insoCode: "string",
+        insoCode: "inso2",
+        name: "string",
+        created: new Date(),
+        archived: null,
+        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        facilitators: [new Types.ObjectId()],
+        poster: new Types.ObjectId(),
+        set: [new Types.ObjectId()],
+        participants: [{
+          user: new Types.ObjectId(),
+          joined: Date(),
+          muted: Boolean,
+          grade: new Types.ObjectId()
+        }]
+      },
+      {
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        insoCode: "inso1",
         name: "string",
         created: new Date(),
         archived: null,
@@ -82,10 +99,12 @@ describe('AppController', () => {
           user: new Types.ObjectId('62b276fda78b2a00063b1de0'),
           joined: Date(),
           muted: Boolean,
-          grade: new Types.ObjectId('62b276fda78b2a00063b1de0')
+          grade: null
         }]
       }
     ]);
+
+    
 
     await inspirationModel.insertMany([
       {
@@ -168,23 +187,43 @@ describe('AppController', () => {
     }); 
   });
   
- /** --------------------------- */ 
+ 
 
 //200 status for participant 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
     it('should return valid ParticipantID added', () => {
 
-      const vailidParticipant = {
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
+    });
+  }); 
+ 
+//400 status for participant 
+  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
+    it('should return valid Discussion Id', () => {
+
+      const validParticipantId = {
         "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
         "joined": new Date(),
         "muted": Boolean,
-        "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
+        "grade": null
         }; 
-        return expect(appController.joinDiscussion(vailidParticipant, )).resolves.not.toThrow()
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso2')).resolves.not.toThrow()
     }); 
   }); 
+/** --------------------------- 
+  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
+    it('should return valid Discussion Id', () => {
 
-/** --------------------------- */
+      const validParticipant = {
+        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "joined": new Date(),
+        "muted": new Boolean(),
+        "grade": new Types.ObjectId(null)
+        }; 
+        const error = new HttpException("User Id or discussion does not exist", HttpStatus.NOT_FOUND);
+        return expect(appController.joinDiscussion(validParticipant, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);    }); 
+  }); 
+ --------------------------- **/
 
   describe('POST /discussion 401 Response', () => {
     // TODO AFTER AUTHENTICATION IS WRITTEN
@@ -405,22 +444,6 @@ describe('AppController', () => {
       expect(JSON.stringify(errors)).toContain('calendar should not be empty');
     });
   });
-/** --------------------------- */
-
-  //400 status for participant 
-  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
-    it('should return valid Discussion Id', () => {
-
-      const validParticipantId = {
-        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        "joined": new Date(),
-        "muted": Boolean,
-        "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
-        }; 
-        return expect(appController.joinDiscussion(validParticipantId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
-    }); 
-  }); 
-  /** --------------------------- */
 
 
   // add 404 status errors for settings checks agains mongoo db
@@ -478,22 +501,6 @@ describe('AppController', () => {
       return expect(appController.updateDiscussionSettings(validDiscussion, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
     });
   });
-/** --------------------------- */
-
-  //404 status for participant 
-  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
-    it('should return valid Discussion Id', () => {
-
-      const validParticipant = {
-        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        "joined": new Date(),
-        "muted": new Boolean(),
-        "grade": new Types.ObjectId('62b276fda78b2a00063b1de0')
-        }; 
-        const error = new HttpException("User Id or discussion does not exist", HttpStatus.NOT_FOUND);
-        return expect(appController.joinDiscussion(validParticipant, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);    }); 
-  }); 
-/** --------------------------- */
 
   afterAll(done => {
     // Closing the DB connection allows Jest to exit successfully.
