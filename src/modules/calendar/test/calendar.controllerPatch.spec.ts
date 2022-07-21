@@ -10,9 +10,9 @@ import { validCalendar, openDateInPast, openDateNotADate, openDateEmpty,
   respondingOpenNotDate, respondingOpenEmpty, respondingClosePast, respondingCloseNotDate,
   respondingCloseEmpty, synthesizingEmpty, synthesizingOpenPast, synthesizingOpenNotDate,
   synthesizingOpenEmpty, synthesizingClosePast, synthesizingCloseNotDate, synthesizingCloseEmpty }
-  from '../calendar/calendarMocksPatch';
+  from '../calendarMocksPatch';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
-import { CalendarController } from './calendar.controller';
+import { CalendarController } from '../calendar.controller';
 import { User, UserSchema } from 'src/entities/user/user';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -176,19 +176,6 @@ describe('AppController', () => {
         validCalendar) }).rejects.toThrow(error)
         done()
 
-    }); // NOT FINISHED
-  });
-
-  // USER ID IS NOT CREATOR ID, VALID CALENDAR ID, VALID CALENDAR WRITE DTO, SHOULD RETURN 403 STATUS
-  describe('PATCH /user/{userId}/calendar/{calendarId} 403 STATUS', () => {
-    it('Test case user id and creator id do not match', done => {
-    
-    const error = new HttpException("Body id and url id for user do not match", HttpStatus.BAD_REQUEST);
-       expect(async() => {await appController.updateCalendar(
-        '629a3aaa17d028a1f19f0777',
-        '629a69deaa8494f552c89cd9',
-         patchCalendarReq)}).rejects.toThrow();
-         done();
     }); // NOT FINISHED
   });
 

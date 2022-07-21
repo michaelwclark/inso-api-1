@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Connection, Model, connect, Types } from 'mongoose';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
-import { CalendarController } from './calendar.controller';
+import { CalendarController } from '../calendar.controller';
 import { validCalendar, openDateInPast, openDateNotADate, openDateEmpty,
          closeDateInPast, closeDateNotADate, closeDateEmpty, postingEmpty,
          postingOpenPast, postingOpenNotDate, postingOpenEmpty, postingClosePast, 
@@ -12,7 +12,7 @@ import { validCalendar, openDateInPast, openDateNotADate, openDateEmpty,
          respondingOpenNotDate, respondingOpenEmpty, respondingClosePast, respondingCloseNotDate,
          respondingCloseEmpty, synthesizingEmpty, synthesizingOpenPast, synthesizingOpenNotDate,
          synthesizingOpenEmpty, synthesizingClosePast, synthesizingCloseNotDate, synthesizingCloseEmpty }
-         from '../calendar/calendarMocks';
+         from '../calendarMocks';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
