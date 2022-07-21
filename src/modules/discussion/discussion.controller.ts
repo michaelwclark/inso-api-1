@@ -81,13 +81,18 @@ export class DiscussionController {
     }
 
     // If there are new facilitators verify they exist and push them into the existing array
-    for await (const user of discussion.facilitators) {
-      let found = await this.userModel.findOne({_id: user});
-      if(!found) {
-        throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+    if(discussion.facilitators) {
+      for await (const user of discussion.facilitators) {
+        let found = await this.userModel.findOne({_id: user});
+        if(!found) {
+          throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+        }
       }
+      // Filter out any duplicate Ids
+      discussion.facilitators = discussion.facilitators.filter((c, index) => {
+        return discussion.facilitators.indexOf(c) === index;
+      });
     }
-    discussion.facilitators = discussion.facilitators.concat(found.facilitators);
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
