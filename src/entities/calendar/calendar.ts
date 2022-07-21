@@ -6,6 +6,7 @@ export type CalendarDocument = Calendar & Document;
 
 @Schema()
 export class Calendar {
+
     @Prop(Types.ObjectId)
     public id: Types.ObjectId;
     @Prop({Date, default: Date.now})
@@ -19,7 +20,7 @@ export class Calendar {
     @Prop(StartEnd)
     public synthesizing?: StartEnd;
     @Prop(Types.ObjectId)
-    public creatorId: Types.ObjectId;
+    public creator: Types.ObjectId;
 
     constructor(partial: any) {
         Object.assign(this, partial);

@@ -1,12 +1,17 @@
 import { HttpException, HttpStatus, Post } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Type } from 'class-transformer';
 import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connect, Connection, Model, Types } from 'mongoose';
+import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion';
+import { Inspiration, InspirationSchema } from 'src/entities/inspiration/inspiration';
+import { Score, ScoreSchema } from 'src/entities/score/score';
+import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
+import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
@@ -17,6 +22,10 @@ describe('AppController', () => {
   let mongoConnection: Connection;
   let discussionModel: Model<any>;
   let userModel: Model<any>;
+  let settingModel: Model<any>;
+  let scoreModel: Model<any>;
+  let inspirationModel: Model<any>;
+  let calendarModel: Model<any>;
   let postModel: Model<any>;
   
   beforeAll(async () => {
@@ -25,6 +34,10 @@ describe('AppController', () => {
     mongoConnection = (await connect(uri)).connection;
     discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
     userModel = mongoConnection.model(User.name, UserSchema);
+    settingModel = mongoConnection.model(Setting.name, SettingSchema);
+    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
+    inspirationModel = mongoConnection.model(Inspiration.name, InspirationSchema);
+    calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
     postModel = mongoConnection.model(DiscussionPost.name, DiscussionPostSchema)
 
     await userModel.insertMany([
@@ -34,7 +47,76 @@ describe('AppController', () => {
         "l_name": "Zaleppa"
       }
     ])
-    
+
+    await calendarModel.insertMany([
+      {
+        "_id": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "open": new Date(),
+        "close": new Date()
+      }
+    ])
+
+    await settingModel.insertMany([
+      {
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'), 
+      }
+    ]);
+
+    await discussionModel.insertMany([
+      {
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        insoCode: "string",
+        name: "string",
+        created: new Date(),
+        archived: null,
+        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        facilitators: [new Types.ObjectId()],
+        poster: new Types.ObjectId(),
+        set: [new Types.ObjectId()]
+      }
+    ]);
+
+    await inspirationModel.insertMany([
+      {
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de2'),
+        name: "inspo",
+        type: "responding",
+        instructions: "string",
+        outline: [{
+          header: "string",
+          prompt: "string",
+        }]
+      }
+    ]);
+
+    await scoreModel.insertMany([
+      {
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        type: "string",
+        instructions: {
+          posting: "number",
+          responding: "number",
+          synthesizing: "number"},
+        interactions: {
+          max: "number"},
+        impact: {
+          max: "number"
+        },
+        rubric: { 
+          max: "number",
+          criteria: [{
+            description: "string",
+            max: "number"}],
+        },
+
+
+      }
+    ])
   });
 
   beforeEach(async () => {
@@ -42,6 +124,10 @@ describe('AppController', () => {
       controllers: [DiscussionController],
       providers: [{provide: getModelToken(Discussion.name), useValue: discussionModel},
         {provide: getModelToken(User.name), useValue: userModel},
+        {provide: getModelToken(Setting.name), useValue: settingModel},
+        {provide: getModelToken(Score.name), useValue: scoreModel},
+        {provide: getModelToken(Inspiration.name), useValue: inspirationModel},
+        {provide: getModelToken(Calendar.name), useValue: calendarModel},
         {provide: getModelToken(DiscussionPost.name), useValue: postModel},
       ],
     }).compile();
@@ -60,6 +146,21 @@ describe('AppController', () => {
       return expect(appController.createDiscussion(validDiscussion)).resolves.toMatchObject(validDiscussion);
     });
   });
+  //200 status valid for setting here 
+  describe('PATCH /discussion/:discussionId/settings 200 Status' , () => {
+    it('should return valid Discussion Id', () => {
+
+      const validDiscussionId = {
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": ("This is a prompt"),
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+        }; 
+        return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+    }); 
+  }); 
 
   describe('POST /discussion 401 Response', () => {
     // TODO AFTER AUTHENTICATION IS WRITTEN
@@ -195,6 +296,147 @@ describe('AppController', () => {
       const error = new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       return expect(appController.createDiscussion(validDiscussion)).rejects.toThrow(error);
     });
+  });  
+
+  //400 ERROR STATUS
+   describe('PATCH discussion/:discussionId/settings 400 Status',  () => {
+    //valid discussion id, starter prompt not less than 2
+    it('should return a 400 for prompt is less than 2 characters', async () => {
+      const validDiscussionId = {
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "T",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+       };
+
+      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
+      const errors = await validate(invalid);
+      expect(errors.length).not.toBe(2);
+      expect(JSON.stringify(errors)).toContain('prompt must be longer than or equal to 2 characters');
+    });
+    
+    //valid discussion id, post inspiration id not valid
+    it('should throw a 400 for post inspiration not valid', async () => {
+      const validDiscussionId = { 
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [null],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      };
+
+      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
+      const errors = await validate(invalid);
+      
+      expect(JSON.stringify(errors)).toContain('each value in post_inspiration must be a mongodb id');
+    });
+
+    //valid discussion id, score id is not valid
+    it('should throw a 400 for Score Id not valid', async () => {
+      const validDiscussionId = { 
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": null,
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      };
+
+      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
+      const errors = await validate(invalid);
+      expect(JSON.stringify(errors)).toContain('score must be a mongodb id');
+    });
+    
+    //valid discussion id, calendar id is not valid
+    it('should throw a 400 for an undefined calendar', async () => {
+      const validDiscussionId = { 
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar":null,
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      };
+
+      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
+      const errors = await validate(invalid);
+      expect(errors.length).not.toBe(0);
+      expect(JSON.stringify(errors)).toContain('calendar must be a mongodb id');
+    });
+    
+    //valid discussion id, empty object
+    it('should throw a 400 for an empty object', async () => {
+      const invalidDiscussion = {};
+
+      const invalid = plainToInstance(SettingsCreateDTO, invalidDiscussion);
+      const errors = await validate(invalid);
+      expect(errors.length).not.toBe(0);
+      expect(JSON.stringify(errors)).toContain('calendar should not be empty');
+      expect(JSON.stringify(errors)).toContain('prompt should not be empty');
+      expect(JSON.stringify(errors)).toContain('post_inspiration should not be empty');
+      expect(JSON.stringify(errors)).toContain('score should not be empty');
+      expect(JSON.stringify(errors)).toContain('calendar should not be empty');
+    });
+  });
+  
+  // add 404 status aerrors for settings checks agains mongoo db
+
+  //404 error status
+  describe('PATCH /discussion/:discussionId/setting 404 status', () => {
+    it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
+      const non_existentDiscussionId = {
+      "id": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+      "prompt": "This is a prompt",
+      "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+      "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+      "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+      "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+      };
+      const error = new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
+      return expect(appController.updateDiscussionSettings(non_existentDiscussionId, '62b276fda78b2a00063b1de4')).rejects.toThrow(error);
+    });
+
+    it('should throw a 404 error for a post inspiration not found', () => {
+      const validDiscussion = {
+      "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+      "prompt": "This is a prompt",
+      "post_inspiration": [undefined],
+      "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+      "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+      "userId": new Types.ObjectId('62b276fda78b2a00063b1de0')
+        };
+      const error = new HttpException("Post inspiration Id does not exist", HttpStatus.NOT_FOUND);
+      return expect(appController.updateDiscussionSettings(validDiscussion,'62b276fda78b2a00063b1de0' )).rejects.toThrow(error);
+    });
+
+    it('should throw a 404 error for a score id not found for setting', () => {
+      const validDiscussion = {
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": undefined,
+        "calendar": new Types.ObjectId('62b276fda78b2a00063b1de4'),
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      };
+      const error = new HttpException("Score Id does not exist", HttpStatus.NOT_FOUND);
+      return expect(appController.updateDiscussionSettings(validDiscussion, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
+    });
+
+    it('should throw a 404 error for a calendar id not found for setting', () => {
+      const validDiscussion = {
+        "id": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "prompt": "This is a prompt",
+        "post_inspiration": [new Types.ObjectId('62b276fda78b2a00063b1de2')],
+        "score": new Types.ObjectId('62b276fda78b2a00063b1de3'),
+        "calendar": null,
+        "userId": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+      }
+      const error = new HttpException("Calendar Id does not exist", HttpStatus.NOT_FOUND);
+      return expect(appController.updateDiscussionSettings(validDiscussion, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
+    });
   });
 
   afterAll(done => {
@@ -202,4 +444,6 @@ describe('AppController', () => {
     mongoConnection.close();
     done()
   });
+
 });
+

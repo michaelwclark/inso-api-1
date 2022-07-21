@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsIn, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Types } from 'mongoose';
 import { InstructionsEditDTO } from "../../entities/score/scoreNestedObjects/instructions/editInstructions"
 import { CreateInteractionsDTO } from "./scoreNestedObjects/interactions/createInteractions";
@@ -9,23 +9,6 @@ import { CreateImpactDTO } from "./scoreNestedObjects/impact/createImpact";
 import { CreateRubricDTO } from "./scoreNestedObjects/rubric/createRubric";
 
 export class ScoreEditDTO {
-    @ApiProperty({
-        name: 'id',
-        description: 'The ObjectId of the score entity being edited',
-        required: true,
-        type: Types.ObjectId,
-        isArray: false
-    })
-    @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Score Id']);
-        }
-        return new Types.ObjectId(id.value);
-    })
-    public id: Types.ObjectId;
-
     @ApiProperty({
         name: 'type',
         description: 'Auto or Rubric',
@@ -35,6 +18,7 @@ export class ScoreEditDTO {
     })
     @IsNotEmpty()
     @IsString()
+    @IsIn(['auto', 'rubric'])
     public type: string;
 
     @ApiProperty({

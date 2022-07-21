@@ -4,20 +4,6 @@ import { IsDate, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-valid
 import { Types } from 'mongoose';
 
 export class DiscussionEditDTO {
-
-    @ApiProperty({
-      name: 'id',
-      description: 'The ObjectId of the discussion',
-      required: true,
-      type: Types.ObjectId,
-      isArray: false,
-      example: '507f1f77bcf86cd799439011'
-    })
-    @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @IsMongoId()
-    public id: Types.ObjectId;
-
     @ApiProperty({
       name: 'name',
       description: 'The updated name of the discussion',
@@ -55,8 +41,8 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
-    @Type(() => Types.ObjectId)
     @IsMongoId()
+    @Type(() => Types.ObjectId)
     public settings: Types.ObjectId;
 
     @ApiProperty({
@@ -69,9 +55,9 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
+    @IsMongoId({ each: true })
     @Type(() => Types.ObjectId)
-    @IsMongoId()
-    public facilitators: Types.ObjectId [];
+    public facilitators: Types.ObjectId[];
     
     @ApiProperty({
       name: 'calendar',
