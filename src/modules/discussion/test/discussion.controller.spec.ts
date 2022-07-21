@@ -102,9 +102,7 @@ describe('AppController', () => {
           grade: null
         }]
       }
-    ]);
-
-    
+    ]);    
 
     await inspirationModel.insertMany([
       {
@@ -138,8 +136,6 @@ describe('AppController', () => {
             description: "string",
             max: "number"}],
         },
-
-
       }
     ])
   });
@@ -186,8 +182,6 @@ describe('AppController', () => {
         return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
     }); 
   });
-  
- 
 
 //200 status for participant 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
@@ -361,7 +355,7 @@ describe('AppController', () => {
     });
   });  
 
-  //400 ERROR STATUS
+  //400 ERROR STATUS 
    describe('PATCH discussion/:discussionId/settings 400 Status',  () => {
     //valid discussion id, starter prompt not less than 2
     it('should return a 400 for prompt is less than 2 characters', async () => {

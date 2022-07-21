@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
@@ -15,6 +15,7 @@ import { makeInsoId } from '../shared/generateInsoCode';
 import { DiscussionPost } from 'src/entities/post/post';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
+import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
 
 @Controller()
 export class DiscussionController {
@@ -34,6 +35,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: 'The user does not have permission to create a discussion'})
   @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
@@ -46,6 +48,10 @@ export class DiscussionController {
       discussion.facilitators = [];
     }
     discussion.facilitators.push(discussion.poster);
+    // Filter out any duplicate Ids
+    discussion.facilitators = discussion.facilitators.filter((c, index) => {
+      return discussion.facilitators.indexOf(c) === index;
+    });
 
     // Verify that all facilitators exist
     for await (const user of discussion.facilitators) {
@@ -54,14 +60,18 @@ export class DiscussionController {
         throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
       }
     }
-    // Create Inso Code 
-    const code = makeInsoId(5);
     // Check that the code is not active in the database
     let found = new this.discussionModel();
     while(found !== null) {
+      const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
-      const createdDiscussion = new this.discussionModel({...discussion, insoCode: code});
-      return await createdDiscussion.save();
+      if(!found) {
+        const setting = new this.settingModel();
+        const settingId = await setting.save();
+
+        const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
+        return await createdDiscussion.save();
+      }
     }
   }
 
@@ -75,11 +85,8 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
-    // Check that the ids match
-    if(discussionId !== discussion.id.toString()) {
-      throw new HttpException("Discussion being updated is not discussion", HttpStatus.BAD_REQUEST)
-    }
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
     if(!found) {
@@ -87,13 +94,18 @@ export class DiscussionController {
     }
 
     // If there are new facilitators verify they exist and push them into the existing array
-    for await (const user of discussion.facilitators) {
-      let found = await this.userModel.findOne({_id: user});
-      if(!found) {
-        throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+    if(discussion.facilitators) {
+      for await (const user of discussion.facilitators) {
+        let found = await this.userModel.findOne({_id: user});
+        if(!found) {
+          throw new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
+        }
       }
+      // Filter out any duplicate Ids
+      discussion.facilitators = discussion.facilitators.filter((c, index) => {
+        return discussion.facilitators.indexOf(c) === index;
+      });
     }
-    discussion.facilitators = discussion.facilitators.concat(found.facilitators);
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
@@ -102,24 +114,188 @@ export class DiscussionController {
   @ApiOperation({description: 'Update the metadata for the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: 'discussionId', description: 'The id of the discussion'})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: 'The discussion Id is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
-  @ApiNotFoundResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion was not found'})
   @ApiTags('Discussion')
-  async getDiscussion(@Param('discussionId') discussionId: string): Promise<string> {
-    return 'wowo';
+  async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
+    }
+    const discussion = await this.discussionModel.findOne({ _id: discussionId }).exec();
+
+    if(!discussion) {
+      throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
+    const dSettings = {
+      _id: settings._id,
+      starterPrompt: settings.prompt,
+      calendar: null,
+      postInspiration: null,
+      scores: null,
+    }
+    const calendar = await this.calendarModel.findOne({ _id: settings.calendar});
+    dSettings.calendar = calendar;
+
+    const scores = await this.scoreModel.findOne({ _id: settings.score });
+    dSettings.scores = scores;
+
+    const postInspiration = await this.post_inspirationModel.find({ _id: { $in: settings.inspiration}});
+    dSettings.postInspiration = postInspiration;
+
+    const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
+    const poster = await this.userModel.findOne({ _id: discussion.poster });
+
+    // TODO Get posts 
+    const posts = [];
+    const discussionRead = new DiscussionReadDTO({
+      _id: discussion._id,
+      insoCode: discussion.insoCode,
+      name: discussion.name,
+      archived: discussion.archived !== null ? discussion.archived.toString(): null,
+      created: discussion.created.toString(),
+      settings: dSettings,
+      facilitators: facilitators,
+      poster: poster,
+      posts: posts
+    });
+
+    return discussionRead;
   }
 
-  @Get('discussions')
+  @Post('discussion/:discussionId/archive')
+  @ApiOperation({description: 'Archive a discussion'})
+  @ApiOkResponse({ description: 'Newly archived discussion'})
+  @ApiBadRequestResponse({ description: 'The discussionId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
+  @ApiTags('Discussion')
+  async archiveDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
+    }
+    const archivedDate = new Date();
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId }, { archived: archivedDate });
+  }
+
+  @Post('discussion/:discussionId/duplicate')
+  @ApiOperation({description: 'Duplicate a discussion with all settings'})
+  @ApiOkResponse({ description: 'Discussions'})
+  @ApiBadRequestResponse({ description: 'The discussionId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
+  @ApiTags('Discussion')
+  async duplicateDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
+    }
+    const discussion = await this.discussionModel.findOne({ _id: discussionId });
+    if(!discussion) {
+      throw new HttpException('Discussion does not exist!', HttpStatus.NOT_FOUND);
+    }
+    const settings = await this.settingModel.findOne({ _id: discussion.settings });
+  
+
+    //Duplicate the score
+    const score = await this.scoreModel.findOne({ _id: settings.score });
+    delete score._id;
+    const newScore = new this.scoreModel(score);
+    const newScoreId = await newScore.save();
+
+    //Duplicate the post inspirations
+    const newInspoIds = [];
+    for await(const inspo of settings.inspiration) {
+      const postInspiration = await this.post_inspirationModel.findOne({ _id: inspo });
+      delete postInspiration._id;
+      const newInspo = new this.post_inspirationModel(postInspiration);
+      const newInspoId = await newInspo.save();
+      newInspoIds.push(newInspoId._id);
+    }
+
+    // duplicate the settings 
+    // calendar is set to null because the calendar needs to be set
+    delete settings._id;
+    const newSetting = new this.settingModel({ 
+      userId: settings.userId,
+      prompt: settings.prompt,
+      inspiration: newInspoIds,
+      score: newScoreId._id,
+      calendar: null 
+    });
+    const settingId = await newSetting.save();
+
+     // duplicate a discussion
+    let found = new this.discussionModel();
+    while(found !== null) {
+      const code = makeInsoId(5);
+      found = await this.discussionModel.findOne({ insoCode: code });
+      if(!found) {
+        const createdDiscussion = new this.discussionModel({ 
+          name: discussion.name,
+          facilitators: discussion.facilitators,
+          insoCode: code,
+          settings: settingId._id,
+          poster: discussion.poster,
+        });
+        return await createdDiscussion.save();
+      }
+    }
+  }
+
+
+  @Get('users/:userId/discussions')
   @ApiOperation({description: 'Gets discussions for a user from the database'})
   @ApiOkResponse({ description: 'Discussions'})
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
+  @ApiQuery({ description: ''})
   @ApiTags('Discussion')
-  async getDiscussions(): Promise<Discussion[]> {
-    return;
+  async getDiscussions(
+    @Param('userId') userId: string,
+    @Query('participant') participant: boolean,
+    @Query('facilitator') facilitator: boolean,
+    @Query('text') text: string,
+    @Query('archived') archived: boolean
+  ): Promise<any []> {
+
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+    }
+
+    // TODO add search for inso code and text
+    const aggregation = [];
+    if(participant === undefined && facilitator === undefined) {
+      // aggregation.push({ $match: { participants._id: new Types.ObjectId(userId)}});
+      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
+    }
+    if(participant === true) {
+      // aggregation.push({ $match: { participants._id: new Types.ObjectId(userId)}});
+    }
+    if(facilitator === true) {
+      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }})
+    }
+    if(archived !== undefined) {
+      if(archived === false) {
+        aggregation.push({ $match: { archived: null }});
+      } else if (archived === true) {
+        aggregation.push({ $match: { archived: { $ne: null }}});
+      }
+    }
+
+    const discussions = await this.discussionModel.aggregate(
+      aggregation
+    );
+
+    const returnDiscussions = [];
+    for await(const discuss of discussions) {
+      discuss.poster = await this.userModel.findOne({ _id: discuss.poster});
+      returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
+    }
+    return returnDiscussions;
   }
 
   @Patch('discussion/:discussionId/settings')
@@ -137,7 +313,7 @@ export class DiscussionController {
 
     //check discussionId is valid]
     if(!Types.ObjectId.isValid(discussionId)){
-      throw new HttpException('DiscsussionId is invalid', HttpStatus.BAD_REQUEST)
+      throw new HttpException('Discussion Id is invalid', HttpStatus.BAD_REQUEST)
     }
 
     const found = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)})
@@ -166,10 +342,11 @@ export class DiscussionController {
   }
 
   @Patch('/users/:userId/discussions/:insoCode/join')
-  @ApiOperation({description: 'Add the user to the participants array on the discussion'})
-  @ApiBody({description: ''})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
+  @ApiOperation({description: 'Add the user as a participant on the discussion'})
+  @ApiOkResponse({ description: 'Participant added'})
+  @ApiBadRequestResponse({ description: 'UserId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
   async joinDiscussion(
     @Param('userId') userId: string,
     @Param('insoCode') insoCode: string): Promise<any>{
