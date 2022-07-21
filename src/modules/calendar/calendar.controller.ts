@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
-=======
-import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
->>>>>>> e5457df06c6c8daed0db3eefe6052fbb8a748855
+import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -30,13 +26,9 @@ export class CalendarController {
   @ApiUnauthorizedResponse({ description: 'User does not have access.'})
   @ApiNotFoundResponse({ description: 'User does not exist.'})
   @ApiTags('Calendar')
-<<<<<<< HEAD
   @UseInterceptors(ClassSerializerInterceptor)
   @UseGuards(JwtAuthGuard)
-=======
-  //@UseInterceptors(ClassSerializerInterceptor)
   @UsePipes(new ValidationPipe({ transform: true }))
->>>>>>> e5457df06c6c8daed0db3eefe6052fbb8a748855
   async createCalendar(@Param('userId') id: string, @Body() calendar: CalendarCreateDTO): Promise<string>{ // function used to return Promise<Calendar>
     
     if(id === null){
@@ -78,11 +70,8 @@ export class CalendarController {
   @ApiUnauthorizedResponse({ description: 'User does not have access.'})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Calendar')
-<<<<<<< HEAD
   @UseGuards(JwtAuthGuard)
-=======
   @UsePipes(new ValidationPipe({ transform: true }))
->>>>>>> e5457df06c6c8daed0db3eefe6052fbb8a748855
   async updateCalendar(
     @Param('userId') id: string, 
     @Param('calendarId') calendarId: string,
