@@ -96,7 +96,7 @@ describe('AppController', () => {
         poster: new Types.ObjectId(),
         set: [new Types.ObjectId()],
         participants: [{
-          user: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+          user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
           joined: Date(),
           muted: Boolean,
           grade: null
@@ -207,23 +207,23 @@ describe('AppController', () => {
         "muted": Boolean,
         "grade": null
         }; 
-        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso2')).resolves.not.toThrow()
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
     }); 
   }); 
-/** --------------------------- 
+//404 status 
   describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
     it('should return valid Discussion Id', () => {
 
       const validParticipant = {
-        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "user": new Types.ObjectId('62b276fda78b2a00063b1de0'),
         "joined": new Date(),
-        "muted": new Boolean(),
-        "grade": new Types.ObjectId(null)
+        "muted": Boolean(),
+        "grade": null
         }; 
-        const error = new HttpException("User Id or discussion does not exist", HttpStatus.NOT_FOUND);
-        return expect(appController.joinDiscussion(validParticipant, '62b276fda78b2a00063b1de0')).rejects.toThrow(error);    }); 
+        const error = new HttpException("UserId not found in the discussion", HttpStatus.NOT_FOUND);
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso2')).resolves.not.toThrow(error);}); 
   }); 
- --------------------------- **/
+
 
   describe('POST /discussion 401 Response', () => {
     // TODO AFTER AUTHENTICATION IS WRITTEN
