@@ -1,6 +1,5 @@
-import { Types } from 'mongoose';
+import { ObjectId, Types, Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
 
 
 export type DiscussionDocument = Discussion & Document;
@@ -20,17 +19,17 @@ export class Discussion {
     @Prop({ Date, default: null })
     public archived: Date;
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId })
     public settings: Types.ObjectId;
 
-    @Prop([Types.ObjectId])
-    public facilitators: Types.ObjectId [];
+    @Prop({ type: [Types.ObjectId], ref: 'User' })
+    public facilitators: ObjectId[];
 
     @Prop(Types.ObjectId)
     public poster: Types.ObjectId;
 
-    @Prop([Types.ObjectId])
-    public set: Types.ObjectId[];
+    @Prop({ type: [Types.ObjectId] })
+    public set: ObjectId[];
     
     constructor(partial: Partial<Discussion>) {
         Object.assign(this, partial);

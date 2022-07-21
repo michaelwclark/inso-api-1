@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
-import { SettingModule } from './modules/setting/setting.module';
 import { ScoreModule } from './modules/score/score.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
 import { PostModule } from './modules/post/post.module';
@@ -23,7 +22,6 @@ import { AuthController } from './auth.controller';
   imports: [
     AuthModule,
     UserModule,
-    SettingModule,
     ScoreModule,
     ReactionModule,
     PostModule,

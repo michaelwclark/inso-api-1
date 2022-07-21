@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsIn, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { CreateInstructionsDTO } from './scoreNestedObjects/instructions/createInstructions';
 import { CreateInteractionsDTO } from './scoreNestedObjects/interactions/createInteractions';
@@ -18,6 +18,7 @@ export class ScoreCreateDTO {
     })
     @IsNotEmpty()
     @IsString()
+    @IsIn(['auto', 'rubric'])
     public type: string;
 
     @ApiProperty({
