@@ -377,13 +377,8 @@ export class DiscussionController {
       if(!findDiscussion){
         throw new HttpException('DiscussionId was not found', HttpStatus.NOT_FOUND);
       }
-
-
-
+      
       //The user is not a participant or a facilitator of the discussion 403 - forbidden status
-
-
-
 
     }
  
