@@ -24,6 +24,7 @@ import { ConfigModule } from "@nestjs/config";
     DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
+    PostModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(
       process.env.MONGO_CONNECTION_STRING,
