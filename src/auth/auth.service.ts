@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, Post, UseGuards, Request, Get, B
 import { JwtService } from '@nestjs/jwt';
 import { UserController } from 'src/modules/user/user.controller';
 import * as bcrypt from 'bcrypt';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,15 @@ export class AuthService {
         return {
             access_token: this.jwtService.sign(payload)
         }
+    }
+
+    async validateAuthor(username: any, objectId: any ){
+        
+        const res = await this.userController.returnUserByUsername(username);
+        console.log('validateAuthor: ' + res._id);
+        //return Types.ObjectId.isValid(res._id);
+        let isAuthor = res._id === objectId;
+        return isAuthor;
     }
 
 }

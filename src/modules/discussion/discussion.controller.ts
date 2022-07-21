@@ -13,10 +13,11 @@ import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
 import { DiscussionPost } from 'src/entities/post/post';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
+import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 
 @Controller()
 export class DiscussionController {
@@ -87,7 +88,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsCreatorGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
     // Check that discussion exists

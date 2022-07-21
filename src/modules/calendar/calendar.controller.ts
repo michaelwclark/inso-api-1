@@ -6,7 +6,7 @@ import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 
 @Controller()

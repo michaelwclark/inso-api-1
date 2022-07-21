@@ -6,7 +6,7 @@ import { connect, Connection, Model, Types } from 'mongoose';
 import { User, UserSchema } from 'src/entities/user/user';
 import { UserController } from 'src/modules/user/user.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './guards/jwt.strategy';
 
 describe('AuthService', () => {
   let service: AuthService;

@@ -28,6 +28,15 @@ export class UserController {
     return found;
   }
 
+  /** For Authentication service, needed for authorization in IsCreatorGuard */
+  async returnUserByUsername(username: string){
+    const found = await this.userModel.findOne({'username': username});
+    if(!found){ 
+      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
+    }
+    return found;
+  }
+
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
     

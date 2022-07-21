@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { ScoreEditDTO } from 'src/entities/score/edit-score';
 import { Score, ScoreDocument } from 'src/entities/score/score';
