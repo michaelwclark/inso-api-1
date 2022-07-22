@@ -15,9 +15,8 @@ export class InspirationController {
 
   @Post('inspiration')
   @ApiOperation({description: 'Create an inspiration for a discussion'})
-  @ApiBody({description: '', type: Object})
-  @ApiParam({name: '', description: ''})
-  @ApiOkResponse({ description: ''})
+  @ApiBody({description: 'Inspiration to create', type: InspirationCreateDTO})
+  @ApiOkResponse({ description: 'Inspiration created!'})
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
@@ -28,11 +27,11 @@ export class InspirationController {
   }
 
   @Patch('inspiration/:inspirationId')
-  @ApiOperation({description: ''})
-  @ApiBody({description: '', type: Object})
-  @ApiParam({name: '', description: ''})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
+  @ApiOperation({description: 'Update a post inspiration'})
+  @ApiBody({description: 'The Inspiration to update', type: InspirationEditDTO})
+  @ApiParam({name: 'inspirationId', description: 'The id of the inspiration'})
+  @ApiOkResponse({ description: 'Inspiration updated!'})
+  @ApiBadRequestResponse({ description: 'Inspiration Id is invalid'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Inspiration')

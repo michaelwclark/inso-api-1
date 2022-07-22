@@ -112,7 +112,6 @@ export class DiscussionController {
 
   @Get('discussion/:discussionId')
   @ApiOperation({description: 'Update the metadata for the discussion'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: 'discussionId', description: 'The id of the discussion'})
   @ApiOkResponse({ description: 'Discussions'})
   @ApiBadRequestResponse({ description: 'The discussion Id is not valid'})
@@ -300,7 +299,7 @@ export class DiscussionController {
 
   @Patch('discussion/:discussionId/settings')
   @ApiOperation({description: 'Update the discussion settings'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
+  @ApiBody({description: '', type: SettingsCreateDTO})
   @ApiParam({name: '', description: ''})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: ''})
@@ -343,7 +342,6 @@ export class DiscussionController {
 
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: '', description: ''})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: 'The discussion has already been answered. It cannot be deleted'})
