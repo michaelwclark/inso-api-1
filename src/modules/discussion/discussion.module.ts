@@ -10,6 +10,7 @@ import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from './discussion.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from '../user/user.module';
+import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 
 @Module({
     imports: [
@@ -26,7 +27,8 @@ import { UserModule } from '../user/user.module';
         UserModule
     ],
     controllers: [DiscussionController],
-    providers: [],
+    providers: [DiscussionController],
+    exports: [DiscussionController]
 })
 export class DiscussionModule {}
 

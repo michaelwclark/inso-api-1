@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -10,16 +10,19 @@ import { AuthService } from './auth.service';
 import { LocalStrategy } from './guards/local.strategy';
 import { jwtConstants } from './constants';
 import { AuthController } from '../auth.controller';
+import { DiscussionModule } from 'src/modules/discussion/discussion.module';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy],
   imports: [
     UserModule, 
+    forwardRef(() => DiscussionModule),
     PassportModule, 
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '86000s'}
-     })], 
+     }),
+    ], 
   controllers: [],
   exports: [AuthService]
 })

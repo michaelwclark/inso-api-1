@@ -1,7 +1,6 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe, UseGuards, Request } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
@@ -21,13 +20,25 @@ import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 
 @Controller()
 export class DiscussionController {
-  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
-              @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
-              @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
-              @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
-              @InjectModel(User.name) private userModel: Model<UserDocument>,
-              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-              @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>) {}
+  constructor(
+    @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
+    @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
+    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+    @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
+  ) {}
+
+  //** For Authentication Service, needed for authorization use in IsCreator Guard   */
+  async getCreator(id: string){
+    const found = await this.discussionModel.findOne({_id: id});
+    if(!found){ 
+      throw new HttpException("Discussion does not exist", HttpStatus.NOT_FOUND); 
+    }
+    console.log('getCreator found.poster: ' + found.poster);
+    return found.poster;
+  }
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -39,11 +50,18 @@ export class DiscussionController {
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
+  async createDiscussion(@Body() discussion: DiscussionCreateDTO, @Request() req): Promise<Discussion> {
+
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
     if(!user) {
       throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+    }
+
+    // Compare poster to user in request from JWT for authorization
+    const auth = await this.userModel.findOne({username: req.user.username});
+    if(auth._id.toString() !== discussion.poster.toString()){
+      throw new HttpException('Discussion poster does not match authentication token user', HttpStatus.BAD_REQUEST);
     }
     
     // Add the poster to the facilitators
@@ -79,7 +97,7 @@ export class DiscussionController {
   }
 
 
-  @Patch('discussion/:discussionId/metadata')
+  @Patch(':entity/:discussionId/metadata')
   @ApiOperation({description: 'Update the metadata for the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: '', description: ''})
@@ -90,7 +108,16 @@ export class DiscussionController {
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard, IsCreatorGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
+  async updateDiscussionMetadata(
+    @Param('discussionId') discussionId: string,
+    @Param('entity') entity: string,
+    @Body() discussion: DiscussionEditDTO
+  ): Promise<any> {
+
+    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
+    if(entity !== 'discussion'){
+      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
+    }
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
     if(!found) {
@@ -345,7 +372,7 @@ export class DiscussionController {
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
-  @Delete('discussion/:discussionId')
+  @Delete(':entity/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: '', description: ''})
@@ -354,8 +381,15 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
-  async deleteDiscussion(@Param('discussionId') discussionId: string): Promise<void> {
+  @UseGuards(JwtAuthGuard, IsCreatorGuard)
+  async deleteDiscussion(
+    @Param('discussionId') discussionId: string,
+    @Param('entity') entity: string
+    ): Promise<void> {
+    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
+    if(entity !== 'discussion'){
+      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
+    }
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
