@@ -8,7 +8,7 @@ export type SettingDocument = Setting & Document;
 @Schema()
 export class Setting {
     @Prop({ type: Types.ObjectId, default: '' })
-    public prompt: string;
+    public starter_prompt: string;
 
     @Prop([Types.ObjectId])
     public inspiration: Types.ObjectId[];

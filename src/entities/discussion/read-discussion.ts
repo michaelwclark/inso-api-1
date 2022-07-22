@@ -9,7 +9,7 @@ export class DiscussionReadDTO {
   public archived: string;
   public settings: {
     _id: string;
-    starterPrompt: string;
+    starter_prompt: string;
     postInspiration: {
       _id: string;
       type: string;

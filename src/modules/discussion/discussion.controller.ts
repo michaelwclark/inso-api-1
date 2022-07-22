@@ -131,7 +131,7 @@ export class DiscussionController {
     const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
     const dSettings = {
       _id: settings._id,
-      starterPrompt: settings.prompt,
+      starter_prompt: settings.starter_prompt,
       calendar: null,
       postInspiration: null,
       scores: null,
@@ -219,7 +219,7 @@ export class DiscussionController {
     delete settings._id;
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
-      prompt: settings.prompt,
+      starter_prompt: settings.starter_prompt,
       inspiration: newInspoIds,
       score: newScoreId._id,
       calendar: null 
