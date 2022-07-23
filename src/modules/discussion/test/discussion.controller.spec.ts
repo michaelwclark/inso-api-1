@@ -70,16 +70,39 @@ describe('AppController', () => {
     await discussionModel.insertMany([
       {
         _id: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        insoCode: "string",
+        insoCode: "inso2",
         name: "string",
         created: new Date(),
         archived: null,
         settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         facilitators: [new Types.ObjectId()],
         poster: new Types.ObjectId(),
-        set: [new Types.ObjectId()]
+        set: [new Types.ObjectId()],
+        participants: [{
+          user: new Types.ObjectId(),
+          joined: Date(),
+          muted: Boolean,
+          grade: new Types.ObjectId()
+        }]
+      },
+      {
+        _id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        insoCode: "inso1",
+        name: "string",
+        created: new Date(),
+        archived: null,
+        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        facilitators: [new Types.ObjectId()],
+        poster: new Types.ObjectId(),
+        set: [new Types.ObjectId()],
+        participants: [{
+          user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
+          joined: Date(),
+          muted: Boolean,
+          grade: null
+        }]
       }
-    ]);
+    ]);    
 
     await inspirationModel.insertMany([
       {
@@ -113,8 +136,6 @@ describe('AppController', () => {
             description: "string",
             max: "number"}],
         },
-
-
       }
     ])
   });
@@ -160,7 +181,43 @@ describe('AppController', () => {
         }; 
         return expect(appController.updateDiscussionSettings(validDiscussionId, '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
     }); 
+  });
+
+//200 status for participant 
+  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
+    it('should return valid ParticipantID added', () => {
+
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
+    });
   }); 
+ 
+//400 status for participant 
+  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
+    it('should return valid Discussion Id', () => {
+
+      const validParticipantId = {
+        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "joined": new Date(),
+        "muted": Boolean,
+        "grade": null
+        }; 
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
+    }); 
+  }); 
+//404 status 
+  describe('PATCH /users/:userId/discussions/:discussionId/join' , () => {
+    it('should return valid Discussion Id', () => {
+
+      const validParticipant = {
+        "user": new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        "joined": new Date(),
+        "muted": Boolean(),
+        "grade": null
+        }; 
+        const error = new HttpException("UserId not found in the discussion", HttpStatus.NOT_FOUND);
+        return expect(appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso2')).resolves.not.toThrow(error);}); 
+  }); 
+
 
   describe('POST /discussion 401 Response', () => {
     // TODO AFTER AUTHENTICATION IS WRITTEN
@@ -298,7 +355,7 @@ describe('AppController', () => {
     });
   });  
 
-  //400 ERROR STATUS
+  //400 ERROR STATUS 
    describe('PATCH discussion/:discussionId/settings 400 Status',  () => {
     //valid discussion id, starter prompt not less than 2
     it('should return a 400 for prompt is less than 2 characters', async () => {
@@ -381,9 +438,9 @@ describe('AppController', () => {
       expect(JSON.stringify(errors)).toContain('calendar should not be empty');
     });
   });
-  
-  // add 404 status aerrors for settings checks agains mongoo db
 
+
+  // add 404 status errors for settings checks agains mongoo db
   //404 error status
   describe('PATCH /discussion/:discussionId/setting 404 status', () => {
     it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {

@@ -83,6 +83,13 @@ export class DiscussionReadDTO {
       tags: string [];
       post: string;
   } [];
+
+  // public participants:{
+  //   user: string,
+  //   joined: string,
+  //   muted: string,
+  //   grade: string
+  // } []
   public participants: {
     // TO DO Add the participants of the discussion
   } [];

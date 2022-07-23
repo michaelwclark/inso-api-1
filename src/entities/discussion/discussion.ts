@@ -27,7 +27,14 @@ export class Discussion {
 
     @Prop(Types.ObjectId)
     public poster: Types.ObjectId;
-
+    
+    @Prop()
+    public participants: {
+        user: Types.ObjectId,
+        joined: Date,
+        muted: Boolean,
+        grade: Types.ObjectId
+    }[]
     @Prop({ type: [Types.ObjectId] })
     public set: ObjectId[];
     

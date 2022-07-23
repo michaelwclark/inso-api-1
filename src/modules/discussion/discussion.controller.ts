@@ -340,6 +340,52 @@ export class DiscussionController {
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
+  @Patch('/users/:userId/discussions/:insoCode/join')
+  @ApiOperation({description: 'Add the user as a participant on the discussion'})
+  @ApiOkResponse({ description: 'Participant added'})
+  @ApiBadRequestResponse({ description: 'UserId is not valid'})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
+  async joinDiscussion(
+    @Param('userId') userId: string,
+    @Param('insoCode') insoCode: string): Promise<any>{
+    
+    if(insoCode.length !== 5) {
+      throw new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST);
+    }
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
+    }
+
+    //check for user
+    const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
+    if(!findUser){
+      throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+    }
+
+    //check for discusionId 
+    const found = await this.discussionModel.findOne({ insoCode: insoCode });
+    if(!found) {
+      throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
+    }
+
+    // Add the participants to the discussion
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    if(foundParticipant) {
+      throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
+    }
+
+    const newParticipant = {
+    user: new Types.ObjectId(userId),
+    joined: new Date,
+    muted: false,
+    grade: null
+    } 
+    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
+    
+  }
+
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
   @ApiParam({name: '', description: ''})
