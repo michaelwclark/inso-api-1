@@ -5,6 +5,7 @@ import { Inspiration, InspirationSchema } from 'src/entities/inspiration/inspira
 import { Milestone, MilestoneSchema } from 'src/entities/milestone/milestone';
 import { Notification, NotificationSchema } from 'src/entities/notification/notification';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
+import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { PostController } from './post.controller';
 
 @Module({
@@ -13,7 +14,8 @@ import { PostController } from './post.controller';
         MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
         MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
         MongooseModule.forFeature([{ name: Milestone.name, schema: MilestoneSchema }]),
-        MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }])
+        MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }]),
+        MongooseModule.forFeature([{ name: Setting.name, schema: SettingSchema }])
     ],
     controllers: [PostController],
     providers: [],
