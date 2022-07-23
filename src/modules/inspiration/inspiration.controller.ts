@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';
 import { InspirationEditDTO } from 'src/entities/inspiration/edit-inspiration';
 import { Inspiration } from 'src/entities/inspiration/inspiration';
+import { InspirationReadResponse } from 'src/entities/inspiration/read-inspiration';
 
 
 @Controller()
@@ -24,6 +25,19 @@ export class InspirationController {
   async createInspiration(@Body() inspiration: InspirationCreateDTO): Promise<Inspiration> {
     const createdInspiration = new this.inspirationModel(inspiration);
     return await createdInspiration.save();
+  }
+
+  @Get('inspirations')
+  @ApiOperation({description: 'Gets all valid inspirations on the system'})
+  @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiTags('Inspiration')
+  async getInspirations(): Promise<InspirationReadResponse> {
+    const posting = await this.inspirationModel.find({ type: 'posting'});
+    const responding = await this.inspirationModel.find({ type: 'responding'});
+    const synthesizing = await this.inspirationModel.find({ type: 'synthesizing'});
+
+    return { posting, responding, synthesizing };
   }
 
   @Patch('inspiration/:inspirationId')
