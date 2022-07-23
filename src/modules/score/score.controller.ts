@@ -52,6 +52,7 @@ export class ScoreController {
   @ApiOperation({ description: 'This will update a score object'})
   @ApiBody({description: '', type: ScoreEditDTO})
   @ApiOkResponse({description: 'Score updated successfully'})
+  @ApiTags('Score')
   async updateScore(@Param('userId') id: string, @Param('scoreId') scoreId: string, @Body() score: ScoreEditDTO){
 
     if(score === null){

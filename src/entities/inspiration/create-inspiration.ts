@@ -36,11 +36,11 @@ export class InspirationCreateDTO {
 
     @ApiProperty({
         name: 'type',
-        description: 'The type of inspiration (i.e. poll)',
+        description: 'The type of the inspiration: responding, posting, synthesizing are the only valid options',
         required: true,
         type: String,
         isArray: false,
-        example: 'poll'
+        example: 'responding'
     })
     @IsNotEmpty()
     @IsString()

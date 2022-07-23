@@ -6,7 +6,7 @@ import { Types } from "mongoose";
 export class SettingsCreateDTO {
 
     @ApiProperty({
-        name: 'prompt',
+        name: 'starter_prompt',
         description: 'The starter prompt for the discussion',
         required: true,
         type: String,
@@ -16,7 +16,7 @@ export class SettingsCreateDTO {
     @IsNotEmpty()
     @IsString()
     @Length(2, 1000)
-    public prompt: string;
+    public starter_prompt: string;
 
     @ApiProperty({
         name: 'post_inspiration',
