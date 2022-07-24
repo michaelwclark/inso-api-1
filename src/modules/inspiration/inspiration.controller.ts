@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';

@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { ScoreEditDTO } from 'src/entities/score/edit-score';
 import { Score, ScoreDocument } from 'src/entities/score/score';
@@ -22,6 +23,7 @@ export class ScoreController {
   @ApiBody({description: '', type: ScoreCreateDTO})
   @ApiOkResponse({description: 'Score created successfully'})
   @ApiTags('Score')
+  @UseGuards(JwtAuthGuard)
   async createScore(@Param('userId') id: string, @Body() score: ScoreCreateDTO){
 
     if(id === undefined){
@@ -53,6 +55,7 @@ export class ScoreController {
   @ApiBody({description: '', type: ScoreEditDTO})
   @ApiOkResponse({description: 'Score updated successfully'})
   @ApiTags('Score')
+  @UseGuards(JwtAuthGuard)
   async updateScore(@Param('userId') id: string, @Param('scoreId') scoreId: string, @Body() score: ScoreEditDTO){
 
     if(score === null){

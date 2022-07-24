@@ -1,21 +1,29 @@
 import { Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { IsBoolean, IsString } from 'class-validator';
 
 
 export type UserDocument = User & Document;
 
-@Schema()
+@Schema({ _id : false })
 export class Contact {
 
     @Prop(String)
+    @IsString()
     email: string;
 
     @Prop(Boolean)
+    @IsBoolean()
     verified: boolean;
 
     @Prop(Boolean)
+    @IsBoolean()
     primary: boolean;
+
+    @Prop(Boolean)
+    @IsBoolean()
+    delete: boolean;
 
     constructor(partial: Partial<Contact>) {
         Object.assign(this, partial);
@@ -41,10 +49,10 @@ export class User {
     public dateJoined: Date;
 
     @Prop([Contact])
-    public contact: Contact [];
+    public contact: Contact[];
 
     @Prop([String])
-    public sso: string [];
+    public sso: string[];
 
     @Prop(String)
     public password: string;

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, HttpCode, HttpException, HttpStatus, Param, Patch, Post, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -6,6 +6,7 @@ import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 
 @Controller()
@@ -25,7 +26,8 @@ export class CalendarController {
   @ApiUnauthorizedResponse({ description: 'User does not have access.'})
   @ApiNotFoundResponse({ description: 'User does not exist.'})
   @ApiTags('Calendar')
-  //@UseInterceptors(ClassSerializerInterceptor)
+  @UseInterceptors(ClassSerializerInterceptor)
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   async createCalendar(@Param('userId') id: string, @Body() calendar: CalendarCreateDTO): Promise<string>{ // function used to return Promise<Calendar>
     
@@ -68,11 +70,13 @@ export class CalendarController {
   @ApiUnauthorizedResponse({ description: 'User does not have access.'})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Calendar')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateCalendar(
     @Param('userId') id: string, 
     @Param('calendarId') calendarId: string,
-    @Body() calendar: CalendarEditDTO): Promise<string> {
+    @Body() calendar: CalendarEditDTO
+    ): Promise<string> {
 
     if(calendar == null){
       throw new HttpException("Object is empty", HttpStatus.BAD_REQUEST)

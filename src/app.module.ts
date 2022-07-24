@@ -12,9 +12,15 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 import { ConfigModule } from "@nestjs/config";
+import { AuthModule } from './auth/auth.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthService } from './auth/auth.service';
+import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
+    AuthModule,
     UserModule,
     ScoreModule,
     ReactionModule,
@@ -35,9 +41,13 @@ import { ConfigModule } from "@nestjs/config";
     ),
     SendGridModule.forRoot({ 
       apiKey: process.env.SENDGRID_KEY
+    }),
+    ThrottlerModule.forRoot({
+      ttl: 60,
+      limit: 10
     })
   ],
-  controllers: [AppController],
-  providers: [],
+  controllers: [AppController, AuthController],
+  providers: [ { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
