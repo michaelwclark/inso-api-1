@@ -9,8 +9,9 @@ import { UserModule } from 'src/modules/user/user.module';
 import { AuthService } from './auth.service';
 import { LocalStrategy } from './guards/local.strategy';
 import { jwtConstants } from './constants';
-import { AuthController } from '../auth.controller';
+import { AuthController } from './auth.controller';
 import { DiscussionModule } from 'src/modules/discussion/discussion.module';
+import { GoogleAuthController } from './googleAuth.controller';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy],
@@ -23,7 +24,7 @@ import { DiscussionModule } from 'src/modules/discussion/discussion.module';
       signOptions: { expiresIn: '86000s'}
      }),
     ], 
-  controllers: [],
+  controllers: [AuthController, GoogleAuthController],
   exports: [AuthService]
 })
 export class AuthModule {}

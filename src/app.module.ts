@@ -15,8 +15,8 @@ import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from './auth/auth.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthService } from './auth/auth.service';
-import { AuthController } from './auth.controller';
+import { AppService } from './app.service';
+import { GoogleStrategy } from './auth/guards/google.strategy';
 
 @Module({
   imports: [
@@ -47,7 +47,7 @@ import { AuthController } from './auth.controller';
       limit: 10
     })
   ],
-  controllers: [AppController, AuthController],
-  providers: [ { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  controllers: [AppController],
+  providers: [ { provide: APP_GUARD, useClass: ThrottlerGuard }, AppService, GoogleStrategy],
 })
 export class AppModule {}
