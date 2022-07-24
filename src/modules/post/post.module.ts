@@ -6,10 +6,12 @@ import { Milestone, MilestoneSchema } from 'src/entities/milestone/milestone';
 import { Notification, NotificationSchema } from 'src/entities/notification/notification';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
+import { NotificationModule } from '../notification/notification.module';
 import { PostController } from './post.controller';
 
 @Module({
     imports: [
+        NotificationModule,
         MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
         MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
         MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
