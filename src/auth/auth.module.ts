@@ -10,23 +10,25 @@ import { AuthService } from './auth.service';
 import { LocalStrategy } from './guards/local.strategy';
 import { jwtConstants } from './constants';
 import { AuthController } from './auth.controller';
-import { DiscussionModule } from 'src/modules/discussion/discussion.module';
 import { GoogleAuthController } from './googleAuth.controller';
 import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
+import { Score, ScoreSchema } from 'src/entities/score/score';
+import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy],
   imports: [
-    UserModule, 
-    forwardRef(() => DiscussionModule),
+    UserModule,
     PassportModule, 
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '86000s'}
      }),
      MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
-     MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }])
+     MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
+     MongooseModule.forFeature([{ name: Score.name, schema: ScoreSchema }]),
+     MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }])
     ], 
   controllers: [AuthController, GoogleAuthController],
   exports: [AuthService]

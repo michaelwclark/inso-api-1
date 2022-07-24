@@ -7,6 +7,8 @@ import { DiscussionController } from 'src/modules/discussion/discussion.controll
 import { InjectModel } from '@nestjs/mongoose';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
+import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
+import { Score, ScoreDocument } from 'src/entities/score/score';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +17,8 @@ export class AuthService {
         private jwtService: JwtService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
+        @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+        @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>
         ){
     }
 
@@ -38,35 +42,6 @@ export class AuthService {
             access_token: this.jwtService.sign(payload)
         }
     }
-
-    // // AUTHORIZATION
-    // async validateAuthor(username: string, entity: string, objectId: string ){
-        
-    //     const author = await this.userController.returnUserByUsername(username);        
-
-    //     const creatorId = await this.findCreator(entity, objectId);
-
-    //     console.log('author: ' + author._id + ', creator: ' + creatorId);
-    //     let isAuthor = author._id.toString() === creatorId.toString();
-    //     console.log(isAuthor);
-    //     if(isAuthor == false){
-    //         throw new HttpException('User is not the creator of the object, action is not authorized', HttpStatus.FORBIDDEN);
-    //     }
-        
-    //     return isAuthor;
-    // }
-
-    // async findCreator(entity: string, objectId: string){
-    //     if(entity === 'discussion'){
-    //         // Move this to the auth service
-    //         const creatorId = await this.discussionController.getCreator(objectId);
-    //         console.log('findCreator authService: ' + creatorId);
-    //         return creatorId;
-    //     }
-    //     if(entity === 'post') {
-             
-    //     }
-    // }
 
     /** GOOGLE LOGIN */
     googleLogin(req) {
@@ -123,7 +98,7 @@ export class AuthService {
         return isReactionCreator;
     }
 
-    async isDiscussionMember(userId: string, discussionId: string) {
+    async isDiscussionMember(userId: string, discussionId: string): Promise<boolean> {
         const isFacilitator = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId), facilitators: new Types.ObjectId(userId)}) === null ? false : true;
         const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId) });
         const participantIds = discussion.participants.map(part => {
@@ -135,6 +110,22 @@ export class AuthService {
             throw new HttpException(`${userId} is not a member of this discussion`, HttpStatus.FORBIDDEN);
         }
         return isFacilitator || isParticipant;
+    }
+
+    async isScoreCreator(userId: string, scoreId: string): Promise<boolean> {
+        const isScorer = await this.scoreModel.findOne({ _id: new Types.ObjectId(scoreId), creatorId: new Types.ObjectId(userId) }) === null ? false : true;
+        if(!isScorer) {
+            throw new HttpException(`${userId} is not permitted to perform action on the score`, HttpStatus.FORBIDDEN);
+        }
+        return isScorer;
+    }
+
+    async isCalendarCreator(userId: string, calendarId: string): Promise<boolean> {
+        const isCalendarCreator = await this.calendarModel.findOne( { _id: new Types.ObjectId(calendarId), creator: new Types.ObjectId(userId)}) === null ? false : true;
+        if(!isCalendarCreator) {
+            throw new HttpException(`${userId} is not permitted to perform action on the calendar`, HttpStatus.FORBIDDEN);
+        }
+        return isCalendarCreator;
     }
 
     verifyMongoIds(ids: string[]) {

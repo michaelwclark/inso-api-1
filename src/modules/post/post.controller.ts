@@ -1,7 +1,10 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { IsDiscussionParticipantGuard } from 'src/auth/guards/userGuards/isDiscussionParticipant.guard';
+import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
 import { PostCreateDTO } from 'src/entities/post/create-post';
@@ -27,6 +30,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard)
   async createPost(@Param('discussionId') discussionId: string, @Body() post: PostCreateDTO): Promise<string> {
     const discussion = await this.verifyDiscussion(discussionId);
     // Check that the participant is a part of the array
@@ -54,6 +58,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
   @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsPostCreatorGuard)
   async updatePost(@Param('discussionId') discussionId: string, @Param('postId') postId: string, @Body() postUpdates: PostUpdateDTO): Promise<DiscussionPost> {
     // Verify the discussion exists
     const discussion = await this.verifyDiscussion(discussionId);
@@ -82,6 +87,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
   @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsPostCreatorGuard)
   async publishPost(@Param('discussionId') discussionId: string, @Param('postId') postId: string): Promise<string> {
     await this.verifyDiscussion(discussionId);
     
@@ -103,6 +109,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
   @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsPostCreatorGuard)
   async deletePost(@Param('discussionId') discussionId: string, @Param('postId') postId: string): Promise<any> {
     const discussion = await this.verifyDiscussion(discussionId);
     if(!Types.ObjectId.isValid(postId)) {
