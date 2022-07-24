@@ -25,22 +25,11 @@ export class PostController {
   @ApiOkResponse({ description: 'Post created'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
-  @ApiTags('Inspiration')
+  @ApiTags('Post')
   async createPost(@Param('discussionId') discussionId: string, @Body() post: PostCreateDTO): Promise<string> {
-    if(!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
-    }
-    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)});
-    if(!discussion) {
-      throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
-    }
+    const discussion = await this.verifyDiscussion(discussionId);
     // Check that the participant is a part of the array
-    const participants = discussion.participants.map(participant => {
-      return participant.user;
-    });
-    if(!participants.includes(post.userId)) {
-      throw new HttpException(`${post.userId} is not a participant in the discussion`, HttpStatus.FORBIDDEN);
-    }
+    this.verifyParticipation(post.userId.toString(), discussion);
 
     if(post.comment_for) {
       const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
@@ -49,7 +38,7 @@ export class PostController {
       }
     } 
 
-    const newPost = new this.discussionPostModel(post);
+    const newPost = new this.discussionPostModel({ ...post, discussionId: new Types.ObjectId(discussionId) });
     const newPostId = await newPost.save();
     return newPostId._id;
   }
@@ -60,31 +49,18 @@ export class PostController {
   @ApiOkResponse({ description: 'Post updated!'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
-  @ApiTags('Inspiration')
+  @ApiTags('Post')
   async updatePost(@Param('discussionId') discussionId: string, @Param('postId') postId: string, @Body() postUpdates: PostUpdateDTO): Promise<DiscussionPost> {
-    if(!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
-    }
-    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)});
-    if(!discussion) {
-      throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
-    }
+    // Verify the discussion exists
+    const discussion = await this.verifyDiscussion(discussionId);
 
+    // Verify that the postId is valid
     if(!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(`${discussionId} is not a valid postId`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(`${postId} is not a valid postId`, HttpStatus.BAD_REQUEST);
     }
 
     // Check the post_inspiration is valid
-    const inspiration = await this.inspirationModel.findOne({ _id: postUpdates.post_inspiration});
-    if(!inspiration) {
-      throw new HttpException(`${postUpdates.post_inspiration} is not a valid post inspiration`, HttpStatus.NOT_FOUND);
-    }
-
-    // Check if the post inspiration is in the discussion settings inspirations array
-    const settings = await this.settingsModel.findOne({ _id: discussion.settings });
-    if(!settings.inspiration.includes(inspiration._id)) {
-      throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
-    }
+    await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
 
     return await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { postUpdates });
   }
@@ -94,18 +70,74 @@ export class PostController {
   @ApiOkResponse({ description: 'Post published!'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
-  @ApiTags('Inspiration')
+  @ApiTags('Post')
   async publishPost(@Param('discussionId') discussionId: string, @Param('postId') postId: string): Promise<string> {
+    await this.verifyDiscussion(discussionId);
+    
+    // Verify that the postId is valid
+    if(!Types.ObjectId.isValid(postId)) {
+      throw new HttpException(`${postId} is not a valid postId`, HttpStatus.BAD_REQUEST);
+    }
+    
+    const update = await this.discussionPostModel.findOneAndUpdate( {_id: new Types.ObjectId(postId)}, { draft: false });
     return 'publish from draft'
   }
 
   @Delete('discussion/:discussionId/post/:postId')
-  @ApiOperation({description: 'Publish a draft post in a discussion'})
-  @ApiOkResponse({ description: 'Post published!'})
+  @ApiOperation({description: 'Delete a post'})
+  @ApiOkResponse({ description: 'Post deleted!'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User, Post, or discussion does not exist'})
-  @ApiTags('Inspiration')
-  async deletePost(@Param('discussionId') discussionId: string, @Param('postId') postId: string): Promise<string> {
-    return 'publish from draft'
+  @ApiTags('Post')
+  async deletePost(@Param('discussionId') discussionId: string, @Param('postId') postId: string): Promise<any> {
+    const discussion = await this.verifyDiscussion(discussionId);
+    if(!Types.ObjectId.isValid(postId)) {
+      throw new HttpException(`${postId} is not a valid postId`, HttpStatus.BAD_REQUEST);
+    }
+
+    // Need to check if the post has comments_for
+    const comments = await this.discussionPostModel.find({ comment_for: new Types.ObjectId(postId)});
+    if(comments.length > 0) {
+      throw new HttpException(`${postId} cannot delete a post that has comments`, HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.discussionPostModel.deleteOne({ _id: new Types.ObjectId(postId)});
+  }
+
+
+  /** PRIVATE FUNCTIONS */
+
+  async verifyDiscussion(discussionId: string): Promise<Discussion> {
+    if(!Types.ObjectId.isValid(discussionId)) {
+      throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
+    }
+    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)});
+    if(!discussion) {
+      throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
+    }
+    return discussion;
+  }
+
+  verifyParticipation(userId: string, discussion: Discussion) {
+    const participants = discussion.participants.map(participant => {
+      return participant.user.toString();
+    });
+    if(!participants.includes(userId)) {
+      throw new HttpException(`${userId} is not a participant in the discussion`, HttpStatus.FORBIDDEN);
+    }
+  }
+
+  async verifyPostInspiration(inspirationId: Types.ObjectId, settingsId: Types.ObjectId) {
+    // Check the post_inspiration is valid
+    const inspiration = await this.inspirationModel.findOne({ _id: inspirationId });
+    if(!inspiration) {
+      throw new HttpException(`${inspirationId} is not a valid post inspiration`, HttpStatus.NOT_FOUND);
+    }
+
+    // Check if the post inspiration is in the discussion settings inspirations array
+    const settings = await this.settingsModel.findOne({ _id: settingsId });
+    if(!settings.inspiration.includes(inspiration._id)) {
+      throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
+    }
   }
 }

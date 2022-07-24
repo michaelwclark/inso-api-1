@@ -7,8 +7,6 @@ export type DiscussionPostDocument = DiscussionPost & Document;
 
 @Schema()
 export class DiscussionPost {
-    @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
 
     @Prop(Types.ObjectId)
     public userId: Types.ObjectId;
@@ -32,7 +30,15 @@ export class DiscussionPost {
     public post: string;
 
     constructor(partial: Partial<DiscussionPost>) {
-        Object.assign(this, partial);
+        if(partial) {
+            this.userId = partial.userId;
+            this.discussionId = partial.discussionId;
+            this.draft = partial.draft;
+            this.date = partial.date;
+            this.tags = partial.tags;
+            this.comment_for = partial.comment_for;
+            this.post = partial.post;
+        }
     }
 }
 

@@ -15,6 +15,7 @@ export class PostUpdateDTO {
     post_inspiration: Types.ObjectId;
 
     constructor(partial: Partial<PostCreateDTO>) {
+        console.log(partial);
         this.post = partial.post;
         this.post_inspiration = partial.post_inspiration;
     }

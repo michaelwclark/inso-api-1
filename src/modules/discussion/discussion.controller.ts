@@ -69,7 +69,7 @@ export class DiscussionController {
         const setting = new this.settingModel();
         const settingId = await setting.save();
 
-        const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
+        const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
         return await createdDiscussion.save();
       }
     }
@@ -148,8 +148,16 @@ export class DiscussionController {
     const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
     const poster = await this.userModel.findOne({ _id: discussion.poster });
 
-    // TODO Get posts 
+    // Get posts
+    const dbPosts = await this.postModel.find({ discussionId: discussion._id}).sort({ date: -1 }).lean();
     const posts = [];
+    for await(const post of dbPosts) {
+      const user = await this.userModel.findOne({ _id: new Types.ObjectId(post.userId)}, { password: 0, sso: 0});
+      delete post.userId;
+      posts.push({ ...post, user: user });
+    }
+
+    console.log(posts);
     const discussionRead = new DiscussionReadDTO({
       _id: discussion._id,
       insoCode: discussion.insoCode,
@@ -346,6 +354,7 @@ export class DiscussionController {
   @ApiBadRequestResponse({ description: 'UserId is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
+  @ApiTags('Discussion')
   async joinDiscussion(
     @Param('userId') userId: string,
     @Param('insoCode') insoCode: string): Promise<any>{
