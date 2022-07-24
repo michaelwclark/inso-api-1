@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDefined, IsMongoId, IsString } from "class-validator";
+import { IsDefined, IsMongoId, IsOptional, IsString } from "class-validator";
 import { Types } from "mongoose";
 import { PostCreateDTO } from "./create-post";
 
@@ -11,12 +11,13 @@ export class PostUpdateDTO {
 
     @IsMongoId()
     @Type(() => Types.ObjectId)
-    @IsDefined()
+    @IsOptional()
     post_inspiration: Types.ObjectId;
 
     constructor(partial: Partial<PostCreateDTO>) {
-        console.log(partial);
-        this.post = partial.post;
-        this.post_inspiration = partial.post_inspiration;
+        if(partial) {
+            this.post = partial.post;
+            this.post_inspiration = partial.post_inspiration;
+        }
     }
 }

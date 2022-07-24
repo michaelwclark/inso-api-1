@@ -16,7 +16,8 @@ export class PostController {
     @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
     @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
-    @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>
+    @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
+    // Build a notification service
   ) {}
 
   @Post('discussion/:discussionId/post')
@@ -37,6 +38,9 @@ export class PostController {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
     } 
+
+    // Generate Notifications
+    // Check Milestones for a user
 
     const newPost = new this.discussionPostModel({ ...post, discussionId: new Types.ObjectId(discussionId) });
     const newPostId = await newPost.save();
@@ -60,9 +64,16 @@ export class PostController {
     }
 
     // Check the post_inspiration is valid
-    await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
+    if(postUpdates.post_inspiration) {
+      await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
+    }
 
-    return await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { postUpdates });
+
+    const postUpdate = await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { post: postUpdates.post, post_inspiration: postUpdates.post_inspiration });
+    if(postUpdate === null) {
+      throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
+    }
+    return postUpdate;
   }
 
   @Patch('discussion/:discussionId/post/:postId/publish')
@@ -80,7 +91,10 @@ export class PostController {
     }
     
     const update = await this.discussionPostModel.findOneAndUpdate( {_id: new Types.ObjectId(postId)}, { draft: false });
-    return 'publish from draft'
+    if(update === null) {
+      throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
+    }
+    return 'Updated!';
   }
 
   @Delete('discussion/:discussionId/post/:postId')
@@ -101,7 +115,12 @@ export class PostController {
       throw new HttpException(`${postId} cannot delete a post that has comments`, HttpStatus.BAD_REQUEST);
     }
 
-    return await this.discussionPostModel.deleteOne({ _id: new Types.ObjectId(postId)});
+    const deleteMarker = await this.discussionPostModel.deleteOne({ _id: new Types.ObjectId(postId)});
+    if(deleteMarker.deletedCount === 1) {
+      return `${postId} deleted`;
+    } else {
+      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+    }
   }
 
 
@@ -139,5 +158,22 @@ export class PostController {
     if(!settings.inspiration.includes(inspiration._id)) {
       throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async generateNotifications() {
+    // If new post '@username posted in discussion' for facilitators
+    // Build a notification service that will handle the inserting and checking if it exists and stuff
+    // If new comment '@username responded to your post'
+
+  }
+
+  async checkAndGenerateMilestones() {
+    // If first post
+
+    // If 10th post
+
+    // If 100th post
+
+    // Generate notification if milestone is reached
   }
 }

@@ -149,15 +149,18 @@ export class DiscussionController {
     const poster = await this.userModel.findOne({ _id: discussion.poster });
 
     // Get posts
-    const dbPosts = await this.postModel.find({ discussionId: discussion._id}).sort({ date: -1 }).lean();
+    // Need to figure out a better way to do this. Look into Mongoose Model
+    const dbPosts = await this.postModel.find({ discussionId: discussion._id, draft: false }).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
       const user = await this.userModel.findOne({ _id: new Types.ObjectId(post.userId)}, { password: 0, sso: 0});
+      if(post.comment_for) {
+        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).lean();
+      }
       delete post.userId;
       posts.push({ ...post, user: user });
     }
 
-    console.log(posts);
     const discussionRead = new DiscussionReadDTO({
       _id: discussion._id,
       insoCode: discussion.insoCode,

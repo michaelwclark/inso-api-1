@@ -4,15 +4,15 @@ const milestones = {
     },
     "tenthPost": {
         "total": 10
-    }, 
+    },
+    "hundrethPost": {
+        total: 100
+    },
     "firstReaction": {
         "total": 1
     },
     "tenthReaction": {
         "total": 10
-    },
-    "obtainMaxScore": {
-        "total": 1
     },
     "thirtyUpvotes": {
         "total": 30
