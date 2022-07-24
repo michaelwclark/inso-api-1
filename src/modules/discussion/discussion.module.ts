@@ -11,6 +11,7 @@ import { DiscussionController } from './discussion.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from '../user/user.module';
 import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
+import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 
 @Module({
     imports: [
@@ -27,7 +28,7 @@ import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
         UserModule
     ],
     controllers: [DiscussionController],
-    providers: [DiscussionController],
+    providers: [DiscussionController, JwtStrategy],
     exports: [DiscussionController]
 })
 export class DiscussionModule {}

@@ -17,6 +17,9 @@ import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
 import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
+import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
+import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 
 @Controller()
 export class DiscussionController {
@@ -29,16 +32,6 @@ export class DiscussionController {
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
   ) {}
-
-  //** For Authentication Service, needed for authorization use in IsCreator Guard   */
-  async getCreator(id: string){
-    const found = await this.discussionModel.findOne({_id: id});
-    if(!found){ 
-      throw new HttpException("Discussion does not exist", HttpStatus.NOT_FOUND); 
-    }
-    console.log('getCreator found.poster: ' + found.poster);
-    return found.poster;
-  }
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -97,7 +90,7 @@ export class DiscussionController {
   }
 
 
-  @Patch(':entity/:discussionId/metadata')
+  @Patch('discussion/:discussionId/metadata')
   @ApiOperation({description: 'Update the metadata for the discussion'})
   @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: '', description: ''})
@@ -106,18 +99,13 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsCreatorGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(
     @Param('discussionId') discussionId: string,
     @Param('entity') entity: string,
     @Body() discussion: DiscussionEditDTO
   ): Promise<any> {
-
-    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
-    if(entity !== 'discussion'){
-      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
-    }
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
     if(!found) {
@@ -149,7 +137,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion was not found'})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
@@ -215,7 +203,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async archiveDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -231,7 +219,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async duplicateDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -298,7 +286,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiQuery({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: boolean,
@@ -352,7 +340,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async updateDiscussionSettings(
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
@@ -443,7 +431,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsCreatorGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async deleteDiscussion(
     @Param('discussionId') discussionId: string,
     @Param('entity') entity: string

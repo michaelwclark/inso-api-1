@@ -8,17 +8,21 @@ import { AuthService } from "../auth.service";
 export class IsCreatorGuard implements CanActivate {
     constructor(private authService: AuthService){}
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-        const request = context.switchToHttp().getRequest();
-        
-        const arr = [ 'discussion' ];
-        if(!arr.includes(request.params.entity)){
-            throw new HttpException('Invalid entity entry in parameter', HttpStatus.BAD_REQUEST);
-        }
+        // const request = context.switchToHttp().getRequest();
+        // console.log(request.route);
 
-        return this.authService.validateAuthor(
-            request.user.username, 
-            request.params.entity, 
-            request.params.discussionId
-        );
+        // // Match regex for routes that are {{ entity }} routes
+        
+        // const arr = [ 'discussion' ];
+        // if(!arr.includes(request.params.entity)){
+        //     throw new HttpException('Invalid entity entry in parameter', HttpStatus.BAD_REQUEST);
+        // }
+
+        // return this.authService.validateAuthor(
+        //     request.user.username, 
+        //     request.params.entity, 
+        //     request.params.discussionId
+        // );
+        return true;
     }    
 }
