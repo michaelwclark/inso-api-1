@@ -5,8 +5,8 @@ import { plainToClass } from 'class-transformer';
 import { Model, Types } from 'mongoose';
 import { authenticate } from 'passport';
 import { async } from 'rxjs';
-import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
-import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
+import { ContactCreateDTO, UserCreateDTO } from '../../entities/user/create-user';
+import { ContactEditDTO, UserEditDTO } from '../../entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
 import { Contact, User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
@@ -104,6 +104,7 @@ export class UserController {
   @ApiBody({description: 'Body must be of correct format UserEditDTO type', type: UserEditDTO})
   @ApiOkResponse({ description: 'User edited!'})
   @ApiBadRequestResponse({ description: 'The calendar is not of the correct format.'})
+  @ApiTags('User')
   async updateUser(@Param('userId') userId: string, @Body() user: UserEditDTO){
 
     // user id validation

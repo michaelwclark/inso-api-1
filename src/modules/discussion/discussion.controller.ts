@@ -149,6 +149,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion was not found'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
@@ -214,6 +215,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async archiveDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -229,6 +231,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async duplicateDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -295,6 +298,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiQuery({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: boolean,
@@ -348,6 +352,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async updateDiscussionSettings(
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
@@ -389,6 +394,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async joinDiscussion(
     @Param('userId') userId: string,
     @Param('insoCode') insoCode: string): Promise<any>{

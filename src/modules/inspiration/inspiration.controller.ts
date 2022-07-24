@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
@@ -32,6 +32,7 @@ export class InspirationController {
   @ApiOperation({description: 'Gets all valid inspirations on the system'})
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: ''})
+  @UseGuards(JwtAuthGuard)
   @ApiTags('Inspiration')
   async getInspirations(): Promise<InspirationReadResponse> {
     const posting = await this.inspirationModel.find({ type: 'posting'});
