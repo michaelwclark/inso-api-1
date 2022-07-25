@@ -31,8 +31,41 @@ export class SGService {
       ota?: string;
   }[]): Promise<void> {
         // TODO: Build the mail from mailinfo
-        const email = {};
-            await this.sgclient.send(email);
+        const email = {
+          personalizations :[
+            {
+              to:[
+                {
+                  email: mailinfo[0].email,
+                  name: mailinfo[0].name
+                }
+              ],
+              //subject: "Hello, World!"
+            }
+          ],
+          content: 
+          [
+            {
+              type: "text/html", 
+              value: mailinfo[0].action
+            }
+          ],
+          from:
+          {
+            email: "paigezaleppa@gmail.com",
+            name:"Inso API"
+          },
+          reply_to:
+          {
+            email:"paigezaleppa@gmail.com",
+            name:"Inso API"
+          },
+          templateId: "d-c5fd47a270b2408b97c4151785fc4bda"
+        };
+
+        await this.sgclient.send(email).catch((error) => {
+          console.log(error);
+        });
   }
 
   private getTemplate(template: MAIL_DEFAULTS.TEMPLATES): string {

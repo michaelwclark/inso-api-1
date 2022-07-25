@@ -11,7 +11,6 @@ export class AuthController{
   @Post('auth/login')
   @ApiTags('User')
   async login(@Request() req){
-    //console.log(req);
     return req.user;
   }
 

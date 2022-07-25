@@ -10,12 +10,15 @@ import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
+import { SGService } from 'src/drivers/sendgrid';
+import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
 
 @Injectable()
 export class AuthService {
     constructor(
         private userController: UserController, 
         private jwtService: JwtService,
+        private sgService: SGService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
@@ -29,6 +32,8 @@ export class AuthService {
         if(!user){
             throw new HttpException('Username does not exist in database', HttpStatus.BAD_REQUEST);
         }
+
+        console.log("validate user function, user: " + user);
 
         const isMatch = await bcrypt.compare(password, user.password);
         if(isMatch == false){
@@ -143,5 +148,19 @@ export class AuthService {
                 throw new HttpException(`${id} is not a valid Mongo Id`, HttpStatus.BAD_REQUEST);
             }
         });
+    }
+
+    verifyEmail(user: any){
+    
+        this.sgService.sendEmail([
+            {
+                    name: user.f_name,
+                    username: user.username,
+                    email: user.contact[0].email,
+                    action: TEMPLATES.CONFIRM_EMAIL,
+                    ota: "ota"
+            }
+        ]);
+        console.log(`Email verification sent!`);
     }
 }

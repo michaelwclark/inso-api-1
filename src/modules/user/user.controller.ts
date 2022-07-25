@@ -10,13 +10,16 @@ import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
 import { Contact, User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
+import { SGService } from 'src/drivers/sendgrid';
+import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
 
 
 
 @Controller()
 export class UserController {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private sgService: SGService
     ) {}
 
   /** For Authentication service, needed to verify password */
@@ -96,7 +99,9 @@ export class UserController {
     const newUser = new this.userModel({...user, 'dateJoined': new Date()})
     await newUser.save();
 
-    return 'User Created!';
+    this.verifyEmail(user);
+
+    return 'User Created! Please check your email inbox to verify your email address.';
   }
 
   @Patch('user/:userId')
@@ -192,27 +197,19 @@ export class UserController {
     return 'User Updated';
   }
 
-
-//////////////////////////////////
-
-/** removes contacts with delete boolean marker as true, for patch route */
-  public removeUnwantedContacts(array: ContactEditDTO[]){
-
-    var contactsToDelete = array.filter(function (e) {
-      return e.delete == true;
-    }); // new array of elements to remove from current contacts
-    var contactsToKeep = array.filter(function (e) {
-      return e.delete != true;
-    }); // new array of new elements to add to current contacts
-
-    for (var i = 0; i < contactsToDelete.length; i++) {
-    this.userModel.updateMany(
-      {},
-      { $pull: { contact : {email: contactsToDelete[i].email} } }
-      )
-    }
-
-    return contactsToKeep;
+  //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
+  verifyEmail(user: any){
+    
+    this.sgService.sendEmail([
+        {
+                name: user.f_name,
+                username: user.username,
+                email: user.contact[0].email,
+                action: TEMPLATES.CONFIRM_EMAIL,
+                ota: "ota"
+        }
+    ]);
+    console.log(`Email verification sent! Please check your email inbox to verify your email address.`);
   }
 
 }
@@ -294,4 +291,3 @@ function checkForDuplicateContacts(array: ContactCreateDTO[]){
   else { return unique }
 
 }
-

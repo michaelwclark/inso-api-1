@@ -15,9 +15,10 @@ import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { Score, ScoreSchema } from 'src/entities/score/score';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
+import { SGService } from 'src/drivers/sendgrid';
 
 @Module({
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, SGService],
   imports: [
     UserModule,
     PassportModule, 
