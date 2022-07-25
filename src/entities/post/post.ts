@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { User } from '../user/user';
+import { Discussion } from '../discussion/discussion';
 
 
 export type DiscussionPostDocument = DiscussionPost & Document;
@@ -8,10 +10,10 @@ export type DiscussionPostDocument = DiscussionPost & Document;
 @Schema()
 export class DiscussionPost {
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'User'})
     public userId: Types.ObjectId;
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'Discussion'})
     public discussionId: Types.ObjectId;
 
     @Prop(Boolean)
@@ -23,7 +25,7 @@ export class DiscussionPost {
     @Prop(String)
     public tags: string [];
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'DiscussionPost' })
     public comment_for: Types.ObjectId;
 
     @Prop(String)

@@ -142,7 +142,7 @@ export class DiscussionController {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: discussionId }).exec();
+    const discussion = await this.discussionModel.findOne({ _id: discussionId });
 
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);

@@ -1,5 +1,6 @@
 import { ObjectId, Types, Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { User } from '../user/user';
 
 
 export type DiscussionDocument = Discussion & Document;
@@ -25,7 +26,7 @@ export class Discussion {
     @Prop({ type: [Types.ObjectId], ref: 'User' })
     public facilitators: ObjectId[];
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'User' })
     public poster: Types.ObjectId;
     
     @Prop()

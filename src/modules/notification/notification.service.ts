@@ -8,7 +8,7 @@ import { User, UserDocument } from "src/entities/user/user";
 export class NotificationService {
 
     constructor(
-        @InjectModel(Notification.name) private settingsModel: Model<NotificationDocument>,
+        @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) {}
     /**
@@ -17,9 +17,14 @@ export class NotificationService {
      * @param notification 
      */
     async createNotification(userId: string, notification: { header: string, text: string }) {
-        
+        const newNotification = new this.notificationModel(notification);
+        return newNotification.save();
     }
 
+    async markNotificationAsRead() {
+        
+    }
+    
     async deleteNotification() {
 
     }
