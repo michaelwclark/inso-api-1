@@ -18,12 +18,16 @@ export class Notification {
     @Prop()
     text: string;
 
+    @Prop({ default: false })
+    read: boolean;
+
     constructor(partial: Partial<Notification>) {
         if(partial) {
             this.userId = partial.userId;
             this.date = partial.date;
             this.header = partial.header;
             this.text = partial.text;
+            this.read = partial.read;
         }
     }
 }

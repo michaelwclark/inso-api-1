@@ -17,14 +17,15 @@ export class NotificationService {
      * @param notification 
      */
     async createNotification(userId: string, notification: { header: string, text: string }) {
-        const newNotification = new this.notificationModel(notification);
+        // Verify it is a valid notification header and text
+        const newNotification = new this.notificationModel({ ...notification, userId});
         return newNotification.save();
     }
 
     async markNotificationAsRead() {
         
     }
-    
+
     async deleteNotification() {
 
     }
