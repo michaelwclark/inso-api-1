@@ -28,7 +28,8 @@ import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
      MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
      MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
      MongooseModule.forFeature([{ name: Score.name, schema: ScoreSchema }]),
-     MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }])
+     MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
+     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
     ], 
   controllers: [AuthController, GoogleAuthController],
   exports: [AuthService]

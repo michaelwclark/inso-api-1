@@ -9,6 +9,7 @@ import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussi
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
+import { User, UserDocument } from 'src/entities/user/user';
 
 @Injectable()
 export class AuthService {
@@ -18,7 +19,8 @@ export class AuthService {
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
-        @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>
+        @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+        @InjectModel(User.name) private userModel: Model<UserDocument>
         ){
     }
 
@@ -44,15 +46,22 @@ export class AuthService {
     }
 
     /** GOOGLE LOGIN */
-    googleLogin(req) {
+    async googleLogin(req) {
         if (!req.user) {
-          return 'No user from google'
+          throw new HttpException('User does not exist to Google!', HttpStatus.NOT_FOUND);
         }
     
-        return {
-          message: 'User information from google',
-          user: req.user
+        // Check out db for the user and see if the email is attached
+        const user = await this.userModel.findOne({ "contact.email": req.user.email });
+        if(user == null) {
+            throw new HttpException(`${req.user.email} is not associated with an Inso account`, HttpStatus.NOT_FOUND);
         }
+        const payload = { 'username': user.username, 'sub': user._id };
+        return {
+            access_token: this.jwtService.sign(payload)
+        }
+            
+
       }
 
       /** AUTHORIZATION FUNCTIONS */
