@@ -8,9 +8,6 @@ export type ReactionDocument = Reaction & Document;
 @Schema()
 export class Reaction {
     @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
-
-    @Prop(Types.ObjectId)
     public userId: Types.ObjectId;
 
     @Prop(Types.ObjectId)
