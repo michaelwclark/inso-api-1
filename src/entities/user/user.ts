@@ -61,7 +61,7 @@ export class User {
     public level: string;
 
     @Prop(String)
-    public subject: string;
+    public role: string;
 
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);

@@ -137,7 +137,7 @@ export class UserEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @IsString()
-    public subject: string;
+    public role: string;
 
     constructor(partial: Partial<UserEditDTO>) {
         Object.assign(this, partial);
