@@ -13,10 +13,12 @@ export class GoogleAuthController{
 
     @Get()
     @UseGuards(AuthGuard('google'))
+    @ApiTags('User')
     async googleAuth(@Req() req) {}
 
     @Get('redirect')
     @UseGuards(AuthGuard('google'))
+    @ApiTags('User')
     googleAuthRedirect(@Req() req) {
         return this.authService.googleLogin(req)
     }

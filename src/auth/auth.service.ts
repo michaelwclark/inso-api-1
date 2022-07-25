@@ -10,6 +10,7 @@ import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
+import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +26,7 @@ export class AuthService {
     }
 
     async validateUser(email: string, password: string): Promise<any>{
-        const user = await this.userController.returnUser(email);
+        const user = await this.userModel.findOne({ "contact.email" : email});
         if(!user){
             throw new HttpException('Username does not exist in database', HttpStatus.BAD_REQUEST);
         }
@@ -63,8 +64,32 @@ export class AuthService {
             
 
       }
+      /**
+       * Reset Password 
+       * @param userId 
+       * @param oldPassword 
+       * @param newPassword 
+       * @returns 
+       */
 
-      /** AUTHORIZATION FUNCTIONS */
+      async resetPassword(userId: string, oldPassword: string, newPassword: string) {
+        this.verifyMongoIds([userId]);
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId) });
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if(isMatch == false){
+            throw new HttpException('Invalid credentials, old password is not correct', HttpStatus.BAD_REQUEST);
+        }
+
+        validatePassword(newPassword);
+
+        const saltRounds = 10;
+        const password = await bcrypt.hash(user.password, saltRounds);
+
+        return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
+      }
+
+      /** AUTHORIZATION DECORATOR FUNCTIONS */
 
     async isDiscussionCreator(userId: string, discussionId: string): Promise<boolean> {
         const isCreator = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId), poster: new Types.ObjectId(userId)}) === null ? false : true;
@@ -137,6 +162,7 @@ export class AuthService {
         return isCalendarCreator;
     }
 
+    //** MONGO ID VERIFICATION */
     verifyMongoIds(ids: string[]) {
         ids.forEach(id => {
             if(!Types.ObjectId.isValid(id)) {

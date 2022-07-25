@@ -10,6 +10,7 @@ import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
 import { Contact, User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
+import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 
 
 
@@ -18,24 +19,6 @@ export class UserController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>
     ) {}
-
-  /** For Authentication service, needed to verify password */
-  async returnUser(email: string){
-    const found = await this.userModel.findOne({'contact.email': email});
-    if(!found){ 
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
-    }
-    return found;
-  }
-
-  /** For Authentication service, needed for authorization in IsCreatorGuard */
-  async returnUserByUsername(username: string){
-    const found = await this.userModel.findOne({'username': username});
-    if(!found){ 
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
-    }
-    return found;
-  }
 
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
@@ -244,41 +227,6 @@ function isEmail(search: string){
 
   searchFind = regexp.test(search);
   return searchFind;
-}
-
-/** validates the password for a new user meets all the required conditions to ensure password strength */
-function validatePassword(password: string){
-
-  if(password.length < 8 || password.length > 32){
-    throw new HttpException('Password length must be at least 8 characters and no more than 32', HttpStatus.BAD_REQUEST)
-  }
-
-  var checkStrength: boolean;
-  var lowercaseRegexp = new RegExp('(?=.*[a-z])')
-  var uppercaseRegexp = new RegExp('(?=.*[A-Z])')
-  var numberRegexp = new RegExp('(?=.*[0-9])')
-  var specialCharRegexp = new RegExp('(?=.*[^A-Za-z0-9])')
-
-  checkStrength = lowercaseRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one lowercase character', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = uppercaseRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one uppercase character', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = numberRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one number', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = specialCharRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one special character', HttpStatus.BAD_REQUEST)
-  }
-
 }
 
 /** checks if array of new contacts in User create or edit DTOs, contains duplicate emails */
