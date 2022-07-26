@@ -125,7 +125,6 @@ export class UserReadDTO {
 
     constructor(partial: Partial<UserReadDTO>) {
         if(partial) {
-            console.log(partial)
             this._id = partial._id;
             this.username = partial.username;
             this.f_name = partial.f_name;

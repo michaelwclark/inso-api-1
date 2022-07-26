@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import * as nodeEmoji from 'node-emoji';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 
 export type ReactionDocument = Reaction & Document;
@@ -17,7 +19,19 @@ export class Reaction {
     public reaction: string;
     
     constructor(partial: Partial<Reaction>) {
-        Object.assign(this, partial);
+        if(partial) {
+            this.userId = new Types.ObjectId(partial.userId),
+            this.postId = new Types.ObjectId(partial.postId),
+            this.setReaction(partial.reaction);
+        }
+    }
+
+    setReaction(reaction: string) {
+        if(!nodeEmoji.hasEmoji(reaction)) {
+            throw new HttpException(`${reaction} is not a valid emoji`, HttpStatus.BAD_REQUEST);
+        } else {
+            this.reaction = reaction;
+        }
     }
 }
 

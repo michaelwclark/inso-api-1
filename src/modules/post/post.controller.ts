@@ -46,7 +46,13 @@ export class PostController {
     // Generate Notifications
     // Check Milestones for a user
 
-    const newPost = new this.discussionPostModel({ ...post, discussionId: new Types.ObjectId(discussionId) });
+    const newPost = new this.discussionPostModel({ 
+      ...post,
+      discussionId: new Types.ObjectId(discussionId),
+      userId: new Types.ObjectId(post.userId),
+      date: new Date(),
+      comment_for: new Types.ObjectId(post.comment_for)
+    });
     const newPostId = await newPost.save();
     return newPostId._id;
   }
