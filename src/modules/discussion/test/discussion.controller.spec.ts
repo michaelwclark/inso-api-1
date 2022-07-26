@@ -15,6 +15,7 @@ import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
+import { AuthModule } from 'src/auth/auth.module';
 
 describe('AppController', () => {
   let appController: DiscussionController;
@@ -143,6 +144,7 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [DiscussionController],
+      imports: [AuthModule],
       providers: [{provide: getModelToken(Discussion.name), useValue: discussionModel},
         {provide: getModelToken(User.name), useValue: userModel},
         {provide: getModelToken(Setting.name), useValue: settingModel},
@@ -164,7 +166,11 @@ describe('AppController', () => {
         "facilitators": []
       }
 
-      return expect(appController.createDiscussion(validDiscussion)).resolves.toMatchObject(validDiscussion);
+      const reqUser = {
+        "userId": "62b276fda78b2a00063b1de0"
+      };
+
+      return expect(appController.createDiscussion(validDiscussion, reqUser)).resolves.toMatchObject(validDiscussion);
     });
   });
   //200 status valid for setting here 
@@ -340,8 +346,12 @@ describe('AppController', () => {
         "poster": new Types.ObjectId(),
         "facilitators": []
       }
+
+      const reqUser = {
+        "userId": "62b276fda78b2a00063b1de0"
+      };
       const error = new HttpException("User trying to create discussion does not exist", HttpStatus.NOT_FOUND);
-      return expect(appController.createDiscussion(validDiscussion)).rejects.toThrow(error);
+      return expect(appController.createDiscussion(validDiscussion, reqUser)).rejects.toThrow(error);
     });
 
     it('throw a 404 error for a facilitator not found', () => {
@@ -350,8 +360,11 @@ describe('AppController', () => {
         "poster": new Types.ObjectId('62b276fda78b2a00063b1de0'),
         "facilitators": [new Types.ObjectId()]
       }
+      const reqUser = {
+        "userId": "62b276fda78b2a00063b1de0"
+      };
       const error = new HttpException("A user does not exist in the facilitators array", HttpStatus.NOT_FOUND);
-      return expect(appController.createDiscussion(validDiscussion)).rejects.toThrow(error);
+      return expect(appController.createDiscussion(validDiscussion, reqUser)).rejects.toThrow(error);
     });
   });  
 

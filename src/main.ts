@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 
 async function bootstrap() {
   console.log(process.env.MONGO_CONNECTION_STRING);
@@ -26,6 +27,8 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api', app, document);
   
-  await app.listen(3000);
+  app.use(helmet());
+  
+  await app.listen(process.env.PORT);
 }
 bootstrap();

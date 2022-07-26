@@ -8,6 +8,10 @@ import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from './discussion.controller';
+import { AuthModule } from 'src/auth/auth.module';
+import { UserModule } from '../user/user.module';
+import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
+import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 
 @Module({
     imports: [
@@ -20,9 +24,12 @@ import { DiscussionController } from './discussion.controller';
         MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
         MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
+        AuthModule,
+        UserModule
     ],
     controllers: [DiscussionController],
-    providers: [],
+    providers: [DiscussionController, JwtStrategy],
+    exports: [DiscussionController]
 })
 export class DiscussionModule {}
 
