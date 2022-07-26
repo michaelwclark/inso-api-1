@@ -13,6 +13,7 @@ import { User, UserDocument } from 'src/entities/user/user';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from 'src/entities/user/google-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,8 @@ export class AuthService {
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
         @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
         ){
     }
 
@@ -143,14 +145,19 @@ export class AuthService {
         }
         stats.discussions_created = await this.discussionModel.find({ poster: new Types.ObjectId(userId)}).count();
         stats.discussions_joined = await this.discussionModel.find({ "participants.user": new Types.ObjectId(userId)}).count();
-        stats.posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)}).count();
+        const posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)});
+        stats.posts_made = posts_made.length;
 
         // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
+        const postIds = posts_made.map(post => {
+            return post._id;
+        })
+
         // Aggregate based on all the posts and how many of their posts ids are in the comment_for attribute
-        stats.comments_received = await this.postModel.find({ userId: new Types.ObjectId(userId)}).count();
+        stats.comments_received = await this.postModel.find({ comment_for: { $in: postIds }}).count();
 
         // Aggregate based on the posts and if they were upvoted for
-        stats.upvotes = 1;
+        stats.upvotes = await this.reactionModel.find({ postId: { $in: postIds }}).count()
         return new UserReadDTO({ ...user, statistics: stats });
     }
 
