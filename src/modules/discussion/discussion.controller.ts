@@ -144,34 +144,16 @@ export class DiscussionController {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: discussionId });
+    const discussion = await this.discussionModel.findOne({ _id: discussionId })
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
 
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
 
-    const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
-    const dSettings = {
-      _id: settings._id,
-      starter_prompt: settings.starter_prompt,
-      calendar: null,
-      postInspiration: null,
-      scores: null,
-    }
-    const calendar = await this.calendarModel.findOne({ _id: settings.calendar});
-    dSettings.calendar = calendar;
-
-    const scores = await this.scoreModel.findOne({ _id: settings.score });
-    dSettings.scores = scores;
-
-    const postInspiration = await this.post_inspirationModel.find({ _id: { $in: settings.inspiration}});
-    dSettings.postInspiration = postInspiration;
-
-    const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
-    const poster = await this.userModel.findOne({ _id: discussion.poster });
-
     // Get posts
-    // Need to figure out a better way to do this. Look into Mongoose Model
     const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
@@ -185,14 +167,7 @@ export class DiscussionController {
     }
 
     const discussionRead = new DiscussionReadDTO({
-      _id: discussion._id,
-      insoCode: discussion.insoCode,
-      name: discussion.name,
-      archived: discussion.archived !== null ? discussion.archived.toString(): null,
-      created: discussion.created.toString(),
-      settings: dSettings,
-      facilitators: facilitators,
-      poster: poster,
+      ...discussion,
       posts: posts
     });
 
@@ -240,23 +215,13 @@ export class DiscussionController {
     const newScore = new this.scoreModel(score);
     const newScoreId = await newScore.save();
 
-    //Duplicate the post inspirations
-    const newInspoIds = [];
-    for await(const inspo of settings.inspiration) {
-      const postInspiration = await this.post_inspirationModel.findOne({ _id: inspo });
-      delete postInspiration._id;
-      const newInspo = new this.post_inspirationModel(postInspiration);
-      const newInspoId = await newInspo.save();
-      newInspoIds.push(newInspoId._id);
-    }
-
     // duplicate the settings 
     // calendar is set to null because the calendar needs to be set
     delete settings._id;
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
       starter_prompt: settings.starter_prompt,
-      inspiration: newInspoIds,
+      inspiration: settings.inspiration,
       score: newScoreId._id,
       calendar: null 
     });
