@@ -1,7 +1,7 @@
 export class SettingsReadDTO{
     
     public id: string;
-    public starterPrompt: string;
+    public starter_prompt: string;
     public postInsnspiration: {
         id: string;
         type: string;

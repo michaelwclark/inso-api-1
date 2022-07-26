@@ -19,7 +19,7 @@ export class SettingsEditDTO{
     public id: Types.ObjectId;
 
     @ApiProperty({
-        name: 'prompt',
+        name: 'starter_prompt',
         description: 'This will be an id to a post inspiration entity',
         required: true,
         type: String,
@@ -29,7 +29,7 @@ export class SettingsEditDTO{
     @IsOptional()
     @IsNotEmpty()
     @IsString()
-    public prompt: string;
+    public starter_prompt: string;
 
     @ApiProperty({
         name: 'post_inspiration',

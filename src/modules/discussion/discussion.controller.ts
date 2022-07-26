@@ -112,7 +112,6 @@ export class DiscussionController {
 
   @Get('discussion/:discussionId')
   @ApiOperation({description: 'Update the metadata for the discussion'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: 'discussionId', description: 'The id of the discussion'})
   @ApiOkResponse({ description: 'Discussions'})
   @ApiBadRequestResponse({ description: 'The discussion Id is not valid'})
@@ -132,7 +131,7 @@ export class DiscussionController {
     const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
     const dSettings = {
       _id: settings._id,
-      starterPrompt: settings.prompt,
+      starter_prompt: settings.starter_prompt,
       calendar: null,
       postInspiration: null,
       scores: null,
@@ -220,7 +219,7 @@ export class DiscussionController {
     delete settings._id;
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
-      prompt: settings.prompt,
+      starter_prompt: settings.starter_prompt,
       inspiration: newInspoIds,
       score: newScoreId._id,
       calendar: null 
@@ -300,7 +299,7 @@ export class DiscussionController {
 
   @Patch('discussion/:discussionId/settings')
   @ApiOperation({description: 'Update the discussion settings'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
+  @ApiBody({description: '', type: SettingsCreateDTO})
   @ApiParam({name: '', description: ''})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: ''})
@@ -341,51 +340,54 @@ export class DiscussionController {
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
 
-  @Patch('/users/:userId/discussion/:discussionId/mute')
-  @ApiOperation({description: 'Mute the discussion'})
-  @ApiBody({description: ''})
-  @ApiParam({name: '', description: ''})
-  @ApiOkResponse({ description: ''})
-  @ApiBadRequestResponse({ description: ''})
+  @Patch('/users/:userId/discussions/:insoCode/join')
+  @ApiOperation({description: 'Add the user as a participant on the discussion'})
+  @ApiOkResponse({ description: 'Participant added'})
+  @ApiBadRequestResponse({ description: 'UserId is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
-  @ApiNotFoundResponse({ description: ''})
-  async muteDiscussion(
-    @Body() discussion: DiscussionEditDTO, //add user DTO
+  @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
+  async joinDiscussion(
     @Param('userId') userId: string,
-    @Param('discussionId') discussionId: string): Promise<any>{
-
-      //mute discussion - findoneandupdate by searching through participant and set to true 
-      const mute = Boolean()
-      if(mute){}
-      
-      //Invalid UserId and DiscussionId
-      if(!Types.ObjectId.isValid(userId)) {
-        throw new HttpException('UserId is invalid', HttpStatus.BAD_REQUEST);
-      }
-
-      if(!Types.ObjectId.isValid(discussionId)){
-        throw new HttpException('DiscussionId is invalid', HttpStatus.BAD_REQUEST);
-      }
-
-      //UserId and DiscussionId not found
-      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)});
-      if (!findUser){
-        throw new HttpException('UserId was not found', HttpStatus.NOT_FOUND);
-      }
-
-      const findDiscussion = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)});
-      if(!findDiscussion){
-        throw new HttpException('DiscussionId was not found', HttpStatus.NOT_FOUND);
-      }
-      
-      //The user is not a participant or a facilitator of the discussion 403 - forbidden status
-
+    @Param('insoCode') insoCode: string): Promise<any>{
+    
+    if(insoCode.length !== 5) {
+      throw new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST);
     }
- 
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
+    }
+
+    //check for user
+    const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
+    if(!findUser){
+      throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+    }
+
+    //check for discusionId 
+    const found = await this.discussionModel.findOne({ insoCode: insoCode });
+    if(!found) {
+      throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
+    }
+
+    // Add the participants to the discussion
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    if(foundParticipant) {
+      throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
+    }
+
+    const newParticipant = {
+    user: new Types.ObjectId(userId),
+    joined: new Date,
+    muted: false,
+    grade: null
+    } 
+    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
+    
+  }
 
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
-  @ApiBody({description: '', type: DiscussionEditDTO})
   @ApiParam({name: '', description: ''})
   @ApiOkResponse({ description: ''})
   @ApiBadRequestResponse({ description: 'The discussion has already been answered. It cannot be deleted'})

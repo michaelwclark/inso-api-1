@@ -73,6 +73,20 @@ export class DiscussionEditDTO {
     @IsMongoId()
     public set: Types.ObjectId;
 
+    @ApiProperty({
+      name: 'participants',
+      description: 'The users that are a participant of a discussion',
+      required: false,
+      type: Types.ObjectId,
+      isArray: true,
+      example: ['62b276fda78b2a00063b1de1']
+    })
+    @IsOptional()
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @IsMongoId()
+    public participants: Types.ObjectId [];
+
     
     constructor(partial: Partial<DiscussionEditDTO>) {
         Object.assign(this, partial);
