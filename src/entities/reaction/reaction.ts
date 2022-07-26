@@ -9,7 +9,7 @@ export type ReactionDocument = Reaction & Document;
 
 @Schema()
 export class Reaction {
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'User'})
     public userId: Types.ObjectId;
 
     @Prop(Types.ObjectId)

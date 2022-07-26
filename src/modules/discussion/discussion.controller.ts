@@ -11,7 +11,7 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
-import { DiscussionPost } from 'src/entities/post/post';
+import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
@@ -20,6 +20,7 @@ import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 
 @Controller()
 export class DiscussionController {
@@ -30,7 +31,8 @@ export class DiscussionController {
     @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
+    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
   ) {}
               
   @Post('discussion')
@@ -170,15 +172,16 @@ export class DiscussionController {
 
     // Get posts
     // Need to figure out a better way to do this. Look into Mongoose Model
-    const dbPosts = await this.postModel.find({ discussionId: discussion._id, draft: false }).sort({ date: -1 }).lean();
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
-      const user = await this.userModel.findOne({ _id: new Types.ObjectId(post.userId)}, { password: 0, sso: 0});
       if(post.comment_for) {
-        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).lean();
+        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).populate('user', ['f_name', 'l_name', 'email', 'username']).lean();
       }
-      delete post.userId;
-      posts.push({ ...post, user: user });
+      const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+      let newPost = { ...post, user: post.userId, reactions: reactions };
+      delete newPost.userId;
+      posts.push(newPost);
     }
 
     const discussionRead = new DiscussionReadDTO({
