@@ -133,8 +133,25 @@ export class AuthService {
        * @returns 
        */
     async fetchUserAndStats(userId: string) {
-        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
-        return new UserReadDTO(user);
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)}).lean();
+        const stats = {
+            discussions_created: 0,
+            discussions_joined: 0,
+            posts_made: 0, 
+            comments_received: 0,
+            upvotes: 0
+        }
+        stats.discussions_created = await this.discussionModel.find({ poster: new Types.ObjectId(userId)}).count();
+        stats.discussions_joined = await this.discussionModel.find({ "participants.user": new Types.ObjectId(userId)}).count();
+        stats.posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)}).count();
+
+        // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
+        // Aggregate based on all the posts and how many of their posts ids are in the comment_for attribute
+        stats.comments_received = await this.postModel.find({ userId: new Types.ObjectId(userId)}).count();
+
+        // Aggregate based on the posts and if they were upvoted for
+        stats.upvotes = 1;
+        return new UserReadDTO({ ...user, statistics: stats });
     }
 
       /** AUTHORIZATION DECORATOR FUNCTIONS */
