@@ -30,7 +30,7 @@ export class AuthService {
     async validateUser(email: string, password: string): Promise<any>{
         const user = await this.userModel.findOne({ "contact.email" : email});
         if(!user){
-            throw new HttpException('Username does not exist in database', HttpStatus.BAD_REQUEST);
+            throw new HttpException('Email does not exist in database', HttpStatus.NOT_FOUND);
         }
 
         if(!user.password) {
@@ -38,7 +38,7 @@ export class AuthService {
         }
         const isMatch = await bcrypt.compare(password, user.password);
         if(isMatch == false){
-            throw new HttpException('Invalid credentials, password is not correct', HttpStatus.BAD_REQUEST);
+            throw new HttpException('Invalid credentials, password is not correct', HttpStatus.UNAUTHORIZED);
         }
         
         return this.login(user);
@@ -136,7 +136,7 @@ export class AuthService {
         const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
         return new UserReadDTO(user);
     }
-    
+
       /** AUTHORIZATION DECORATOR FUNCTIONS */
 
     async isDiscussionCreator(userId: string, discussionId: string): Promise<boolean> {

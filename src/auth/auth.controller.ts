@@ -1,10 +1,40 @@
 import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Query, Param, HttpException, HttpStatus } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiProperty, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { PasswordResetDTO } from "src/entities/user/password-reset";
 import { UserReadDTO } from "src/entities/user/read-user";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
+
+class LoginDTO {
+  @ApiProperty({
+    name: 'email',
+    description: 'The email of the user',
+    required: true,
+    type: String,
+    example: 'example@example.com'
+  })
+  "email": string;
+
+  @ApiProperty({
+    name: 'password',
+    description: 'The password of the user',
+    required: true,
+    type: String,
+    example: 'Password#23333'
+  })
+  "password": string;
+}
+
+class TokenDTO {
+  @ApiProperty({
+    name: 'access_token',
+    description: 'The bearer token that was created for the user',
+    required: true,
+    type: String
+  })
+  "access_token": string;
+}
 
 @Controller()
 export class AuthController {
@@ -15,6 +45,11 @@ export class AuthController {
     // Returns JWT token to be used by the client
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
+  @ApiBody({ type: LoginDTO })
+  @ApiOkResponse({ type: TokenDTO })
+  @ApiUnauthorizedResponse({ description: 'The password is not correct'})
+  @ApiBadRequestResponse({ description: 'User is signed up with SSO'})
+  @ApiNotFoundResponse({ description: 'Account does not exist for email'})
   @ApiTags('User')
   async login(@Request() req){
     return req.user;
