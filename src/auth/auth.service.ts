@@ -55,8 +55,12 @@ export class AuthService {
         // Check out db for the user and see if the email is attached
         const user = await this.userModel.findOne({ "contact.email": req.user.email });
         if(user == null) {
-            throw new HttpException(`${req.user.email} is not associated with an Inso account`, HttpStatus.NOT_FOUND);
+            // Create a user 
+            // const new this.userModel({
+            //     f_name: req.user.
+            // })
         }
+        console.log(req.user)
         const payload = { 'username': user.username, 'sub': user._id };
         return {
             access_token: this.jwtService.sign(payload)
