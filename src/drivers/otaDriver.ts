@@ -1,0 +1,45 @@
+import { HttpException, HttpStatus } from '@nestjs/common';
+import * as jwt from 'jsonwebtoken';
+
+export interface otaCode {
+    code: string;
+}
+
+export interface decodedOtaCode{
+    data: any,
+    action: string,
+    iat: string,
+    exp: string,
+    iss: string
+}
+
+export function generateCode(payload: any){
+    return new Promise<otaCode>((resolve, reject) => {
+        jwt.sign({
+            data: payload
+        },
+        process.env.OTA_SECRET,
+        {
+            expiresIn: '1h'
+        },
+        );
+    });
+
+}
+
+export function decodeOta(ota: string){
+    const code = ota.replace(process.env.OTA_CODE_REPLACER, process.env.TOKEN_REPLACEMENT);
+    return new Promise((resolve, reject) => {
+        jwt.verify(
+            code, 
+            process.env.OTA_CODE_SECRET,
+            (err: any, decoded: any) => {
+                if(err){
+                    throw new HttpException('There is an error with the OTA token', HttpStatus.UNAUTHORIZED);
+                } else {
+                    resolve(decoded as decodedOtaCode);
+                }
+            }
+        );
+    });
+}

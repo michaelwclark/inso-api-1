@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, forwardRef, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { plainToClass } from 'class-transformer';
@@ -6,13 +6,13 @@ import { Model, Types } from 'mongoose';
 import { authenticate } from 'passport';
 import { async } from 'rxjs';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
-import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
+import { UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
-import { Contact, User, UserDocument } from 'src/entities/user/user';
+import { User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
 import { SGService } from 'src/drivers/sendgrid';
 import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
-
+import { AuthService } from 'src/auth/auth.service';
 
 
 @Controller()
@@ -99,9 +99,15 @@ export class UserController {
     const newUser = new this.userModel({...user, 'dateJoined': new Date()})
     await newUser.save();
 
-    this.verifyEmail(user);
+    //this.verifyEmail(user);
 
-    return 'User Created! Please check your email inbox to verify your email address.';
+    // const payload = { 'username': user.username, 'email': user.contact[0].email };
+    // this.jwtService.sign(payload);
+    // const link = 
+    await this.sgService.verifyEmail(user);
+      
+
+    return 'User Created! Please check your email inbox to verify your email address';//, link: ' + link;
   }
 
   @Patch('user/:userId')
@@ -197,20 +203,20 @@ export class UserController {
     return 'User Updated';
   }
 
-  //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
-  verifyEmail(user: any){
+  // //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
+  // verifyEmail(user: any){
     
-    this.sgService.sendEmail([
-        {
-                name: user.f_name,
-                username: user.username,
-                email: user.contact[0].email,
-                action: TEMPLATES.CONFIRM_EMAIL,
-                ota: "ota"
-        }
-    ]);
-    console.log(`Email verification sent! Please check your email inbox to verify your email address.`);
-  }
+  //   this.sgService.sendEmail([
+  //       {
+  //               name: user.f_name,
+  //               username: user.username,
+  //               email: user.contact[0].email,
+  //               action: TEMPLATES.CONFIRM_EMAIL,
+  //               template: "d-c5fd47a270b2408b97c4151785fc4bda"  // template id for email verification template
+  //       }
+  //   ]);
+  //   console.log(`Email verification sent! Please check your email inbox to verify your email address.`);
+  // }
 
 }
 

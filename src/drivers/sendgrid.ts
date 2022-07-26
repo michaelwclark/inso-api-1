@@ -2,6 +2,7 @@ import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
 import { Injectable } from "@nestjs/common";
 import { DefaultEmailParams } from "./interfaces/mailerDefaults";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
+import { JwtService } from "@nestjs/jwt";
 
 enum SENDGRID_TEMPLATES {
     CONFIRM_EMAIL = "",
@@ -16,7 +17,10 @@ const MAILER_DEFAULTS = {
 export class SGService {
   private TEMPLATES = new Map<MAIL_DEFAULTS.TEMPLATES, string>()
 
-  constructor(@InjectSendGrid() private readonly sgclient: SendGridService) {
+  constructor(
+    @InjectSendGrid() private readonly sgclient: SendGridService,
+    private jwtService: JwtService,
+    ) {
       this.TEMPLATES.set(
           MAIL_DEFAULTS.TEMPLATES.CONFIRM_EMAIL, 
           SENDGRID_TEMPLATES.CONFIRM_EMAIL,
@@ -28,9 +32,11 @@ export class SGService {
       username: string;
       email: string;
       action: MAIL_DEFAULTS.TEMPLATES,
+      template?: string,
+      data?: any, 
       ota?: string;
   }[]): Promise<void> {
-        // TODO: Build the mail from mailinfo
+        
         const email = {
           personalizations :[
             {
@@ -60,7 +66,10 @@ export class SGService {
             email:"paigezaleppa@gmail.com",
             name:"Inso API"
           },
-          templateId: "d-c5fd47a270b2408b97c4151785fc4bda"
+          templateId: mailinfo[0].template,
+          dynamicTemplateData: {
+            user: mailinfo[0].data
+          }
         };
 
         await this.sgclient.send(email).catch((error) => {
@@ -75,5 +84,43 @@ export class SGService {
     }
     throw new Error(`No existing template for: ${template}`);
   }
+
+  async verifyEmail(user: any){
+    
+    this.sendEmail([
+        {
+          name: user.f_name,
+          username: user.username,
+          email: user.contact[0].email,
+          action: MAIL_DEFAULTS.TEMPLATES.CONFIRM_EMAIL,
+          template: process.env.CONFIRM_EMAIL_ID, // template id for email verification template
+          data: user.data
+        }
+    ]);
+
+    
+
+    console.log(`Email verification sent!`);
+
+    //return this.createVerificationToken(user);
+  }
+
+  // async createVerificationToken(user: any){
+    
+  //   const payload = { 'username': user.username, 'email': user.contact[0].email };
+  //   // const token = this.jwtService.sign(payload)
+  //   this.jwtService.sign(payload)
+    
+
+  //   var a = document.createElement('a');
+  //   var link = document.createTextNode('This string is a link');
+  //   a.appendChild(link);
+  //   a.title = 'This is a link';
+  //   a.href = 'http://localhost:3000'
+  //   return a;
+
+  //   // let text = 'http://localhost:3000/auth/' + token;
+  //   // let result = text.link('http://localhost:3000/')
+  // }
 
 }

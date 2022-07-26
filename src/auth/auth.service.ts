@@ -11,7 +11,7 @@ import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
 import { SGService } from 'src/drivers/sendgrid';
-import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
+import { generateCode } from 'src/drivers/otaDriver';
 
 @Injectable()
 export class AuthService {
@@ -150,17 +150,44 @@ export class AuthService {
         });
     }
 
-    verifyEmail(user: any){
+    // verifyEmail(user: any){
     
-        this.sgService.sendEmail([
-            {
-                    name: user.f_name,
-                    username: user.username,
-                    email: user.contact[0].email,
-                    action: TEMPLATES.CONFIRM_EMAIL,
-                    ota: "ota"
-            }
-        ]);
-        console.log(`Email verification sent!`);
+    //     this.sgService.sendEmail([
+    //         {
+    //                 name: user.f_name,
+    //                 username: user.username,
+    //                 email: user.contact[0].email,
+    //                 action: TEMPLATES.CONFIRM_EMAIL,
+    //                 ota: "ota"
+    //         }
+    //     ]);
+
+    //     this.createVerificationToken(user);
+
+    //     console.log(`Email verification sent!`);
+    // }
+
+    // createVerificationToken(user: any){
+        
+    //     const payload = { 'username': user.username, 'email': user.contact[0].email };
+    //     this.jwtService.sign(payload)
+        
+
+    //     var a = document.createElement('a');
+    //     var link = document.createTextNode('This string is a link');
+    //     a.appendChild(link);
+    //     a.title = 'This is a link';
+    //     a.href = 'http://localhost:3000'
+    //     return a;
+    // }
+
+    async sendEmailVerification(userEmail: string){
+        const user = this.userController.returnUser(userEmail);
+        if(!user){
+            throw new HttpException('User is not found', HttpStatus.NOT_FOUND);
+        }
+        const ota = await generateCode(userEmail);
+
+        return this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
     }
 }
