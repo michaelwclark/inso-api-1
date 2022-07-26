@@ -154,14 +154,13 @@ export class DiscussionController {
     }
 
     // Get posts
-    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
+    // Needs recursion here 
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
-      if(post.comment_for) {
-        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).populate('user', ['f_name', 'l_name', 'email', 'username']).lean();
-      }
+      const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
       const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
-      let newPost = { ...post, user: post.userId, reactions: reactions };
+      let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
       delete newPost.userId;
       posts.push(newPost);
     }
@@ -416,5 +415,17 @@ export class DiscussionController {
     }
     await this.discussionModel.deleteOne({ _id: discussion });
     return;
+  }
+
+
+
+  //** PRIVATE FUNCTIONS */
+
+  async getPostsAndComments(post: any) {
+    const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+    const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
+    delete newPost.userId;
+    return newPost;
   }
 }
