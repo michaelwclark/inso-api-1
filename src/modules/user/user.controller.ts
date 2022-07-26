@@ -11,6 +11,7 @@ import { UserReadDTO } from 'src/entities/user/read-user';
 import { Contact, User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
+import { length } from 'class-validator';
 
 
 
@@ -47,11 +48,24 @@ export class UserController {
   @ApiTags('User')
   async createUser(@Body() user: UserCreateDTO){
 
-    validateUsername(user.username);
-    
-    const sameUsername = await this.userModel.findOne({username: user.username})
-    if(!(sameUsername == undefined)){
-      throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
+    let username = user.f_name + user.l_name;
+    let sameUsername = await this.userModel.findOne({username: username});
+    let counter = 1;
+    username = username + counter.toString();
+    while(sameUsername) {
+      if(counter < 10) {
+        username = username.substring(0, username.length - 1);
+      } 
+      if(counter < 100 && counter >=10 ) {
+        username = username.substring(0, username.length - 2);
+      }
+      // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
+      if(counter < 1000 && counter >=100) {
+        username = username.substring(0, username.length - 3);
+      }
+      username = username + counter.toString();
+      sameUsername = await this.userModel.findOne({username: username});
+      counter++;
     }
     
     checkForDuplicateContacts(user.contact); // throws error if same email appears more than once
@@ -76,7 +90,7 @@ export class UserController {
     const saltRounds = 10;
     user.password = await bcrypt.hash(user.password, saltRounds);
 
-    const newUser = new this.userModel({...user, 'dateJoined': new Date()})
+    const newUser = new this.userModel({...user, 'dateJoined': new Date(), username: username });
     await newUser.save();
 
     return 'User Created!';

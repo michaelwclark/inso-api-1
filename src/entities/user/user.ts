@@ -51,9 +51,6 @@ export class User {
     @Prop([Contact])
     public contact: Contact[];
 
-    @Prop([String])
-    public sso: string[];
-
     @Prop(String)
     public password: string;
 

@@ -2,7 +2,6 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty,
          IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
-import { Contact } from "./user";
 
 export class ContactCreateDTO{
 
@@ -43,20 +42,6 @@ export class ContactCreateDTO{
 }
 
 export class UserCreateDTO {
-
-    @ApiProperty({
-        name: 'username',
-        description: 'String identifier for users, must be unique',
-        required: true,
-        type: String,
-        isArray: false
-    })
-    @IsNotEmpty()
-    @IsString()
-    @MinLength(5)
-    @MaxLength(32)
-    public username: string;
-
     @ApiProperty({
         name: 'f_name',
         description: 'The users first name',

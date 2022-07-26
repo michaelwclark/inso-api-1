@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested  } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
 import { Types } from "mongoose";
 import { ContactCreateDTO } from "./create-user";
 
@@ -62,6 +62,8 @@ export class UserEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @IsString()
+    @MinLength(5)
+    @MaxLength(32)
     public username: string;
 
     @ApiProperty({
