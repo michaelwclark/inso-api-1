@@ -1,6 +1,7 @@
 import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Query, Param, HttpException, HttpStatus } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from "@nestjs/swagger";
+import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { PasswordResetDTO } from "src/entities/user/password-reset";
+import { UserReadDTO } from "src/entities/user/read-user";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
@@ -22,8 +23,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/profile')
   @ApiTags('User')
-  getProfile(@Request() req){
-    return req.user;
+  @ApiOkResponse({ description: 'Profile found!', type: UserReadDTO})
+  async getProfile(@Request() req): Promise<UserReadDTO> {
+    const user = await this.authService.fetchUserAndStats(req.user.userId);
+    return user;
   }
 
 

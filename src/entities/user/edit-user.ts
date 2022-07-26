@@ -107,21 +107,8 @@ export class UserEditDTO {
     public contact: ContactEditDTO[];
 
     @ApiProperty({
-        name: 'sso',
-        required: true,
-        type: String,
-        isArray: true
-    })
-    @IsOptional()
-    @IsNotEmpty({each: true})
-    @IsArray()
-    @ArrayMinSize(1)
-    @IsString({each: true})
-    public sso: string[];
-
-    @ApiProperty({
         name: 'level',
-        description: 'The users level of education',
+        description: 'The users level of education (student or teaching)',
         required: true,
         type: String
     })
@@ -131,8 +118,8 @@ export class UserEditDTO {
     public level: string;
 
     @ApiProperty({
-        name: 'subject',
-        description: 'The users class subject',
+        name: 'role',
+        description: 'The users role',
         required: true,
         type: String
     })

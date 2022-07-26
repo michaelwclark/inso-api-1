@@ -12,6 +12,7 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from 'src/entities/user/google-user';
+import { UserReadDTO } from 'src/entities/user/read-user';
 
 @Injectable()
 export class AuthService {
@@ -125,6 +126,17 @@ export class AuthService {
         return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
       }
 
+      /**
+       * 
+       * @param userId 
+       * @param discussionId 
+       * @returns 
+       */
+    async fetchUserAndStats(userId: string) {
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
+        return new UserReadDTO(user);
+    }
+    
       /** AUTHORIZATION DECORATOR FUNCTIONS */
 
     async isDiscussionCreator(userId: string, discussionId: string): Promise<boolean> {

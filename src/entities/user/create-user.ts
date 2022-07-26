@@ -70,7 +70,6 @@ export class UserCreateDTO {
         isArray: true,
         example: [ {
             'email': 'mockemail',
-            'verified': true,
             'primary': true
         } ]
     })
