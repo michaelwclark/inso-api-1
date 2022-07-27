@@ -12,6 +12,9 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
 import { SGService } from 'src/drivers/sendgrid';
 import { decodeOta, generateCode } from 'src/drivers/otaDriver';
+import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
+import { GoogleUserDTO } from 'src/entities/user/google-user';
+import { UserReadDTO } from 'src/entities/user/read-user';
 
 @Injectable()
 export class AuthService {
@@ -29,16 +32,19 @@ export class AuthService {
     }
 
     async validateUser(email: string, password: string): Promise<any>{
-        const user = await this.userController.returnUser(email);
+        const user = await this.userModel.findOne({ "contact.email" : email});
         if(!user){
-            throw new HttpException('Username does not exist in database', HttpStatus.BAD_REQUEST);
+            throw new HttpException('Email does not exist in database', HttpStatus.NOT_FOUND);
         }
 
         console.log("validate user function, user: " + user);
 
+        if(!user.password) {
+            throw new HttpException('User has Google SSO configured. Please login through Google', HttpStatus.BAD_REQUEST);
+        }
         const isMatch = await bcrypt.compare(password, user.password);
         if(isMatch == false){
-            throw new HttpException('Invalid credentials, password is not correct', HttpStatus.BAD_REQUEST);
+            throw new HttpException('Invalid credentials, password is not correct', HttpStatus.UNAUTHORIZED);
         }
         
         return this.login(user);
@@ -60,17 +66,84 @@ export class AuthService {
         // Check out db for the user and see if the email is attached
         const user = await this.userModel.findOne({ "contact.email": req.user.email });
         if(user == null) {
-            throw new HttpException(`${req.user.email} is not associated with an Inso account`, HttpStatus.NOT_FOUND);
+            let username = req.user.firstName + req.user.lastName;
+            let sameUsername = await this.userModel.findOne({username: username});
+            let counter = 1;
+            username = username + counter.toString();
+            while(sameUsername) {
+                if(counter < 10) {
+                    username = username.substring(0, username.length - 1);
+                } 
+                if(counter < 100 && counter >=10 ) {
+                    username = username.substring(0, username.length - 2);
+                }
+                // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
+                if(counter < 1000 && counter >=100) {
+                    username = username.substring(0, username.length - 3);
+                }
+                username = username + counter.toString();
+                sameUsername = await this.userModel.findOne({username: username});
+                counter++;
+            }
+            // Create a user based on the req.user
+            const newUser = new GoogleUserDTO({
+                f_name: req.user.firstName,
+                l_name: req.user.lastName,
+                username: username,
+                contact: [
+                    {
+                        "email": req.user.email,
+                        "verified": false,
+                        "primary": true
+                    }
+                ]
+            });
+            const userSave = new this.userModel({ ...newUser, dateJoined: new Date() });
+            return userSave.save();
+        } else {
+            const payload = { 'username': user.username, 'sub': user._id };
+            return {
+                access_token: this.jwtService.sign(payload)
+            }
         }
-        const payload = { 'username': user.username, 'sub': user._id };
-        return {
-            access_token: this.jwtService.sign(payload)
-        }
-            
+      }
+      /**
+       * Reset Password 
+       * @param userId 
+       * @param oldPassword 
+       * @param newPassword 
+       * @returns 
+       */
 
+      async resetPassword(userId: string, oldPassword: string, newPassword: string) {
+        this.verifyMongoIds([userId]);
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId) });
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if(isMatch == false){
+            throw new HttpException('Invalid credentials, old password is not correct', HttpStatus.BAD_REQUEST);
+        }
+
+        validatePassword(newPassword);
+
+        const saltRounds = 10;
+        const password = await bcrypt.hash(user.password, saltRounds);
+
+        return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
       }
 
-      /** AUTHORIZATION FUNCTIONS */
+      /**
+       * 
+       * @param userId 
+       * @param discussionId 
+       * @returns 
+       */
+    async fetchUserAndStats(userId: string) {
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
+        return new UserReadDTO(user);
+    }
+
+      /** AUTHORIZATION DECORATOR FUNCTIONS */
 
     async isDiscussionCreator(userId: string, discussionId: string): Promise<boolean> {
         const isCreator = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId), poster: new Types.ObjectId(userId)}) === null ? false : true;
@@ -143,6 +216,7 @@ export class AuthService {
         return isCalendarCreator;
     }
 
+    //** MONGO ID VERIFICATION */
     verifyMongoIds(ids: string[]) {
         ids.forEach(id => {
             if(!Types.ObjectId.isValid(id)) {

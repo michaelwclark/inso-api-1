@@ -51,9 +51,6 @@ export class User {
     @Prop([Contact])
     public contact: Contact[];
 
-    @Prop([String])
-    public sso: string[];
-
     @Prop(String)
     public password: string;
 
@@ -61,7 +58,7 @@ export class User {
     public level: string;
 
     @Prop(String)
-    public subject: string;
+    public role: string;
 
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);

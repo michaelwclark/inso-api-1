@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, ValidateNested  } from "class-validator";
+import { ArrayMinSize, IsArray, IsBoolean, IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength, ValidateNested  } from "class-validator";
 import { Types } from "mongoose";
 import { ContactCreateDTO } from "./create-user";
 
@@ -62,6 +62,8 @@ export class UserEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @IsString()
+    @MinLength(5)
+    @MaxLength(32)
     public username: string;
 
     @ApiProperty({
@@ -105,21 +107,8 @@ export class UserEditDTO {
     public contact: ContactEditDTO[];
 
     @ApiProperty({
-        name: 'sso',
-        required: true,
-        type: String,
-        isArray: true
-    })
-    @IsOptional()
-    @IsNotEmpty({each: true})
-    @IsArray()
-    @ArrayMinSize(1)
-    @IsString({each: true})
-    public sso: string[];
-
-    @ApiProperty({
         name: 'level',
-        description: 'The users level of education',
+        description: 'The users level of education (student or teaching)',
         required: true,
         type: String
     })
@@ -129,15 +118,15 @@ export class UserEditDTO {
     public level: string;
 
     @ApiProperty({
-        name: 'subject',
-        description: 'The users class subject',
+        name: 'role',
+        description: 'The users role',
         required: true,
         type: String
     })
     @IsOptional()
     @IsNotEmpty()
     @IsString()
-    public subject: string;
+    public role: string;
 
     constructor(partial: Partial<UserEditDTO>) {
         Object.assign(this, partial);

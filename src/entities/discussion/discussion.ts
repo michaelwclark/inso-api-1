@@ -1,6 +1,5 @@
 import { ObjectId, Types, Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { User } from '../user/user';
 
 
 export type DiscussionDocument = Discussion & Document;

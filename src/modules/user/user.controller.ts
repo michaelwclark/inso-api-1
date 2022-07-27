@@ -13,6 +13,9 @@ import * as bcrypt from 'bcrypt';
 import { SGService } from 'src/drivers/sendgrid';
 import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
 import { AuthService } from 'src/auth/auth.service';
+import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
+import { length } from 'class-validator';
+
 
 
 @Controller()
@@ -23,24 +26,6 @@ export class UserController {
     //@Inject(forwardRef(() => AuthService))
     //private authService: AuthService
     ) {}
-
-  /** For Authentication service, needed to verify password */
-  async returnUser(email: string){
-    const found = await this.userModel.findOne({'contact.email': email});
-    if(!found){ 
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
-    }
-    return found;
-  }
-
-  /** For Authentication service, needed for authorization in IsCreatorGuard */
-  async returnUserByUsername(username: string){
-    const found = await this.userModel.findOne({'username': username});
-    if(!found){ 
-      throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
-    }
-    return found;
-  }
 
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
@@ -69,11 +54,24 @@ export class UserController {
   @ApiTags('User')
   async createUser(@Body() user: UserCreateDTO){
 
-    validateUsername(user.username);
-    
-    const sameUsername = await this.userModel.findOne({username: user.username})
-    if(!(sameUsername == undefined)){
-      throw new HttpException('Username already exists, please choose another', HttpStatus.BAD_REQUEST);
+    let username = user.f_name + user.l_name;
+    let sameUsername = await this.userModel.findOne({username: username});
+    let counter = 1;
+    username = username + counter.toString();
+    while(sameUsername) {
+      if(counter < 10) {
+        username = username.substring(0, username.length - 1);
+      } 
+      if(counter < 100 && counter >=10 ) {
+        username = username.substring(0, username.length - 2);
+      }
+      // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
+      if(counter < 1000 && counter >=100) {
+        username = username.substring(0, username.length - 3);
+      }
+      username = username + counter.toString();
+      sameUsername = await this.userModel.findOne({username: username});
+      counter++;
     }
     
     checkForDuplicateContacts(user.contact); // throws error if same email appears more than once
@@ -98,7 +96,7 @@ export class UserController {
     const saltRounds = 10;
     user.password = await bcrypt.hash(user.password, saltRounds);
 
-    const newUser = new this.userModel({...user, 'dateJoined': new Date()})
+    const newUser = new this.userModel({...user, 'dateJoined': new Date(), username: username });
     await newUser.save();
 
     //this.verifyEmail(user);
@@ -249,41 +247,6 @@ function isEmail(search: string){
 
   searchFind = regexp.test(search);
   return searchFind;
-}
-
-/** validates the password for a new user meets all the required conditions to ensure password strength */
-function validatePassword(password: string){
-
-  if(password.length < 8 || password.length > 32){
-    throw new HttpException('Password length must be at least 8 characters and no more than 32', HttpStatus.BAD_REQUEST)
-  }
-
-  var checkStrength: boolean;
-  var lowercaseRegexp = new RegExp('(?=.*[a-z])')
-  var uppercaseRegexp = new RegExp('(?=.*[A-Z])')
-  var numberRegexp = new RegExp('(?=.*[0-9])')
-  var specialCharRegexp = new RegExp('(?=.*[^A-Za-z0-9])')
-
-  checkStrength = lowercaseRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one lowercase character', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = uppercaseRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one uppercase character', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = numberRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one number', HttpStatus.BAD_REQUEST)
-  }
-
-  checkStrength = specialCharRegexp.test(password);
-  if(checkStrength == false){ 
-    throw new HttpException('Password must contain at least one special character', HttpStatus.BAD_REQUEST)
-  }
-
 }
 
 /** checks if array of new contacts in User create or edit DTOs, contains duplicate emails */
