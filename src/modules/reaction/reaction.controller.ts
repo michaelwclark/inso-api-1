@@ -8,12 +8,14 @@ import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { CreateReactionDTO } from 'src/entities/reaction/create-reaction';
 import { UpdateReactionDTO } from 'src/entities/reaction/edit-reaction';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { NotificationService } from '../notification/notification.service';
 
 @Controller()
 export class ReactionController {
   constructor(
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
-    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    private notificationService: NotificationService
   ) {}
 
   @Post('post/:postId/reaction')
@@ -33,6 +35,8 @@ export class ReactionController {
 
     const checkReaction = new Reaction({ ...reaction, postId: new Types.ObjectId(postId)});
     const newReaction = new this.reactionModel(checkReaction);
+    // Generate a notification
+    // Generate milestones
     return await newReaction.save();
   }
 
@@ -50,6 +54,8 @@ export class ReactionController {
     }
 
     await this.reactionModel.findOneAndUpdate({ _id: new Types.ObjectId(reactionId)}, { reaction: reaction.reaction });
+    // Update notifications
+    // Update milestones
     return;
   }
 
@@ -62,6 +68,8 @@ export class ReactionController {
     }
 
     const deleted = await this.reactionModel.deleteOne({ _id: new Types.ObjectId(reactionId)});
+    // update notifications 
+    // update milestones
     return deleted;
   }
 }

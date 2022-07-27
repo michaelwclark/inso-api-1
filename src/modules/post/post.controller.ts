@@ -11,6 +11,8 @@ import { PostCreateDTO } from 'src/entities/post/create-post';
 import { PostUpdateDTO } from 'src/entities/post/edit-post';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
+import { User, UserDocument } from 'src/entities/user/user';
+import { NotificationService } from '../notification/notification.service';
 
 
 @Controller()
@@ -20,7 +22,8 @@ export class PostController {
     @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
     @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
-    // Build a notification service
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationService: NotificationService
   ) {}
 
   @Post('discussion/:discussionId/post')
@@ -41,9 +44,18 @@ export class PostController {
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
-    } 
+    }
+    const user = await this.userModel.findOne({_id: post.userId});
 
-    // Generate Notifications
+    // Create a notification for each facilitator
+    for await(const facilitator of discussion.facilitators) {
+      await this.notificationService.createNotification(facilitator, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+    }
+    
+    // Create a notification for each participant
+    for await(const participant of discussion.participants) {
+      await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+    }
     // Check Milestones for a user
 
     const newPost = new this.discussionPostModel({ 
