@@ -1,12 +1,6 @@
 import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
-import { JwtService } from "@nestjs/jwt";
-import { UserController } from "src/modules/user/user.controller";
-import { decodeOta, generateCode } from "./otaDriver";
-import { InjectModel } from "@nestjs/mongoose";
-import { User, UserDocument } from "src/entities/user/user";
-import { Model } from "mongoose";
 
 enum SENDGRID_TEMPLATES {
     CONFIRM_EMAIL = "",
@@ -23,9 +17,6 @@ export class SGService {
 
   constructor(
     @InjectSendGrid() private readonly sgclient: SendGridService,
-    private jwtService: JwtService,
-    // private userController: UserController,
-    // @InjectModel(User.name) private userModel: Model<UserDocument>
     ) {
       this.TEMPLATES.set(
           MAIL_DEFAULTS.TEMPLATES.CONFIRM_EMAIL, 

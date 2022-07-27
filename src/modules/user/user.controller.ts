@@ -22,9 +22,6 @@ import { length } from 'class-validator';
 export class UserController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private sgService: SGService,
-    //@Inject(forwardRef(() => AuthService))
-    //private authService: AuthService
     ) {}
 
   @Get('user/:userId')

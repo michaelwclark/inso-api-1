@@ -18,9 +18,7 @@ import { UserReadDTO } from 'src/entities/user/read-user';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        //@Inject(forwardRef(() => UserController))
-        private userController: UserController, 
+    constructor( 
         private jwtService: JwtService,
         private sgService: SGService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
@@ -258,7 +256,7 @@ export class AuthService {
 
     ////***************************************************************************************** */
     async sendEmailVerification(userEmail: string){
-        const user = this.userController.returnUser(userEmail);
+        const user = this.userModel.findOne({'contact.email': userEmail});
         if(!user){
             throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
         }
