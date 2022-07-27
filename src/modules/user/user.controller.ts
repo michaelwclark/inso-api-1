@@ -1,10 +1,7 @@
 import { Body, Controller, forwardRef, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
-import { plainToClass } from 'class-transformer';
 import { Model, Types } from 'mongoose';
-import { authenticate } from 'passport';
-import { async } from 'rxjs';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
 import { UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
@@ -15,6 +12,8 @@ import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
 import { AuthService } from 'src/auth/auth.service';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { length } from 'class-validator';
+import { decodeOta, generateCode } from 'src/drivers/otaDriver';
+import { JwtService } from '@nestjs/jwt';
 
 
 
@@ -22,6 +21,7 @@ import { length } from 'class-validator';
 export class UserController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private sgService: SGService
     ) {}
 
   @Get('user/:userId')
@@ -102,7 +102,7 @@ export class UserController {
     // this.jwtService.sign(payload);
     // const link = 
     //await this.sgService.verifyEmail(user);
-    //  await this.sgService.sendEmailVerification(user.contact[0].email);
+    await this.sendEmailVerification(user);
 
     return 'User Created! Please check your email inbox to verify your email address';//, link: ' + link;
   }
@@ -215,6 +215,24 @@ export class UserController {
   //   console.log(`Email verification sent! Please check your email inbox to verify your email address.`);
   // }
 
+  async sendEmailVerification(user: any){
+    // const user = this.returnUser(userEmail);
+    // if(!user){
+    //     throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
+    // }
+    const ota = await generateCode(user.contact[0].email);
+    console.log(ota);
+
+    return this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+  }
+
+  async verifyEmailToken(ota: string){
+    const code = await decodeOta(ota);
+
+    await this.userModel.updateOne({'contact.email': code.data}, {verified: true});
+
+    console.log('Email verified!');
+  }
 }
 
 /** validates the username for a new user or when updating a username, the value meets all  required conditions */

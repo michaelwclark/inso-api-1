@@ -1,9 +1,7 @@
-import { HttpException, HttpStatus, Injectable, Post, UseGuards, Request, Get, Body, Inject, forwardRef } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserController } from 'src/modules/user/user.controller';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
-import { DiscussionController } from 'src/modules/discussion/discussion.controller';
 import { InjectModel } from '@nestjs/mongoose';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
@@ -11,7 +9,6 @@ import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
 import { SGService } from 'src/drivers/sendgrid';
-import { decodeOta, generateCode } from 'src/drivers/otaDriver';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from 'src/entities/user/google-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
@@ -223,53 +220,4 @@ export class AuthService {
         });
     }
 
-    // verifyEmail(user: any){
-    
-    //     this.sgService.sendEmail([
-    //         {
-    //                 name: user.f_name,
-    //                 username: user.username,
-    //                 email: user.contact[0].email,
-    //                 action: TEMPLATES.CONFIRM_EMAIL,
-    //                 ota: "ota"
-    //         }
-    //     ]);
-
-    //     this.createVerificationToken(user);
-
-    //     console.log(`Email verification sent!`);
-    // }
-
-    // createVerificationToken(user: any){
-        
-    //     const payload = { 'username': user.username, 'email': user.contact[0].email };
-    //     this.jwtService.sign(payload)
-        
-
-    //     var a = document.createElement('a');
-    //     var link = document.createTextNode('This string is a link');
-    //     a.appendChild(link);
-    //     a.title = 'This is a link';
-    //     a.href = 'http://localhost:3000'
-    //     return a;
-    // }
-
-    ////***************************************************************************************** */
-    async sendEmailVerification(userEmail: string){
-        const user = this.userModel.findOne({'contact.email': userEmail});
-        if(!user){
-            throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
-        }
-        const ota = await generateCode(userEmail);
-
-        return this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
-    }
-
-    async verifyEmailToken(ota: string){
-        const code = await decodeOta(ota);
-
-        await this.userModel.updateOne({'contact.email': code.data}, {verified: true});
-
-        console.log('Email verified!');
-    }
 }

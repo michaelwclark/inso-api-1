@@ -18,12 +18,11 @@ import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { SGService } from 'src/drivers/sendgrid';
 
 @Module({
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, SGService],
   imports: [
     UserModule,
     SGService,
     PassportModule,
-    JwtService,
     JwtModule.register({
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '86000s'}
