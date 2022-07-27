@@ -1,8 +1,12 @@
 import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
-import { Injectable } from "@nestjs/common";
-import { DefaultEmailParams } from "./interfaces/mailerDefaults";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
 import { JwtService } from "@nestjs/jwt";
+import { UserController } from "src/modules/user/user.controller";
+import { decodeOta, generateCode } from "./otaDriver";
+import { InjectModel } from "@nestjs/mongoose";
+import { User, UserDocument } from "src/entities/user/user";
+import { Model } from "mongoose";
 
 enum SENDGRID_TEMPLATES {
     CONFIRM_EMAIL = "",
@@ -20,6 +24,8 @@ export class SGService {
   constructor(
     @InjectSendGrid() private readonly sgclient: SendGridService,
     private jwtService: JwtService,
+    // private userController: UserController,
+    // @InjectModel(User.name) private userModel: Model<UserDocument>
     ) {
       this.TEMPLATES.set(
           MAIL_DEFAULTS.TEMPLATES.CONFIRM_EMAIL, 
@@ -46,7 +52,7 @@ export class SGService {
                   name: mailinfo[0].name
                 }
               ],
-              //subject: "Hello, World!"
+              //subject: "Hello, World!"   // gets overridden
             }
           ],
           content: 
@@ -123,4 +129,22 @@ export class SGService {
   //   // let result = text.link('http://localhost:3000/')
   // }
 
+  //************************************************************************************ */
+  // async sendEmailVerification(userEmail: string){
+  //   const user = this.userController.returnUser(userEmail);
+  //   if(!user){
+  //       throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
+  //   }
+  //   const ota = await generateCode(userEmail);
+
+  //   return this.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+  // }
+
+  // async verifyEmailToken(ota: string){
+  //   const code = await decodeOta(ota);
+
+  //   await this.userModel.updateOne({'contact.email': code.data}, {verified: true});
+
+  //   console.log('Email verified!');
+  // }
 }

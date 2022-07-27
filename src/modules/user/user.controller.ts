@@ -19,7 +19,9 @@ import { AuthService } from 'src/auth/auth.service';
 export class UserController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private sgService: SGService
+    private sgService: SGService,
+    //@Inject(forwardRef(() => AuthService))
+    //private authService: AuthService
     ) {}
 
   /** For Authentication service, needed to verify password */
@@ -104,8 +106,8 @@ export class UserController {
     // const payload = { 'username': user.username, 'email': user.contact[0].email };
     // this.jwtService.sign(payload);
     // const link = 
-    await this.sgService.verifyEmail(user);
-      
+    //await this.sgService.verifyEmail(user);
+    //  await this.sgService.sendEmailVerification(user.contact[0].email);
 
     return 'User Created! Please check your email inbox to verify your email address';//, link: ' + link;
   }

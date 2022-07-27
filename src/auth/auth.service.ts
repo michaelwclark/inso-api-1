@@ -11,11 +11,12 @@ import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User, UserDocument } from 'src/entities/user/user';
 import { SGService } from 'src/drivers/sendgrid';
-import { generateCode } from 'src/drivers/otaDriver';
+import { decodeOta, generateCode } from 'src/drivers/otaDriver';
 
 @Injectable()
 export class AuthService {
     constructor(
+        //@Inject(forwardRef(() => UserController))
         private userController: UserController, 
         private jwtService: JwtService,
         private sgService: SGService,
@@ -181,13 +182,22 @@ export class AuthService {
     //     return a;
     // }
 
+    ////***************************************************************************************** */
     async sendEmailVerification(userEmail: string){
         const user = this.userController.returnUser(userEmail);
         if(!user){
-            throw new HttpException('User is not found', HttpStatus.NOT_FOUND);
+            throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
         }
         const ota = await generateCode(userEmail);
 
         return this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+    }
+
+    async verifyEmailToken(ota: string){
+        const code = await decodeOta(ota);
+
+        await this.userModel.updateOne({'contact.email': code.data}, {verified: true});
+
+        console.log('Email verified!');
     }
 }

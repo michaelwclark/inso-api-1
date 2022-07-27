@@ -22,12 +22,19 @@ export function generateCode(payload: any){
         {
             expiresIn: '1h'
         },
+        (err: any, token: any) => {
+            if (err){
+                reject(err);
+            }
+            const code = token.replace(process.env.OTA_CODE_REPLACER, process.env.TOKEN_REPLACEMENT);
+            resolve({ code });
+        }
         );
     });
 
 }
 
-export function decodeOta(ota: string){
+export function decodeOta(ota: string): Promise<decodedOtaCode>{
     const code = ota.replace(process.env.OTA_CODE_REPLACER, process.env.TOKEN_REPLACEMENT);
     return new Promise((resolve, reject) => {
         jwt.verify(

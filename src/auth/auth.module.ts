@@ -1,4 +1,4 @@
-import { Module, forwardRef, Post } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -20,7 +20,7 @@ import { SGService } from 'src/drivers/sendgrid';
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy, SGService],
   imports: [
-    UserModule,
+    //UserModule,
     PassportModule, 
     JwtModule.register({
       secret: jwtConstants.secret,
