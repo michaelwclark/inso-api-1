@@ -509,6 +509,25 @@ describe('AppController', () => {
     });
   });
 
+  //mute discussion 200 ok response
+  // describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
+  //   it('should throw a 200 for discussion has been muted')
+  // })
+
+  //mute discussion 400 bad request
+  describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
+    it('should return invalid UserId or invalid Discussion Id', () => {
+
+      const invalidID = {
+        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+        "joined": new Date(),
+        "muted": Boolean,
+        "grade": null
+        }; 
+        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de1', '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+    }); 
+  }); 
+
   afterAll(done => {
     // Closing the DB connection allows Jest to exit successfully.
     mongoConnection.close();
