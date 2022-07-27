@@ -13,16 +13,22 @@ export class Notification {
     date: Date;
 
     @Prop()
-    notificationHeader: string;
+    header: string;
 
     @Prop()
-    notificationText: string;
+    text: string;
+
+    @Prop({ default: false })
+    read: boolean;
 
     constructor(partial: Partial<Notification>) {
-        this.userId = partial.userId;
-        this.date = partial.date;
-        this.notificationHeader = partial.notificationHeader;
-        this.notificationText = partial.notificationText;
+        if(partial) {
+            this.userId = partial.userId;
+            this.date = partial.date;
+            this.header = partial.header;
+            this.text = partial.text;
+            this.read = partial.read;
+        }
     }
 }
 

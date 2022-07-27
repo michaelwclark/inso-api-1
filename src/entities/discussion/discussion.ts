@@ -25,7 +25,7 @@ export class Discussion {
     @Prop({ type: [Types.ObjectId], ref: 'User' })
     public facilitators: ObjectId[];
 
-    @Prop(Types.ObjectId)
+    @Prop({ type: Types.ObjectId, ref: 'User' })
     public poster: Types.ObjectId;
     
     @Prop()

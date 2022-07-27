@@ -1,7 +1,6 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UsePipes, ValidationPipe, UseGuards, Request } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
@@ -13,19 +12,26 @@ import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
 import { DiscussionPost } from 'src/entities/post/post';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
+import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
+import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
+import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 
 @Controller()
 export class DiscussionController {
-  constructor(@InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
-              @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
-              @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
-              @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
-              @InjectModel(User.name) private userModel: Model<UserDocument>,
-              @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-              @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>) {}
+  constructor(
+    @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
+    @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
+    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+    @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
+  ) {}
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -35,12 +41,20 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: 'The user does not have permission to create a discussion'})
   @ApiNotFoundResponse({ description: 'The poster or one of the facilitators was not found'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async createDiscussion(@Body() discussion: DiscussionCreateDTO): Promise<Discussion> {
+  async createDiscussion(@Body() discussion: DiscussionCreateDTO, @Request() req): Promise<Discussion> {
+
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
     if(!user) {
       throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+    }
+
+    // Compare poster to user in request from JWT for authorization
+    const auth = await this.userModel.findOne({username: req.user.username});
+    if(auth._id.toString() !== discussion.poster.toString()){
+      throw new HttpException('Discussion poster does not match authentication token user', HttpStatus.BAD_REQUEST);
     }
     
     // Add the poster to the facilitators
@@ -69,7 +83,7 @@ export class DiscussionController {
         const setting = new this.settingModel();
         const settingId = await setting.save();
 
-        const createdDiscussion = new this.discussionModel({...discussion, insoCode: code, settings: settingId._id});
+        const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
         return await createdDiscussion.save();
       }
     }
@@ -85,8 +99,13 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
-  async updateDiscussionMetadata(@Param('discussionId') discussionId: string, @Body() discussion: DiscussionEditDTO): Promise<any> {
+  async updateDiscussionMetadata(
+    @Param('discussionId') discussionId: string,
+    @Param('entity') entity: string,
+    @Body() discussion: DiscussionEditDTO
+  ): Promise<any> {
     // Check that discussion exists
     const found = await this.discussionModel.findOne({_id: discussionId});
     if(!found) {
@@ -118,11 +137,12 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion was not found'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: discussionId }).exec();
+    const discussion = await this.discussionModel.findOne({ _id: discussionId });
 
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
@@ -148,8 +168,19 @@ export class DiscussionController {
     const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
     const poster = await this.userModel.findOne({ _id: discussion.poster });
 
-    // TODO Get posts 
+    // Get posts
+    // Need to figure out a better way to do this. Look into Mongoose Model
+    const dbPosts = await this.postModel.find({ discussionId: discussion._id, draft: false }).sort({ date: -1 }).lean();
     const posts = [];
+    for await(const post of dbPosts) {
+      const user = await this.userModel.findOne({ _id: new Types.ObjectId(post.userId)}, { password: 0, sso: 0});
+      if(post.comment_for) {
+        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).lean();
+      }
+      delete post.userId;
+      posts.push({ ...post, user: user });
+    }
+
     const discussionRead = new DiscussionReadDTO({
       _id: discussion._id,
       insoCode: discussion.insoCode,
@@ -172,6 +203,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async archiveDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -187,6 +219,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'The discussion to be archived does not exist'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async duplicateDiscussion(@Param('discussionId') discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('DiscussionId is not a valid MongoId', HttpStatus.BAD_REQUEST);
@@ -253,6 +286,7 @@ export class DiscussionController {
   @ApiNotFoundResponse({ description: ''})
   @ApiQuery({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: boolean,
@@ -306,6 +340,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async updateDiscussionSettings(
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
@@ -346,6 +381,8 @@ export class DiscussionController {
   @ApiBadRequestResponse({ description: 'UserId is not valid'})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'UserId not found in the discussion'})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
   async joinDiscussion(
     @Param('userId') userId: string,
     @Param('insoCode') insoCode: string): Promise<any>{
@@ -394,7 +431,15 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  async deleteDiscussion(@Param('discussionId') discussionId: string): Promise<void> {
+  @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
+  async deleteDiscussion(
+    @Param('discussionId') discussionId: string,
+    @Param('entity') entity: string
+    ): Promise<void> {
+    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
+    if(entity !== 'discussion'){
+      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
+    }
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
