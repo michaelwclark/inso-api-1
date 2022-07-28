@@ -39,6 +39,14 @@ export class PostController {
     // Check that the participant is a part of the array
     this.verifyParticipation(post.userId.toString(), discussion);
 
+    if(discussion.archived !== null) {
+      throw new HttpException(`${discussionId} is currently archived and is not accepting posts`, HttpStatus.BAD_REQUEST);
+    }
+
+    if(discussion.settings.calendar.close < new Date()) {
+      throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
+    }
+
     if(post.comment_for) {
       const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
@@ -151,11 +159,14 @@ export class PostController {
 
   /** PRIVATE FUNCTIONS */
 
-  async verifyDiscussion(discussionId: string): Promise<Discussion> {
+  async verifyDiscussion(discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)});
+    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
     }
