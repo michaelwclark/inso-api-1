@@ -4,10 +4,12 @@ import { ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsReactionCreatorGuard } from 'src/auth/guards/userGuards/isReactionCreator.guard';
+import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { CreateReactionDTO } from 'src/entities/reaction/create-reaction';
 import { UpdateReactionDTO } from 'src/entities/reaction/edit-reaction';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { User, UserDocument } from 'src/entities/user/user';
 import { NotificationService } from '../notification/notification.service';
 
 @Controller()
@@ -15,6 +17,8 @@ export class ReactionController {
   constructor(
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private notificationService: NotificationService
   ) {}
 
@@ -33,10 +37,12 @@ export class ReactionController {
       throw new HttpException(`${postId} does not exist`, HttpStatus.NOT_FOUND);
     }
 
+    const user = await this.userModel.findOne({ _id: reaction.userId});
     const checkReaction = new Reaction({ ...reaction, postId: new Types.ObjectId(postId)});
     const newReaction = new this.reactionModel(checkReaction);
     // Generate a notification
-    // Generate milestones
+    const discussion = await this.discussionModel.findOne({_id: post.discussionId});
+    await this.notificationService.createNotification(post.userId, { header: `<h1 class="notification-header"><span class="username">@${user.username}</span> reacted in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`})
     return await newReaction.save();
   }
 

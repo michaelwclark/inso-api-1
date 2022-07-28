@@ -1,16 +1,19 @@
 import { Controller, Get, HttpException, HttpStatus, Param, Patch, UseGuards } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
 import { NotificationReadDTO } from 'src/entities/notification/read-notification';
+import { User, UserDocument } from 'src/entities/user/user';
 import { NotificationService } from './notification.service';
 
 
 @Controller()
 export class NotificationController {
   constructor(
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    @InjectModel(User.name) private userModel: Model<UserDocument>
   ) {}
 
     @Get('users/:userId/notifications')
@@ -22,7 +25,14 @@ export class NotificationController {
     @ApiTags('Notifications')
     @UseGuards(JwtAuthGuard, RequesterIsUserGuard)
     async getNotifications(@Param('userId') userId: string) {
-
+      if(!Types.ObjectId.isValid(userId)) {
+        throw new HttpException(`${userId} is not a valid id`, HttpStatus.BAD_REQUEST);
+      }
+      const user = await this.userModel.findOne({ _id: userId});
+      if(!user) {
+        throw new HttpException(`${userId} does not exist`, HttpStatus.NOT_FOUND);
+      }
+      return await this.notificationService.getNotifications(new Types.ObjectId(userId));
     }
 
     @Patch('users/:userId/notifications/:notificationId/read')
@@ -36,6 +46,10 @@ export class NotificationController {
     async markNotificationAsRead(@Param('userId') userId: string, @Param('notificationId') notificationId: string) {
       if(!Types.ObjectId.isValid(userId)) {
         throw new HttpException(`${userId} is not a valid id`, HttpStatus.BAD_REQUEST);
+      }
+      const user = await this.userModel.findOne({ _id: userId});
+      if(!user) {
+        throw new HttpException(`${userId} does not exist`, HttpStatus.NOT_FOUND);
       }
       if(!Types.ObjectId.isValid(notificationId)) {
         throw new HttpException(`${notificationId} is not a valid id`, HttpStatus.BAD_REQUEST);
