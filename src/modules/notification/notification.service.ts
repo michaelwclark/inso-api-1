@@ -22,7 +22,7 @@ export class NotificationService {
     }
 
     async markNotificationAsRead(notificationId: Types.ObjectId) {
-        
+        return await this.notificationModel.findOneAndUpdate({ _id: notificationId}, { read: true });
     }
 
     async deleteNotification(notificationId: Types.ObjectId) {

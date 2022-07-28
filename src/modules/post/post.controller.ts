@@ -64,7 +64,6 @@ export class PostController {
     for await(const participant of discussion.participants) {
       await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
     }
-    // Check Milestones for a user
 
     const newPost = new this.discussionPostModel({ 
       ...post,

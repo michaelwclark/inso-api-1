@@ -147,6 +147,8 @@ export class AuthService {
         const posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)});
         stats.posts_made = posts_made.length;
 
+        const milestones = this.getMilestones();
+
         // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
         const postIds = posts_made.map(post => {
             return post._id;
@@ -242,5 +244,9 @@ export class AuthService {
                 throw new HttpException(`${id} is not a valid Mongo Id`, HttpStatus.BAD_REQUEST);
             }
         });
+    }
+
+    getMilestones() {
+        return [];
     }
 }
