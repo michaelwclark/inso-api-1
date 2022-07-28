@@ -1,4 +1,4 @@
-import { Body, Controller, forwardRef, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, forwardRef, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -23,6 +23,12 @@ export class UserController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private sgService: SGService
     ) {}
+
+  @Get('/email-verified')
+  async verifyEmailRoute(@Query('ota') ota: string){
+    console.log(ota)
+    this.verifyEmailToken(ota);
+  }
 
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
@@ -96,15 +102,14 @@ export class UserController {
     const newUser = new this.userModel({...user, 'dateJoined': new Date(), username: username });
     await newUser.save();
 
-    //this.verifyEmail(user);
+    const verifyUser = { 
+      name: user.f_name + ' ' + user.l_name, 
+      username: username, 
+      contact: user.contact[0].email 
+    }
+    await this.sendEmailVerification(verifyUser);
 
-    // const payload = { 'username': user.username, 'email': user.contact[0].email };
-    // this.jwtService.sign(payload);
-    // const link = 
-    //await this.sgService.verifyEmail(user);
-    await this.sendEmailVerification(user);
-
-    return 'User Created! Please check your email inbox to verify your email address';//, link: ' + link;
+    return 'User Created! Please check your email inbox to verify your email address';
   }
 
   @Patch('user/:userId')
@@ -201,35 +206,18 @@ export class UserController {
   }
 
   // //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
-  // verifyEmail(user: any){
-    
-  //   this.sgService.sendEmail([
-  //       {
-  //               name: user.f_name,
-  //               username: user.username,
-  //               email: user.contact[0].email,
-  //               action: TEMPLATES.CONFIRM_EMAIL,
-  //               template: "d-c5fd47a270b2408b97c4151785fc4bda"  // template id for email verification template
-  //       }
-  //   ]);
-  //   console.log(`Email verification sent! Please check your email inbox to verify your email address.`);
-  // }
-
-  async sendEmailVerification(user: any){
-    // const user = this.returnUser(userEmail);
-    // if(!user){
-    //     throw new HttpException('User is not found.', HttpStatus.NOT_FOUND);
-    // }
-    const ota = await generateCode(user.contact[0].email);
+    async sendEmailVerification(user: any){
+  
+    const ota = await generateCode(user.contact);
     console.log(ota);
-
-    return this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+    return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
   }
 
   async verifyEmailToken(ota: string){
     const code = await decodeOta(ota);
 
-    await this.userModel.updateOne({'contact.email': code.data}, {verified: true});
+    console.log('yeet', code)
+    await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
 
     console.log('Email verified!');
   }
