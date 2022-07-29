@@ -57,7 +57,7 @@ export class PostController {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
     }
-    const user = await this.userModel.findOne({_id: post.userId});
+    const user = await this.userModel.findOne({_id: req.user.userId});
 
     // Create a notification for each facilitator
     for await(const facilitator of discussion.facilitators) {
@@ -72,7 +72,7 @@ export class PostController {
     const newPost = new this.discussionPostModel({ 
       ...post,
       discussionId: new Types.ObjectId(discussionId),
-      userId: new Types.ObjectId(post.userId),
+      userId: new Types.ObjectId(req.user.userId),
       date: new Date(),
       comment_for: new Types.ObjectId(post.comment_for)
     });

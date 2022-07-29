@@ -22,9 +22,6 @@ export class DiscussionPost {
     @Prop(Date)
     public date: Date;
 
-    @Prop(String)
-    public tags: string [];
-
     @Prop({ type: Types.ObjectId, ref: 'DiscussionPost' })
     public comment_for: Types.ObjectId;
 
@@ -37,7 +34,6 @@ export class DiscussionPost {
             this.discussionId = partial.discussionId;
             this.draft = partial.draft;
             this.date = partial.date;
-            this.tags = partial.tags;
             this.comment_for = partial.comment_for;
             this.post = partial.post;
         }
