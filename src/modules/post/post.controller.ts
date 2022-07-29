@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, ConsoleLogger, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -34,16 +34,20 @@ export class PostController {
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
   @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard)
-  async createPost(@Param('discussionId') discussionId: string, @Body() post: PostCreateDTO): Promise<string> {
+  async createPost(
+    @Param('discussionId') discussionId: string,
+    @Body() post: PostCreateDTO,
+    @Req() req: any
+    ): Promise<string> {
     const discussion = await this.verifyDiscussion(discussionId);
     // Check that the participant is a part of the array
-    this.verifyParticipation(post.userId.toString(), discussion);
+    //this.verifyParticipation(req.user.userId.toString(), discussion);
 
     if(discussion.archived !== null) {
       throw new HttpException(`${discussionId} is currently archived and is not accepting posts`, HttpStatus.BAD_REQUEST);
     }
 
-    if(discussion.settings.calendar.close < new Date()) {
+    if(discussion.settings.calendar && discussion.settings.calendar.close < new Date()) {
       throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
     }
 
@@ -170,15 +174,6 @@ export class PostController {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
     }
     return discussion;
-  }
-
-  verifyParticipation(userId: string, discussion: Discussion) {
-    const participants = discussion.participants.map(participant => {
-      return participant.user.toString();
-    });
-    if(!participants.includes(userId)) {
-      throw new HttpException(`${userId} is not a participant in the discussion`, HttpStatus.FORBIDDEN);
-    }
   }
 
   async verifyPostInspiration(inspirationId: Types.ObjectId, settingsId: Types.ObjectId) {
