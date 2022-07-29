@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsReactionCreatorGuard } from 'src/auth/guards/userGuards/isReactionCreator.guard';
@@ -24,6 +24,12 @@ export class ReactionController {
 
   @Post('post/:postId/reaction')
   @UseGuards(JwtAuthGuard)
+  @ApiBody({ description: 'Reaction', type: CreateReactionDTO })
+  @ApiOkResponse({ description: 'Reaction created!'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User cannot create a reaction for another user'})
+  @ApiBadRequestResponse({ description: 'postId is not valid or the emoji option is not valid'})
+  @ApiNotFoundResponse({ description: 'The post to react to was not found'})
   @ApiTags('Reaction')
   async createReaction(@Param('postId') postId: string, @Body() reaction: CreateReactionDTO) {
     // Validate postId
@@ -48,6 +54,12 @@ export class ReactionController {
 
   @Patch('post/:postId/reaction/:reactionId')
   @UseGuards(JwtAuthGuard, IsReactionCreatorGuard)
+  @ApiBody({ description: 'Reaction', type: UpdateReactionDTO })
+  @ApiOkResponse({ description: 'Reaction updated!'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User cannot update a reaction for another user'})
+  @ApiBadRequestResponse({ description: 'postId is not valid or the emoji option is not valid'})
+  @ApiNotFoundResponse({ description: 'The post to react to was not found or the reaction was not found'})
   @ApiTags('Reaction')
   async updateReaction(@Param('postId') postId: string, @Param('reactionId') reactionId: string, @Body() reaction: UpdateReactionDTO) {
     if(!Types.ObjectId.isValid(postId)) {
@@ -67,6 +79,10 @@ export class ReactionController {
 
   @Delete('post/:postId/reaction/:reactionId')
   @UseGuards(JwtAuthGuard, IsReactionCreatorGuard)
+  @ApiBody({ description: 'Delete Reaction' })
+  @ApiOkResponse({ description: 'Reaction deleted!'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User cannot delete a reaction for another user'})
   @ApiTags('Reaction')
   async deleteReaction(@Param('postId') postId: string, @Param('reactionId') reactionId: string) {
     if(!Types.ObjectId.isValid(postId)) {
