@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { Notification, NotificationDocument } from "src/entities/notification/notification";
 import { User, UserDocument } from "src/entities/user/user";
 
@@ -16,21 +16,20 @@ export class NotificationService {
      * @param userId 
      * @param notification 
      */
-    async createNotification(userId: string, notification: { header: string, text: string }) {
-        // Verify it is a valid notification header and text
-        const newNotification = new this.notificationModel({ ...notification, userId});
+    async createNotification(userId: any, notification: { header: string, text: string }) {
+        const newNotification = new this.notificationModel({ ...notification, userId, date: new Date()});
         return newNotification.save();
     }
 
-    async markNotificationAsRead() {
-        
+    async markNotificationAsRead(notificationId: Types.ObjectId) {
+        return await this.notificationModel.findOneAndUpdate({ _id: notificationId}, { read: true });
     }
 
-    async deleteNotification() {
+    async deleteNotification(notificationId: Types.ObjectId) {
 
     }
 
-    async getNotifications() {
-
+    async getNotifications(userId: Types.ObjectId) {
+        return this.notificationModel.find({ userId: userId}).sort({ date: -1});
     }
 }

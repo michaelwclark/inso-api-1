@@ -3,11 +3,6 @@ import { IsBoolean, IsDefined, IsMongoId, IsOptional, IsString } from "class-val
 import { Types } from "mongoose";
 
 export class PostCreateDTO {
-    @IsMongoId()
-    @Type(() => Types.ObjectId)
-    @IsDefined()
-    userId: Types.ObjectId;
-
     @IsBoolean()
     @IsDefined()
     draft: boolean;
@@ -28,7 +23,6 @@ export class PostCreateDTO {
 
     constructor(partial: Partial<PostCreateDTO>) {
         if(partial) {
-            this.userId = partial.userId;
             this.draft = partial.draft;
             this.comment_for = partial.comment_for;
             this.post = partial.post;

@@ -10,16 +10,16 @@ export class Setting {
     @Prop({ type: Types.ObjectId, default: '' })
     public starter_prompt: string;
 
-    @Prop([Types.ObjectId])
+    @Prop({ type: [Types.ObjectId], ref: 'Inspiration'})
     public inspiration: Types.ObjectId[];
 
-    @Prop({ type: Types.ObjectId, default: null })
+    @Prop({ type: Types.ObjectId, default: null, ref: 'Score' })
     public score: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, default: null })
+    @Prop({ type: Types.ObjectId, default: null, ref: 'Calendar' })
     public calendar: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, default: null })
+    @Prop({ type: Types.ObjectId, default: null, ref: 'User' })
     public userId: Types.ObjectId;
 
     constructor(partial: Partial<Setting>) {
