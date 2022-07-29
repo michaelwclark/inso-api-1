@@ -52,7 +52,7 @@ export class UserController {
     let sameUsername = await this.userModel.findOne({username: username});
     let counter = 1;
     username = username + counter.toString();
-    while(sameUsername) {
+    while(sameUsername !== null) {
       if(counter < 10) {
         username = username.substring(0, username.length - 1);
       } 
