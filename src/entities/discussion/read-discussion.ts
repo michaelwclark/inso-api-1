@@ -82,34 +82,18 @@ export class DiscussionReadDTO {
       date: string;
       tags: string [];
       post: string;
+      comments: [];
+      
   } [];
 
-  // public participants:{
-  //   user: string,
-  //   joined: string,
-  //   muted: string,
-  //   grade: string
-  // } []
-  public participants: {
-    // TO DO Add the participants of the discussion
+  public participants:{
+    user: string,
+    joined: string,
+    muted: string,
+    grade: string
   } [];
   
-  constructor(partial: Partial<DiscussionReadDTO>) {
+  constructor(partial: any) {
       Object.assign(this, partial);
-      // Map the users to what we want to return
-      this.poster = {
-        _id: partial.poster._id,
-        username: partial.poster.username,
-        f_name: partial.poster.f_name,
-        l_name: partial.poster.l_name
-      };
-      this.facilitators = partial.facilitators.map(fac => {
-        return {
-          _id: fac._id,
-          username: fac.username,
-          f_name: fac.f_name,
-          l_name: fac.l_name
-        }
-      });
   }
 }

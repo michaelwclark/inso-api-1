@@ -11,7 +11,7 @@ import { Score, ScoreDocument } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { makeInsoId } from '../shared/generateInsoCode';
-import { DiscussionPost } from 'src/entities/post/post';
+import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
@@ -20,6 +20,7 @@ import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 
 @Controller()
 export class DiscussionController {
@@ -30,7 +31,8 @@ export class DiscussionController {
     @InjectModel(Inspiration.name) private post_inspirationModel: Model<InspirationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPost>
+    @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
   ) {}
               
   @Post('discussion')
@@ -142,54 +144,29 @@ export class DiscussionController {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: discussionId });
+    const discussion = await this.discussionModel.findOne({ _id: discussionId })
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
 
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
 
-    const settings = await this.settingModel.findOne({ _id: discussion.settings }).exec();
-    const dSettings = {
-      _id: settings._id,
-      starter_prompt: settings.starter_prompt,
-      calendar: null,
-      postInspiration: null,
-      scores: null,
-    }
-    const calendar = await this.calendarModel.findOne({ _id: settings.calendar});
-    dSettings.calendar = calendar;
-
-    const scores = await this.scoreModel.findOne({ _id: settings.score });
-    dSettings.scores = scores;
-
-    const postInspiration = await this.post_inspirationModel.find({ _id: { $in: settings.inspiration}});
-    dSettings.postInspiration = postInspiration;
-
-    const facilitators = await this.userModel.find({ _id: { $in: discussion.facilitators }});
-    const poster = await this.userModel.findOne({ _id: discussion.poster });
-
     // Get posts
-    // Need to figure out a better way to do this. Look into Mongoose Model
-    const dbPosts = await this.postModel.find({ discussionId: discussion._id, draft: false }).sort({ date: -1 }).lean();
+    // Needs recursion here 
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
-      const user = await this.userModel.findOne({ _id: new Types.ObjectId(post.userId)}, { password: 0, sso: 0});
-      if(post.comment_for) {
-        const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1 }).lean();
-      }
-      delete post.userId;
-      posts.push({ ...post, user: user });
+      const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+      const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+      let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
+      delete newPost.userId;
+      posts.push(newPost);
     }
 
     const discussionRead = new DiscussionReadDTO({
-      _id: discussion._id,
-      insoCode: discussion.insoCode,
-      name: discussion.name,
-      archived: discussion.archived !== null ? discussion.archived.toString(): null,
-      created: discussion.created.toString(),
-      settings: dSettings,
-      facilitators: facilitators,
-      poster: poster,
+      ...discussion,
       posts: posts
     });
 
@@ -237,23 +214,13 @@ export class DiscussionController {
     const newScore = new this.scoreModel(score);
     const newScoreId = await newScore.save();
 
-    //Duplicate the post inspirations
-    const newInspoIds = [];
-    for await(const inspo of settings.inspiration) {
-      const postInspiration = await this.post_inspirationModel.findOne({ _id: inspo });
-      delete postInspiration._id;
-      const newInspo = new this.post_inspirationModel(postInspiration);
-      const newInspoId = await newInspo.save();
-      newInspoIds.push(newInspoId._id);
-    }
-
     // duplicate the settings 
     // calendar is set to null because the calendar needs to be set
     delete settings._id;
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
       starter_prompt: settings.starter_prompt,
-      inspiration: newInspoIds,
+      inspiration: settings.inspiration,
       score: newScoreId._id,
       calendar: null 
     });
@@ -448,5 +415,17 @@ export class DiscussionController {
     }
     await this.discussionModel.deleteOne({ _id: discussion });
     return;
+  }
+
+
+
+  //** PRIVATE FUNCTIONS */
+
+  async getPostsAndComments(post: any) {
+    const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+    const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
+    delete newPost.userId;
+    return newPost;
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, ConsoleLogger, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -11,6 +11,8 @@ import { PostCreateDTO } from 'src/entities/post/create-post';
 import { PostUpdateDTO } from 'src/entities/post/edit-post';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
+import { User, UserDocument } from 'src/entities/user/user';
+import { NotificationService } from '../notification/notification.service';
 
 
 @Controller()
@@ -20,7 +22,8 @@ export class PostController {
     @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
     @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
-    // Build a notification service
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationService: NotificationService
   ) {}
 
   @Post('discussion/:discussionId/post')
@@ -31,22 +34,48 @@ export class PostController {
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
   @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard)
-  async createPost(@Param('discussionId') discussionId: string, @Body() post: PostCreateDTO): Promise<string> {
+  async createPost(
+    @Param('discussionId') discussionId: string,
+    @Body() post: PostCreateDTO,
+    @Req() req: any
+    ): Promise<string> {
     const discussion = await this.verifyDiscussion(discussionId);
     // Check that the participant is a part of the array
-    this.verifyParticipation(post.userId.toString(), discussion);
+    //this.verifyParticipation(req.user.userId.toString(), discussion);
+
+    if(discussion.archived !== null) {
+      throw new HttpException(`${discussionId} is currently archived and is not accepting posts`, HttpStatus.BAD_REQUEST);
+    }
+
+    if(discussion.settings.calendar && discussion.settings.calendar.close < new Date()) {
+      throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
+    }
 
     if(post.comment_for) {
       const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
-    } 
+    }
+    const user = await this.userModel.findOne({_id: req.user.userId});
 
-    // Generate Notifications
-    // Check Milestones for a user
+    // Create a notification for each facilitator
+    for await(const facilitator of discussion.facilitators) {
+      await this.notificationService.createNotification(facilitator, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+    }
+    
+    // Create a notification for each participant
+    for await(const participant of discussion.participants) {
+      await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+    }
 
-    const newPost = new this.discussionPostModel({ ...post, discussionId: new Types.ObjectId(discussionId) });
+    const newPost = new this.discussionPostModel({ 
+      ...post,
+      discussionId: new Types.ObjectId(discussionId),
+      userId: new Types.ObjectId(req.user.userId),
+      date: new Date(),
+      comment_for: new Types.ObjectId(post.comment_for)
+    });
     const newPostId = await newPost.save();
     return newPostId._id;
   }
@@ -133,24 +162,18 @@ export class PostController {
 
   /** PRIVATE FUNCTIONS */
 
-  async verifyDiscussion(discussionId: string): Promise<Discussion> {
+  async verifyDiscussion(discussionId: string): Promise<any> {
     if(!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
     }
-    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)});
+    const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
     }
     return discussion;
-  }
-
-  verifyParticipation(userId: string, discussion: Discussion) {
-    const participants = discussion.participants.map(participant => {
-      return participant.user.toString();
-    });
-    if(!participants.includes(userId)) {
-      throw new HttpException(`${userId} is not a participant in the discussion`, HttpStatus.FORBIDDEN);
-    }
   }
 
   async verifyPostInspiration(inspirationId: Types.ObjectId, settingsId: Types.ObjectId) {

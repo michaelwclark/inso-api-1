@@ -7,7 +7,9 @@ import { Milestone, MilestoneSchema } from 'src/entities/milestone/milestone';
 import { Notification, NotificationSchema } from 'src/entities/notification/notification';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
+import { User, UserSchema } from 'src/entities/user/user';
 import { NotificationModule } from '../notification/notification.module';
+import { NotificationService } from '../notification/notification.service';
 import { PostController } from './post.controller';
 
 @Module({
@@ -19,7 +21,8 @@ import { PostController } from './post.controller';
         MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
         MongooseModule.forFeature([{ name: Milestone.name, schema: MilestoneSchema }]),
         MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }]),
-        MongooseModule.forFeature([{ name: Setting.name, schema: SettingSchema }])
+        MongooseModule.forFeature([{ name: Setting.name, schema: SettingSchema }]),
+        MongooseModule.forFeature([ {name: User.name, schema: UserSchema }])
     ],
     controllers: [PostController],
     providers: [],

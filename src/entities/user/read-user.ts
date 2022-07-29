@@ -1,4 +1,52 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { ValidateNested } from "class-validator";
+
+export class UserStatistic {
+    @ApiProperty({
+        name: 'discussions_joined',
+        description: 'The number of discussions joined',
+        required: true,
+    })
+    discussions_joined: number;
+
+    @ApiProperty({
+        name: 'discussions_created',
+        description: 'The number of discussions created',
+        required: true,
+    })
+    discussions_created: number;
+
+    @ApiProperty({
+        name: 'posts_made',
+        description: 'The number of posts created',
+        required: true,
+    })
+    posts_made: number;
+
+    @ApiProperty({
+        name: 'comments_received',
+        description: 'The number of comments received',
+        required: true,
+    })
+    comments_received: number;
+
+    @ApiProperty({
+        name: 'upvotes',
+        description: 'The number of upvotes received',
+        required: true,
+    })
+    upvotes: number;
+
+    constructor(partial: Partial<UserStatistic>) {
+        if(partial) {
+            this.discussions_joined = partial.discussions_joined;
+            this.discussions_created = partial.discussions_created;
+            this.posts_made = partial.posts_made;
+            this.comments_received = partial.comments_received;
+            this.upvotes = partial.upvotes;
+        }
+    }
+}
 
 export class UserReadDTO {
     @ApiProperty({
@@ -65,6 +113,16 @@ export class UserReadDTO {
     })
     role: string;
 
+    @ApiProperty({
+        name: 'statistics',
+        description: 'The statistics for a given user',
+        required: true,
+        type: UserStatistic
+    })
+    @ValidateNested()
+    statistics: UserStatistic;
+
+
     constructor(partial: Partial<UserReadDTO>) {
         if(partial) {
             this._id = partial._id;
@@ -74,6 +132,7 @@ export class UserReadDTO {
             this.contact = partial.contact;
             this.level = partial.level;
             this.role = partial.role;
+            this.statistics = partial.statistics;
         }
     }
 }
