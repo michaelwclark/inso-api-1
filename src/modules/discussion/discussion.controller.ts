@@ -251,9 +251,28 @@ export class DiscussionController {
   @ApiBadRequestResponse({ description: ''})
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
-  @ApiQuery({ description: ''})
+  @ApiQuery({
+    name: 'participant',
+    required: false, 
+    description: 'Return discussions where user is a participant'
+  })
+  @ApiQuery({
+    name: 'facilitator',
+    required: false, 
+    description: 'Return discussions where user is a facilitator'
+  })
+  @ApiQuery({
+    name: 'text',
+    required: false, 
+    description: 'queries for inso code or keyword'
+  })
+  @ApiQuery({
+    name: 'archived',
+    required: false, 
+    description: 'Return archived discussions or not'
+  })
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  @UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: boolean,
@@ -291,12 +310,15 @@ export class DiscussionController {
     );
 
     const returnDiscussions = [];
-    for await(const discuss of discussions) {
-      discuss.poster = await this.userModel.findOne({ _id: discuss.poster});
-      returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
+    if(discussions.length > 0) {
+      for await(const discuss of discussions) {
+        console.log('poster', discuss.poster);
+        discuss.poster = await this.userModel.findOne({ _id: discuss.poster});
+        returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
+      }
     }
     return returnDiscussions;
-  }
+  } 
 
   @Patch('discussion/:discussionId/settings')
   @ApiOperation({description: 'Update the discussion settings'})
