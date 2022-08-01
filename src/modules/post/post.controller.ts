@@ -185,7 +185,7 @@ export class PostController {
 
     // Check if the post inspiration is in the discussion settings inspirations array
     const settings = await this.settingsModel.findOne({ _id: settingsId });
-    if(!settings.inspiration.includes(inspiration._id)) {
+    if(!settings.post_inspirations.includes(inspiration._id)) {
       throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
     }
   }

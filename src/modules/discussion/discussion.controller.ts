@@ -158,11 +158,8 @@ export class DiscussionController {
     const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
-      const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
-      const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
-      let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
-      delete newPost.userId;
-      posts.push(newPost);
+      const postWithComments = await this.getPostsAndComments(post);
+      posts.push(postWithComments);
     }
 
     const discussionRead = new DiscussionReadDTO({
@@ -220,7 +217,7 @@ export class DiscussionController {
     const newSetting = new this.settingModel({ 
       userId: settings.userId,
       starter_prompt: settings.starter_prompt,
-      inspiration: settings.inspiration,
+      post_inspirations: settings.post_inspirations,
       score: newScoreId._id,
       calendar: null 
     });
@@ -347,22 +344,33 @@ export class DiscussionController {
       throw new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
     }
     
-    const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
-    if (!score){
-      throw new HttpException('Score Id does not exist', HttpStatus.NOT_FOUND);
+    if(setting.score) {
+      const score = await this.scoreModel.findOne({_id: new Types.ObjectId(setting.score)});
+      if (!score){
+        throw new HttpException('Score Id does not exist', HttpStatus.NOT_FOUND);
+      }
+      setting.score = new Types.ObjectId(setting.score);
     }
 
-    const calendar = await this.calendarModel.findOne({_id: new Types.ObjectId(setting.calendar)});
-    if (!calendar){
-      throw new HttpException('Calendar Id does not exist', HttpStatus.NOT_FOUND);
+    if(setting.calendar) {
+      const calendar = await this.calendarModel.findOne({_id: new Types.ObjectId(setting.calendar)});
+      if (!calendar){
+        throw new HttpException('Calendar Id does not exist', HttpStatus.NOT_FOUND);
+      }
+      setting.calendar = new Types.ObjectId(setting.calendar);
     }
 
     //Loop through the setting.post_inspiration
-    for await (const post_inspiration of setting.post_inspiration){
-      let found = await this.post_inspirationModel.findOne({_id: [new Types.ObjectId(post_inspiration)]});
-      if(!found){
-        throw new HttpException('Post inspiration Id does not exist', HttpStatus.NOT_FOUND);
+    if(setting.post_inspirations) {
+      const objectIds = [];
+      for await (const post_inspiration of setting.post_inspirations){
+        let found = await this.post_inspirationModel.findOne({_id: [new Types.ObjectId(post_inspiration)]});
+        if(!found){
+          throw new HttpException('Post inspiration Id does not exist', HttpStatus.NOT_FOUND);
+        }
+        objectIds.push(new Types.ObjectId(post_inspiration));
       }
+      setting.post_inspirations = objectIds;
     }
     return await this.settingModel.findOneAndUpdate({_id: new Types.ObjectId(found.settings)}, setting, {new: true, upsert: true});
   }
@@ -449,7 +457,14 @@ export class DiscussionController {
   async getPostsAndComments(post: any) {
     const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
     const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
-    let newPost = { ...post, user: post.userId, reactions: reactions, comments: comments };
+    const freshComments = [];
+    if(comments.length) {
+      for await(const comment of comments) {
+        const post = this.getPostsAndComments(comment);
+        freshComments.push(post);
+      }
+    }
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
     delete newPost.userId;
     return newPost;
   }

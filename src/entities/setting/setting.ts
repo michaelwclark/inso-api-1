@@ -11,7 +11,7 @@ export class Setting {
     public starter_prompt: string;
 
     @Prop({ type: [Types.ObjectId], ref: 'Inspiration'})
-    public inspiration: Types.ObjectId[];
+    public post_inspirations: Types.ObjectId[];
 
     @Prop({ type: Types.ObjectId, default: null, ref: 'Score' })
     public score: Types.ObjectId;
