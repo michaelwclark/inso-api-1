@@ -147,7 +147,7 @@ export class DiscussionController {
     const discussion = await this.discussionModel.findOne({ _id: discussionId })
       .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
