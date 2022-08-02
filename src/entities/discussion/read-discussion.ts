@@ -7,6 +7,10 @@ export class DiscussionReadDTO {
   public name: string;
   public created: string;
   public archived: string;
+  public tags: {
+    tag: string;
+    count: number;
+  };
   public settings: {
     _id: string;
     starter_prompt: string;

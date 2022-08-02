@@ -1,11 +1,108 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
+import { IsBoolean, IsOptional, IsDefined, IsIn, IsNotEmpty, IsNumber, IsString, Length, ValidateNested, ValidateIf } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateInstructionsDTO } from './scoreNestedObjects/instructions/createInstructions';
-import { CreateInteractionsDTO } from './scoreNestedObjects/interactions/createInteractions';
-import { CreateImpactDTO } from './scoreNestedObjects/impact/createImpact';
-import { CreateRubricDTO } from './scoreNestedObjects/rubric/createRubric';
+import { Type } from 'class-transformer';
 
+export class CreateAutoRequirements {
+    @ApiProperty({
+        name: 'max_points',
+        description: 'The max number of points that can be earned for posts, active days, or comments',
+        required: false,
+        type: Number,
+        isArray: false
+    })
+    @IsNumber()
+    @IsDefined()
+    @IsNotEmpty()
+    public max_points: number;
+
+    @ApiProperty({
+        name: 'required',
+        description: 'The required number of posts, active days, or comments received to get full points',
+        required: false,
+        type: Number,
+        isArray: false
+    })
+    @IsNumber()
+    @IsDefined()
+    @IsNotEmpty()
+    public required: number;
+
+    constructor(partial: Partial<CreateAutoRequirements>) {
+        if(partial) {
+            this.max_points = partial.max_points;
+            this.required = partial.required;
+        }
+    }
+}
+
+export class CreatePostInspirationOptions {
+
+    @ApiProperty({
+        name: 'selected',
+        description: 'Boolean to determine if post inspirations are a factor in scoring',
+        required: false,
+        type: Boolean,
+        isArray: false
+    })
+    @IsBoolean()
+    @IsDefined()
+    @IsNotEmpty()
+    public selected: boolean;
+
+    @ApiProperty({
+        name: 'max_points',
+        description: 'The maximum number of points for using post inspirations',
+        required: false,
+        type: Number,
+        isArray: false,
+    })
+    @IsNumber()
+    @IsDefined()
+    @IsNotEmpty()
+    public max_points: number;
+
+    constructor(partial: Partial<CreatePostInspirationOptions>) {
+        if(partial) {
+            this.selected = partial.selected;
+            this.max_points = partial.max_points;
+        }
+    }
+}
+
+export class CreateGradingCriteria { 
+    @ApiProperty({
+        name: 'criteria',
+        description: 'The criteria for the rubric portion',
+        required: false,
+        type: String,
+        isArray: false,
+        maxLength: 100
+    })
+    @IsDefined()
+    @IsNotEmpty()
+    @IsString()
+    @Length(2, 100)
+    public criteria: string;
+
+    @ApiProperty({
+        name: 'max_points',
+        description: 'The maximum number of points for the criteria',
+        required: false,
+        type: Number,
+        isArray: false
+    })
+    @IsDefined()
+    @IsNotEmpty()
+    @IsNumber()
+    public max_points: number;
+
+    constructor(partial: Partial<CreateGradingCriteria>) {
+        if(partial) {
+            this.criteria = partial.criteria;
+            this.max_points = partial.max_points;
+        }
+    }
+}
 
 export class ScoreCreateDTO {
 
@@ -22,72 +119,93 @@ export class ScoreCreateDTO {
     public type: string;
 
     @ApiProperty({
-        name: 'instructions',
-        description: 'scoring instructions which should include posting, responding and synthesizing',
-        required: true,
-        type: CreateInstructionsDTO,
-        isArray: false,
-        example: {
-            'posting': 10,
-            'responding': 10,
-            'synthesizing': 10
-        }
+        name: 'total',
+        description: 'The total number of points available for the discussion',
+        required: false,
+        type: Number,
+        isArray: false
     })
-    @IsNotEmpty()
-    @ValidateNested()
-    @Type(() => CreateInstructionsDTO)
-    public instructions: CreateInstructionsDTO;
+    @IsNumber()
+    @IsDefined()
+    public total: number;
 
     @ApiProperty({
-        name: 'interactions',
-        description: 'interactions which should only include one number as a variable',
-        required: true,
-        type: CreateInteractionsDTO,
-        isArray: false,
-        example: {
-            'max': 10,
-        }
+        name: 'posts_made',
+        description: 'Requirements for posts_made which includes max points possible and the requirement to receive those',
+        required: false,
+        type: CreateAutoRequirements,
+        isArray: false
     })
-    @IsNotEmpty()
+    @ValidateIf(obj =>  obj.type === 'auto')
     @ValidateNested()
-    @Type(() => CreateInteractionsDTO)
-    public interactions: CreateInteractionsDTO;
+    @Type(() => CreateAutoRequirements)
+    public posts_made: CreateAutoRequirements;
 
     @ApiProperty({
-        name: 'impact',
-        description: 'impact which should only include one number as a variable',
-        required: true,
-        type: CreateImpactDTO,
-        isArray: false,
-        example: {
-            'max': 10,
-        }
+        name: 'active_days',
+        description: 'Requirements for active_days which includes max points possible and the requirement to receive those',
+        required: false,
+        type: CreateAutoRequirements,
+        isArray: false
     })
-    @IsNotEmpty()
+    @ValidateIf(obj => obj.type === 'auto')
     @ValidateNested()
-    @Type(() => CreateImpactDTO)
-    public impact: CreateImpactDTO;
+    @Type(() => CreateAutoRequirements)
+    public active_days: CreateAutoRequirements;
 
     @ApiProperty({
-        name: 'rubric',
-        description: 'consists of a max number variable and an array of criteria information',
-        required: true,
-        type: CreateRubricDTO,
-        isArray: false,
-        example:{
-        'max': 10,
-        'criteria': [ {
-            'description': 'This is an example',
-            'max': 10
-            } ]
-         }
+        name: 'comments_received',
+        description: 'Requirements for comments_received which includes max points possible and the requirement to receive those',
+        required: false,
+        type: CreateAutoRequirements,
+        isArray: false
     })
-    @IsNotEmpty()
+    @ValidateIf(obj => obj.type === 'auto')
     @ValidateNested()
-    @Type(() => CreateRubricDTO)
-    public rubric: CreateRubricDTO;
+    @Type(() => CreateAutoRequirements)
+    public comments_received: CreateAutoRequirements;
+
+    @ApiProperty({
+        name: 'post_inspirations',
+        description: 'Requirements for posts_made which includes max points possible and the requirement to receive those',
+        required: false,
+        type: CreatePostInspirationOptions,
+        isArray: false
+    })
+    @ValidateIf(obj => obj.type === 'auto')
+    @ValidateNested()
+    @Type(() => CreatePostInspirationOptions)
+    public post_inspirations: CreatePostInspirationOptions;
+
+    @ApiProperty({
+        name: 'criteria',
+        description: 'Requirements for rubric based scoring',
+        required: false,
+        type: [CreateGradingCriteria],
+        isArray: true
+    })
+    @ValidateIf(obj => obj.type === 'rubric')
+    @IsDefined()
+    @IsNotEmpty()
+    @ValidateNested({ each: true })
+    @Type(() => CreateGradingCriteria)
+    public criteria: CreateGradingCriteria [];
 
     constructor(partial: Partial<ScoreCreateDTO>) {
-        Object.assign(this, partial);
+        if(partial) {
+            this.type = partial.type;
+            this.total = partial.total;
+
+            if(this.type === 'auto') {
+                this.posts_made = partial.posts_made;
+                this.active_days = partial.active_days;
+                this.comments_received = partial.comments_received;
+                this.post_inspirations = partial.post_inspirations;
+            }
+            if(this.type === 'rubric') {
+                this.criteria = partial.criteria;
+            }
+        }
     }
 }
+

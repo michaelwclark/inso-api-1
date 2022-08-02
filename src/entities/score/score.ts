@@ -1,32 +1,45 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Types } from "mongoose";
-import { impact } from "./scoreNestedObjects/impact/impact";
-import { instructions } from "./scoreNestedObjects/instructions/instructions";
-import { interactions } from "./scoreNestedObjects/interactions/interactions";
-import { rubric } from "./scoreNestedObjects/rubric/rubric";
 
 export type ScoreDocument = Score & Document;
 
 @Schema()
 export class Score {
-    @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
-
-
     @Prop(String)
     public type: string;
 
-    @Prop(instructions)
-    public instructions: instructions
+    @Prop(Number)
+    public total: number;
 
-    @Prop(interactions)
-    public interactions: interactions
+    @Prop({ type: { max_points: Number, required: Number }})
+    posts_made: {
+        max_points: number;
+        required: number;
+    }
 
-    @Prop(impact)
-    public impact: impact
+    @Prop({ type: { max_points: Number, required: Number }, _id: false})
+    active_days: {
+        max_points: number;
+        required: number;
+    }
 
-    @Prop(rubric)
-    public rubric: rubric
+    @Prop({ type: { max_points: Number, required: Number }, _id: false})
+    comments_received: {
+        max_points: number;
+        required: number;
+    }
+
+    @Prop({ type: { max_points: Number, selected: Boolean }, _id: false})
+    post_inspirations: {
+        max_points: number;
+        selected: boolean;
+    }
+
+    @Prop({ type: [{ max_points: Number, criteria: String}], _id: false})
+    criteria: {
+        criteria: string;
+        max_points: number;
+    } [];
 
     @Prop(Types.ObjectId)
     public creatorId: Types.ObjectId;
