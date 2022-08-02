@@ -16,6 +16,7 @@ import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { Score, ScoreSchema } from 'src/entities/score/score';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { SGService } from 'src/drivers/sendgrid';
+import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy, SGService],
@@ -31,7 +32,8 @@ import { SGService } from 'src/drivers/sendgrid';
      MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
      MongooseModule.forFeature([{ name: Score.name, schema: ScoreSchema }]),
      MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
-     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])
+     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+     MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }])
     ], 
   controllers: [AuthController, GoogleAuthController],
   exports: [AuthService]

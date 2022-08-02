@@ -29,7 +29,6 @@ export class Inspiration {
     @Prop(String)
     public instructions: string;
 
-    // TODO See if there is some internal validation I have to do
     @Prop([Outline])
     public outline: Outline [];
 

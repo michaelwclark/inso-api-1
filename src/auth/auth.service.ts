@@ -12,17 +12,19 @@ import { SGService } from 'src/drivers/sendgrid';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from 'src/entities/user/google-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 
 @Injectable()
 export class AuthService {
-    constructor( 
+    constructor(
         private jwtService: JwtService,
         private sgService: SGService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
         @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
         ){
     }
 
@@ -134,8 +136,32 @@ export class AuthService {
        * @returns 
        */
     async fetchUserAndStats(userId: string) {
-        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
-        return new UserReadDTO(user);
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)}).lean();
+        const stats = {
+            discussions_created: 0,
+            discussions_joined: 0,
+            posts_made: 0, 
+            comments_received: 0,
+            upvotes: 0
+        }
+        stats.discussions_created = await this.discussionModel.find({ poster: new Types.ObjectId(userId)}).count();
+        stats.discussions_joined = await this.discussionModel.find({ "participants.user": new Types.ObjectId(userId)}).count();
+        const posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)});
+        stats.posts_made = posts_made.length;
+
+        const milestones = this.getMilestones();
+
+        // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
+        const postIds = posts_made.map(post => {
+            return post._id;
+        })
+
+        // Aggregate based on all the posts and how many of their posts ids are in the comment_for attribute
+        stats.comments_received = await this.postModel.find({ comment_for: { $in: postIds }}).count();
+
+        // Aggregate based on the posts and if they were upvoted for
+        stats.upvotes = await this.reactionModel.find({ postId: { $in: postIds }, reaction: '+1'}).count();
+        return new UserReadDTO({ ...user, statistics: stats });
     }
 
       /** AUTHORIZATION DECORATOR FUNCTIONS */
@@ -175,9 +201,11 @@ export class AuthService {
         return isPoster;
     }
 
-    async isReactionCreator(userId: string, discussionId: string) {
-        // TODO When I write reactions logic
-        const isReactionCreator = true;
+    async isReactionCreator(userId: string, reactionId: string) {
+        const isReactionCreator = await this.reactionModel.findOne({ _id: new Types.ObjectId(reactionId), userId: new Types.ObjectId(userId)}) === null ? false : true;
+        if(!isReactionCreator) {
+            throw new HttpException(`User ${userId} is not the creator of the reaction and cannot modify it`, HttpStatus.FORBIDDEN); 
+        }
         return isReactionCreator;
     }
 
@@ -220,4 +248,7 @@ export class AuthService {
         });
     }
 
+    getMilestones() {
+        return [];
+    }
 }

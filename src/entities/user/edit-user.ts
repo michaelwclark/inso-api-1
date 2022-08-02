@@ -16,6 +16,7 @@ export class ContactEditDTO{
     @IsNotEmpty()
     @IsEmail()
     @IsString()
+    @IsOptional()
     public email: string;
 
     @ApiProperty({

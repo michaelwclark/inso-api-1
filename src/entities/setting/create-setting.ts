@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsMongoId, IsNotEmpty, IsString, Length } from "class-validator";
+import { IsArray, IsMongoId, IsNotEmpty, IsOptional, IsString, Length } from "class-validator";
 import { Types } from "mongoose";
 
 export class SettingsCreateDTO {
@@ -16,10 +16,11 @@ export class SettingsCreateDTO {
     @IsNotEmpty()
     @IsString()
     @Length(2, 1000)
+    @IsOptional()
     public starter_prompt: string;
 
     @ApiProperty({
-        name: 'post_inspiration',
+        name: 'post_inspirations',
         description: 'This will be an ObjectId to a post inspiration entity',
         required: true,
         type: Types.ObjectId,
@@ -30,7 +31,8 @@ export class SettingsCreateDTO {
     @Type(() => Types.ObjectId)
     @IsArray()
     @IsMongoId({ each: true })
-    public post_inspiration: Types.ObjectId[];
+    @IsOptional()
+    public post_inspirations: Types.ObjectId[];
 
     @ApiProperty({
         name: 'score',
@@ -43,6 +45,7 @@ export class SettingsCreateDTO {
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsMongoId()
+    @IsOptional()
     public score: Types.ObjectId;
 
     @ApiProperty({
@@ -56,6 +59,7 @@ export class SettingsCreateDTO {
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsMongoId()
+    @IsOptional()
     public calendar: Types.ObjectId;
 
     constructor(partial: Partial<SettingsCreateDTO>){

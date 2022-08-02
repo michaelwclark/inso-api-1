@@ -19,7 +19,7 @@ export class Discussion {
     @Prop({ Date, default: null })
     public archived: Date;
 
-    @Prop({ type: Types.ObjectId })
+    @Prop({ type: Types.ObjectId, ref: 'Setting' })
     public settings: Types.ObjectId;
 
     @Prop({ type: [Types.ObjectId], ref: 'User' })

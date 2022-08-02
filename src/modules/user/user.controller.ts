@@ -60,22 +60,9 @@ export class UserController {
 
     let username = user.f_name + user.l_name;
     let sameUsername = await this.userModel.findOne({username: username});
-    let counter = 1;
-    username = username + counter.toString();
-    while(sameUsername !== null) {
-      if(counter < 10) {
-        username = username.substring(0, username.length - 1);
-      } 
-      if(counter < 100 && counter >=10 ) {
-        username = username.substring(0, username.length - 2);
-      }
-      // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
-      if(counter < 1000 && counter >=100) {
-        username = username.substring(0, username.length - 3);
-      }
-      username = username + counter.toString();
+    while(sameUsername) {
+      username = username + Math.floor(Math.random() * 40).toString();
       sameUsername = await this.userModel.findOne({username: username});
-      counter++;
     }
     
     checkForDuplicateContacts(user.contact); // throws error if same email appears more than once
