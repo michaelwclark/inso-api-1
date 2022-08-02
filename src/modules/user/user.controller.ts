@@ -1,4 +1,4 @@
-import { Body, Controller, forwardRef, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -15,18 +15,15 @@ import { length } from 'class-validator';
 import { decodeOta, generateCode } from 'src/drivers/otaDriver';
 import { JwtService } from '@nestjs/jwt';
 
-
-
 @Controller()
 export class UserController {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private sgService: SGService
-    ) {}
+  ) {}
 
-  @Get('/email-verified')
+  @Get('email-verified')
   async verifyEmailRoute(@Query('ota') ota: string){
-    console.log(ota)
     this.verifyEmailToken(ota);
     return 'Email Verified!'
   }
@@ -46,7 +43,6 @@ export class UserController {
     }
 
     const returnUser = new UserReadDTO(foundUser);
-    
     return returnUser;
   }
 
@@ -98,6 +94,25 @@ export class UserController {
     await this.sendEmailVerification(verifyUser);
 
     return 'User Created! Please check your email inbox to verify your email address';
+  }
+
+  @Post('password-reset/:email')
+  async resetPasswordRequest(@Param('email') email: string){
+    if(isEmail(email) == false ){
+      throw new HttpException('Please enter a valid email address', HttpStatus.BAD_REQUEST);
+    }
+    const foundUser = await this.userModel.findOne({'contact.email': email});
+    if(!foundUser){ 
+      throw new HttpException("No account associated with email: " + email, HttpStatus.NOT_FOUND); 
+    }
+    const userPasswordRequest = {
+      name: foundUser.f_name + ' ' + foundUser.l_name, 
+      username: foundUser.username, 
+      contact: email 
+    }
+    this.sendPasswordResetRequest(userPasswordRequest);
+    console.log('Password reset request has been sent to email: ' + email);
+    return 'Password reset request has been sent to email: ' + email;
   }
 
   @Patch('user/:userId')
@@ -193,9 +208,21 @@ export class UserController {
     return 'User Updated';
   }
 
-  // //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
-    async sendEmailVerification(user: any){
-  
+  @Patch('password-reset')
+  async resetPassword(
+    @Body() newPassword:{ password: string, confirmPassword: string },
+    @Query('ota') ota: string
+  ){
+    console.log(ota);
+    if(newPassword.password !== newPassword.confirmPassword){
+      throw new HttpException('Password and confirm password fields must match', HttpStatus.BAD_REQUEST);
+    }
+    validatePassword(newPassword.password);
+    this.verifyPasswordResetToken(ota, newPassword.password);
+  }
+
+  //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
+  async sendEmailVerification(user: any){
     const ota = await generateCode(user.contact);
     console.log(ota);
     return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
@@ -203,11 +230,37 @@ export class UserController {
 
   async verifyEmailToken(ota: string){
     const code = await decodeOta(ota);
+    //const queryData = {"email": code.data, "verified": true, "primary": true}
+    //console.log(await this.userModel.aggregate( [ {"$project": { "matchedIndex": { "$indexOfArray": [ "$contact", queryData]}}}]));
+    
+    const checkVerified = await this.userModel.findOne({'contact.email' : code.data});
+    console.log(checkVerified);
+    const arr = checkVerified.contact;
+    for(let e of arr){
+      if (e.email == code.data && e.verified == true){
+        console.log('Email has already been verified');
+        throw new HttpException('Email has already been verified', HttpStatus.CONFLICT);
+      }
+    }
 
-    console.log('yeet', code)
+    //if( checkVerified.contact)
+    //console.log(checkVerified);
+
     await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
-
     console.log('Email verified!');
+  }
+
+  async sendPasswordResetRequest(user: any){
+    const ota = await generateCode(user.contact);
+    console.log(ota);
+    return await this.sgService.resetPassword({...user, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
+  }
+
+  async verifyPasswordResetToken(ota: string, password: string){
+    const code = await decodeOta(ota);
+    const saltRounds = 10;
+    const newPassword = await bcrypt.hash(password, saltRounds);
+    await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
   }
 }
 

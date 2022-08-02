@@ -31,7 +31,7 @@ export function generateCode(payload: any){
         }
         );
     });
-
+    
 }
 
 export function decodeOta(ota: string): Promise<decodedOtaCode>{
@@ -41,7 +41,6 @@ export function decodeOta(ota: string): Promise<decodedOtaCode>{
             code,
             process.env.OTA_SECRET,
             (err: any, decoded: any) => {
-                console.log(err)
                 if(err){
                     throw new HttpException('There is an error with the OTA token', HttpStatus.UNAUTHORIZED);
                 } else {
