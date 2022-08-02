@@ -427,6 +427,7 @@ export class DiscussionController {
   @ApiOperation({description: 'Participants have the ability to mute a discussion'})
   @ApiOkResponse({ description: 'Discussion has been muted'})
   @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async muteDiscussion(
     @Param('userId') userId: string,
     @Param('discussionId') discussionId: string): Promise<any> {
