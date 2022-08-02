@@ -28,6 +28,7 @@ export class UserController {
   async verifyEmailRoute(@Query('ota') ota: string){
     console.log(ota)
     this.verifyEmailToken(ota);
+    return 'Email Verified!'
   }
 
   @Get('user/:userId')
