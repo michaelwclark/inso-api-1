@@ -455,12 +455,12 @@ export class DiscussionController {
   //** PRIVATE FUNCTIONS */
 
   async getPostsAndComments(post: any) {
-    const comments = await this.postModel.find({ comment_for: new Types.ObjectId(post._id)}).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
-    const reactions = await this.reactionModel.find({ postId: new Types.ObjectId(post._id)}).populate('userId', ['f_name', 'l_name', 'email', 'username']);
+    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
-        const post = this.getPostsAndComments(comment);
+        const post = await this.getPostsAndComments(comment);
         freshComments.push(post);
       }
     }

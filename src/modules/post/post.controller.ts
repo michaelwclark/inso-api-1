@@ -169,7 +169,7 @@ export class PostController {
     const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
       .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'inspiration'}]}).lean();
+      .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
     }
