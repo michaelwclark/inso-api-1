@@ -153,14 +153,14 @@ export class DiscussionController {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
 
-    // Get posts
-    // Needs recursion here 
+    // Get posts 
     const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
       const postWithComments = await this.getPostsAndComments(post);
       posts.push(postWithComments);
     }
+    // TODO Tags for the discussion
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,

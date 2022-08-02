@@ -28,6 +28,9 @@ export class DiscussionPost {
     @Prop(String)
     public post: string;
 
+    @Prop({ type: Types.ObjectId, ref: 'Inspiration'})
+    public post_inspiration: Types.ObjectId;
+
     constructor(partial: Partial<DiscussionPost>) {
         if(partial) {
             this.userId = partial.userId;
@@ -36,6 +39,7 @@ export class DiscussionPost {
             this.date = partial.date;
             this.comment_for = partial.comment_for;
             this.post = partial.post;
+            this.post_inspiration = partial.post_inspiration;
         }
     }
 }
