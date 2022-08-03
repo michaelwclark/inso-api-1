@@ -474,22 +474,6 @@ export class DiscussionController {
       
     }
 
-  // @Patch('/discussion/:discussionId/participants/:participantId/mute')
-  // @ApiOperation({description: 'Participants have the ability to mute a discussion'})
-  // @ApiOkResponse({ description: 'Discussion has been muted'})
-  // @ApiTags('Discussion')
-  // @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
-  // async muteParticipant(
-  //   @Param('userId') userId: string,
-  //   @Param('participantId') participantId: string): Promise<any> {
-
-
-  //     //Invalid UserId and DiscussionId
-  //     if(!Types.ObjectId.isValid(userId)) {
-  //       throw new HttpException('UserId is invalid', HttpStatus.BAD_REQUEST);
-  //     }
-
-  //   }
 
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})

@@ -514,7 +514,7 @@ describe('AppController', () => {
     describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
       it('should return valid ParticipantID added', () => {
   
-          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).resolves.not.toThrow()
+          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
       });
     }); 
    
@@ -528,9 +528,23 @@ describe('AppController', () => {
           "muted": Boolean,
           "grade": null
           }; 
-          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).resolves.not.toThrow()
+          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', 'inso1')).resolves.not.toThrow()
       }); 
     }); 
+
+    //403 error- mute discussion
+    describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
+      it('throw a 403 error for user not a participant or a facilitator', () => {
+        const validParticipantId = {
+          "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+          "joined": new Date(),
+          "muted": Boolean,
+          "grade": null
+          }; 
+        const error = new HttpException("User is not a participant or a facilitator of the discussion", HttpStatus.FORBIDDEN);
+        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de1', 'inso1')).rejects.toThrow(error);
+        });
+      });
 
     //404 error- mute discussion
     describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
@@ -542,7 +556,7 @@ describe('AppController', () => {
           "grade": null
           }; 
         const error = new HttpException("User or discussion trying to mute does not exist", HttpStatus.NOT_FOUND);
-        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).rejects.toThrow(error);
+        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', 'inso1')).rejects.toThrow(error);
         });
       });
    
