@@ -182,6 +182,9 @@ export class AuthService {
 
     async isDiscussionParticipant(userId: string, discussionId: string) {
         const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId) });
+        if(!discussion) {
+            throw new HttpException(`Discussion could not be found`, HttpStatus.NOT_FOUND);
+        }
         const participantIds = discussion.participants.map(part => {
             return part.user.toString();
         });
@@ -210,6 +213,9 @@ export class AuthService {
     async isDiscussionMember(userId: string, discussionId: string): Promise<boolean> {
         const isFacilitator = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId), facilitators: new Types.ObjectId(userId)}) === null ? false : true;
         const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId) });
+        if(!discussion) {
+            throw new HttpException(`Discussion does not exist`, HttpStatus.NOT_FOUND);
+        }
         const participantIds = discussion.participants.map(part => {
             return part.user.toString();
         });
