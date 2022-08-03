@@ -116,6 +116,7 @@ export class ScoreEditDTO {
         type: String,
         isArray: false
     })
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     @IsIn(['auto', 'rubric'])
@@ -139,7 +140,6 @@ export class ScoreEditDTO {
         type: EditAutoRequirements,
         isArray: false
     })
-    @ValidateIf(obj => obj.type === 'auto')
     @IsOptional()
     @ValidateNested()
     @Type(() => EditAutoRequirements)
@@ -152,7 +152,6 @@ export class ScoreEditDTO {
         type: EditAutoRequirements,
         isArray: false
     })
-    @ValidateIf(obj => obj.type === 'auto')
     @IsOptional()
     @ValidateNested()
     @Type(() => EditAutoRequirements)
@@ -165,7 +164,6 @@ export class ScoreEditDTO {
         type: EditAutoRequirements,
         isArray: false
     })
-    @ValidateIf(obj => obj.type === 'auto')
     @IsOptional()
     @ValidateNested()
     @Type(() => EditAutoRequirements)
@@ -178,7 +176,6 @@ export class ScoreEditDTO {
         type: EditPostInspirationOptions,
         isArray: false
     })
-    @ValidateIf(obj => obj.type === 'auto')
     @IsOptional()
     @ValidateNested()
     @Type(() => EditPostInspirationOptions)
@@ -191,7 +188,6 @@ export class ScoreEditDTO {
         type: [EditGradingCriteria],
         isArray: true
     })
-    @ValidateIf(obj => obj.type === 'rubric')
     @IsOptional()
     @ValidateNested({ each: true })
     @Type(() => EditGradingCriteria)

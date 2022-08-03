@@ -8,7 +8,8 @@ export class CreateAutoRequirements {
         description: 'The max number of points that can be earned for posts, active days, or comments',
         required: false,
         type: Number,
-        isArray: false
+        isArray: false,
+        example: 10
     })
     @IsNumber()
     @IsDefined()
@@ -20,7 +21,8 @@ export class CreateAutoRequirements {
         description: 'The required number of posts, active days, or comments received to get full points',
         required: false,
         type: Number,
-        isArray: false
+        isArray: false,
+        example: 5
     })
     @IsNumber()
     @IsDefined()
@@ -42,7 +44,8 @@ export class CreatePostInspirationOptions {
         description: 'Boolean to determine if post inspirations are a factor in scoring',
         required: false,
         type: Boolean,
-        isArray: false
+        isArray: false,
+        example: true,
     })
     @IsBoolean()
     @IsDefined()
@@ -55,6 +58,7 @@ export class CreatePostInspirationOptions {
         required: false,
         type: Number,
         isArray: false,
+        example: 10
     })
     @IsNumber()
     @IsDefined()
@@ -76,7 +80,8 @@ export class CreateGradingCriteria {
         required: false,
         type: String,
         isArray: false,
-        maxLength: 100
+        maxLength: 100,
+        example: 'Post 4 times'
     })
     @IsDefined()
     @IsNotEmpty()
@@ -89,7 +94,8 @@ export class CreateGradingCriteria {
         description: 'The maximum number of points for the criteria',
         required: false,
         type: Number,
-        isArray: false
+        isArray: false,
+        example: 10
     })
     @IsDefined()
     @IsNotEmpty()
@@ -112,6 +118,8 @@ export class ScoreCreateDTO {
         required: true,
         type: String,
         isArray: false,
+        example: 'auto',
+        enum: ['auto', 'rubric']
     })
     @IsNotEmpty()
     @IsString()
@@ -123,7 +131,8 @@ export class ScoreCreateDTO {
         description: 'The total number of points available for the discussion',
         required: false,
         type: Number,
-        isArray: false
+        isArray: false,
+        example: 40
     })
     @IsNumber()
     @IsDefined()
@@ -134,7 +143,7 @@ export class ScoreCreateDTO {
         description: 'Requirements for posts_made which includes max points possible and the requirement to receive those',
         required: false,
         type: CreateAutoRequirements,
-        isArray: false
+        isArray: false,
     })
     @ValidateIf(obj =>  obj.type === 'auto')
     @ValidateNested()
