@@ -21,7 +21,7 @@ export class ScoreController {
   @Post('users/:userId/score')
   @ApiOperation({
     description: 
-    `Request will create a Score. Note that to create an 'auto' score you will need to send posts_made, active_days, comments_received, and/or posts_inspirations. You do not need criteria for auto score.
+    `Request will create a Score. Note that to create an 'auto' score you will need to send posts_made, active_days, comments_received, and/or post_inspirations. You do not need criteria for auto score.
     If you are creating a rubric you will need to send up criteria and do not need to send up the other properties.`})
   @ApiBody({description: 'The Score to create', type: ScoreCreateDTO})
   @ApiOkResponse({description: 'Score created successfully'})
