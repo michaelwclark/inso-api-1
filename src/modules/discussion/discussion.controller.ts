@@ -268,6 +268,11 @@ export class DiscussionController {
     required: false, 
     description: 'Return archived discussions or not'
   })
+  @ApiQuery({
+    name: 'sort',
+    required: false, 
+    description: 'The order to return discussions in'
+  })
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard)
   async getDiscussions(
@@ -275,7 +280,8 @@ export class DiscussionController {
     @Query('participant') participant: boolean,
     @Query('facilitator') facilitator: boolean,
     @Query('text') text: string,
-    @Query('archived') archived: boolean
+    @Query('archived') archived: boolean,
+    @Query('sort') sort: string
   ): Promise<any []> {
 
     if(!Types.ObjectId.isValid(userId)) {
@@ -304,6 +310,11 @@ export class DiscussionController {
       } else if (archived === true) {
         aggregation.push({ $match: { archived: { $ne: null }}});
       }
+    }
+    if(sort !== undefined) {
+      aggregation.push({ $sort: { created: parseInt(sort)}});
+    } else {
+      aggregation.push({ $sort: { created: -1}});
     }
 
     const discussions = await this.discussionModel.aggregate(
