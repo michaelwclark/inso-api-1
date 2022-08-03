@@ -430,9 +430,21 @@ export class DiscussionController {
     grade: null
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
-
-    
   }
+
+  @Patch('/discussion/:discussionId/participants/:participantId/mute')
+  @ApiOperation({description: 'facilitator/poster should have the ability to mute a participant in a discussion'})
+  @ApiOkResponse({ description: 'Participant muted'})
+  @ApiBadRequestResponse({ description: ''})
+  @ApiUnauthorizedResponse({ description: ''})
+  @ApiNotFoundResponse({ description: ''})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
+  async muteParticipant(
+    @Param('discussion') discussionId: string,
+    @Param('participant') participantId: string): Promise<any>{
+
+    }
 
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
