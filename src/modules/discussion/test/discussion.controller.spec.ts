@@ -509,55 +509,96 @@ describe('AppController', () => {
     });
   });
 
-  //mute discussion 200 ok response
+  // //mute discussion 200 ok response
   // describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
   //   it('should throw a 200 for discussion has been muted')
+
+  //   const invalidID = {
+  //     "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+  //     "joined": new Date(),
+  //     "muted": true,
+  //     "grade": null
+  //     }; 
+  //       expect (result).toBe('Discussion muted')
+  //       return expect(appController.muteDiscussion('62b276fda78b2a00063b1de1', '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
+
   // })
 
-  //mute discussion 400 bad request
-  describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
-    it('should return invalid UserId or invalid Discussion Id', () => {
+  // //mute discussion 400 bad request
+  // describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
+  //   it('should return invalid UserId or invalid Discussion Id', () => {
 
-      const invalidID = {
-        "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        "joined": new Date(),
-        "muted": Boolean,
-        "grade": null
-        }; 
-        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).resolves.not.toThrow() //fix this
-    }); 
-  }); 
+  //     const invalidID = {
+  //       "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+  //       "joined": new Date(),
+  //       "muted": Boolean,
+  //       "grade": null
+  //       }; 
+  //       return expect(appController.muteDiscussion('62b276fda78b2a00063b1de1', '62b276fda78b2a00063b1de1')).resolves.not.toThrow() //fix id - user id or inso ?
+  //   }); 
+  // }); 
 
-  //404 error- mute discussion
-  describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
-    // it('throw a 404 error for user or discussion not found', () => {
+  // //403 error- not a participant or facilitator
+
+  // //404 error- mute discussion
+  // describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
+  //   it('throw a 404 error for user or discussion not found', () => {
       
-    //   const error = new HttpException("User trying to mute discussion does not exist", HttpStatus.NOT_FOUND);
-    //   return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).rejects.toThrow(error); //needs fix
-    // });
-    it('throw a 404 error for user or discussion not found', () => {
-        const validDiscussion = {
-        "name": "Power",
-        "poster": new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        "facilitators": [new Types.ObjectId()]
-        }
-        const reqUser = {
-        "userId": "62b276fda78b2a00063b1de0"
-        };
-        return expect(appController.muteDiscussion(validDiscussion, reqUser)).rejects.toThrow(error); //needs fix
+  //     const error = new HttpException("User trying to mute discussion does not exist", HttpStatus.NOT_FOUND);
+  //     return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).rejects.toThrow(error);
+  //     });
 
+  //   it('throw a 404 error for user or discussion not found', () => {
+       
+  //       const reqUser = {
+  //       "userId": "62b276fda78b2a00063b1de0"
+  //       };
+  //       const error = new HttpException('Discussion Id does not exist', HttpStatus.NOT_FOUND);
+  //       return expect(appController.muteDiscussion(validDiscussion, reqUser)).rejects.toThrow(error);
+  //   });
 
-    });
-      
-    
-    
-
+    //mute discussion 200 ok response
+    describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
+      it('should return valid ParticipantID added', () => {
   
+          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).resolves.not.toThrow()
+      });
+    }); 
+   
+    //400 status for participant 
+    describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
+      it('should return valid Discussion Id', () => {
+  
+        const validParticipantId = {
+          "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+          "joined": new Date(),
+          "muted": Boolean,
+          "grade": null
+          }; 
+          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).resolves.not.toThrow()
+      }); 
+    }); 
+
+    //404 error- mute discussion
+    describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
+      it('throw a 404 error for user or discussion not found', () => {
+        const validParticipantId = {
+          "user": new Types.ObjectId('62b276fda78b2a00063b1de1'),
+          "joined": new Date(),
+          "muted": Boolean,
+          "grade": null
+          }; 
+        const error = new HttpException("User or discussion trying to mute does not exist", HttpStatus.NOT_FOUND);
+        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de1')).rejects.toThrow(error);
+        });
+      });
+   
 
   afterAll(done => {
     // Closing the DB connection allows Jest to exit successfully.
     mongoConnection.close();
     done()
+    
   });
 
 });
