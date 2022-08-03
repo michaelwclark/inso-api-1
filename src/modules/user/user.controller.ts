@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Inject, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -8,12 +8,8 @@ import { UserReadDTO } from 'src/entities/user/read-user';
 import { User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
 import { SGService } from 'src/drivers/sendgrid';
-import { TEMPLATES } from 'src/drivers/interfaces/mailerDefaults';
-import { AuthService } from 'src/auth/auth.service';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
-import { length } from 'class-validator';
 import { decodeOta, generateCode } from 'src/drivers/otaDriver';
-import { JwtService } from '@nestjs/jwt';
 
 @Controller()
 export class UserController {
@@ -21,6 +17,13 @@ export class UserController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private sgService: SGService
   ) {}
+
+  //** TEMPORARY GET REQUEST, for password reset route. Will delete soon. */
+  @Get('password-reset')
+  async passwordTest(@Query('ota') ota: string){
+    console.log(ota); // test the ota is passed through
+    return 'Success!'
+  }
 
   @Get('email-verified')
   async verifyEmailRoute(@Query('ota') ota: string){
@@ -260,7 +263,13 @@ export class UserController {
     const code = await decodeOta(ota);
     const saltRounds = 10;
     const newPassword = await bcrypt.hash(password, saltRounds);
-    await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
+    const user = await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
+    const userConfirmPwd = {
+      name: user.f_name + ' ' + user.l_name, 
+      username: user.username, 
+      contact: code.data
+    };
+    this.sgService.confirmPassword(userConfirmPwd);
   }
 }
 
