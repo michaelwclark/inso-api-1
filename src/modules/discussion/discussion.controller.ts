@@ -105,7 +105,6 @@ export class DiscussionController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(
     @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string,
     @Body() discussion: DiscussionEditDTO
   ): Promise<any> {
     // Check that discussion exists
