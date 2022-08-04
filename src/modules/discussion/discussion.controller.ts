@@ -293,10 +293,10 @@ export class DiscussionController {
 
     // TODO add search for inso code and text
     const aggregation = [];
-    if(text !== undefined) {
-      // Lookup text queries and such
-      aggregation.push();
-    }
+    // if(text !== undefined) {
+    //   // Lookup text queries and such
+    //   aggregation.push();
+    // }
     if(participant === undefined && facilitator === undefined) {
       aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
       aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
