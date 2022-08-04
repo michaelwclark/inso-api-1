@@ -81,7 +81,6 @@ export class UploadController {
             throw new HttpException(`User ${id} does not exist`, HttpStatus.NOT_FOUND);
         }
         if(user._id.toString() !== request.user.userId) {
-            console.log(request.user)
             throw new HttpException(`User ${id} is not the requester`, HttpStatus.FORBIDDEN);
         }
         filePath = filePath + id + '/profile.' + file.originalname.split('.').pop();
