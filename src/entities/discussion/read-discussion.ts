@@ -46,20 +46,8 @@ export class DiscussionReadDTO {
     };
     calendar: {
       id: string;
-      open: Date;
-      close: Date;
-      posting: {
-        open: Date;
-        close: Date;
-      };
-      responding: {
-        open: Date;
-        close: Date;
-      };
-      synthesizing: {
-        open: Date;
-        close: Date;
-      }
+      open: string;
+      close: string;
     };
   };
   public facilitators: {
@@ -98,6 +86,9 @@ export class DiscussionReadDTO {
   } [];
   
   constructor(partial: any) {
-      Object.assign(this, partial);
+    if(partial.settings?.calendar)
+      this.settings = partial.settings;
+      this.settings.calendar.open = new Date(partial.settings.calendar.open).toString();
+      this.settings.calendar.close = new Date(partial.settings.calendar.close).toString();
   }
 }
