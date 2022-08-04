@@ -280,12 +280,18 @@ export class DiscussionController {
   @UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
-    @Query('participant') participant: boolean,
-    @Query('facilitator') facilitator: boolean,
+    @Query('participant') participant: string,
+    @Query('facilitator') facilitator: string,
     @Query('text') text: string,
+<<<<<<< HEAD
     @Query('archived') archived: boolean,
     @Query('sort') sort: string,
     @Request() req
+=======
+    @Query('archived') archived: string,
+    @Query('sort') sort: string,
+    @Query('text') query: any
+>>>>>>> 24b4c30336a1e76b17a090266d4e41a48e7ad97c
   ): Promise<any []> {
     if(!Types.ObjectId.isValid(userId)) {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
@@ -307,19 +313,18 @@ export class DiscussionController {
     //   aggregation.push();
     // }
     if(participant === undefined && facilitator === undefined) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
-      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
+      aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
     }
-    if(participant === true) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
+    if(participant === 'true') {
+      aggregation.push({ $match: { 'participants.user': new Types.ObjectId(userId)}});
     }
-    if(facilitator === true) {
+    if(facilitator === 'true') {
       aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }})
     }
     if(archived !== undefined) {
-      if(archived === false) {
+      if(archived === 'false') {
         aggregation.push({ $match: { archived: null }});
-      } else if (archived === true) {
+      } else if (archived === 'true') {
         aggregation.push({ $match: { archived: { $ne: null }}});
       }
     }
@@ -328,7 +333,6 @@ export class DiscussionController {
     } else {
       aggregation.push({ $sort: { created: -1}});
     }
-
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
