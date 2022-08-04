@@ -16,7 +16,6 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
-import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
@@ -83,6 +82,7 @@ export class DiscussionController {
       found = await this.discussionModel.findOne({ insoCode: code });
       if(!found) {
         const setting = new this.settingModel();
+        setting.userId = discussion.poster;
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
@@ -282,16 +282,11 @@ export class DiscussionController {
     @Param('userId') userId: string,
     @Query('participant') participant: string,
     @Query('facilitator') facilitator: string,
-    @Query('text') text: string,
-<<<<<<< HEAD
-    @Query('archived') archived: boolean,
-    @Query('sort') sort: string,
-    @Request() req
-=======
+    //@Query('text') text: string,
+    @Request() req,
     @Query('archived') archived: string,
     @Query('sort') sort: string,
     @Query('text') query: any
->>>>>>> 24b4c30336a1e76b17a090266d4e41a48e7ad97c
   ): Promise<any []> {
     if(!Types.ObjectId.isValid(userId)) {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
