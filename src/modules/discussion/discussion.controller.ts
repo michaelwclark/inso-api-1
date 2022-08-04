@@ -126,6 +126,10 @@ export class DiscussionController {
         return discussion.facilitators.indexOf(c) === index;
       });
     }
+    // Does not allow adding participants through this route
+    if(discussion.participants != undefined && JSON.stringify(discussion.participants) != JSON.stringify(found.participants)){
+      throw new HttpException('Cannot edit discussion participants using this route', HttpStatus.BAD_REQUEST);
+    }
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
@@ -406,7 +410,8 @@ export class DiscussionController {
     }
 
     // Add the participants to the discussion
-    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    const queryId = new Types.ObjectId(userId);
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": queryId  });
     if(foundParticipant) {
       throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
     }
@@ -419,7 +424,7 @@ export class DiscussionController {
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
 
-    
+    return 'Particpant ' + userId + ' added to discussion'
   }
 
   @Delete('discussion/:discussionId')

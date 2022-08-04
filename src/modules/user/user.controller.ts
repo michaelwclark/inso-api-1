@@ -114,7 +114,6 @@ export class UserController {
       contact: email 
     }
     this.sendPasswordResetRequest(userPasswordRequest);
-    console.log('Password reset request has been sent to email: ' + email);
     return 'Password reset request has been sent to email: ' + email;
   }
 
@@ -216,7 +215,6 @@ export class UserController {
     @Body() newPassword:{ password: string, confirmPassword: string },
     @Query('ota') ota: string
   ){
-    console.log(ota);
     if(newPassword.password !== newPassword.confirmPassword){
       throw new HttpException('Password and confirm password fields must match', HttpStatus.BAD_REQUEST);
     }
@@ -227,35 +225,25 @@ export class UserController {
   //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
   async sendEmailVerification(user: any){
     const ota = await generateCode(user.contact);
-    console.log(ota);
     return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
   }
 
   async verifyEmailToken(ota: string){
     const code = await decodeOta(ota);
-    //const queryData = {"email": code.data, "verified": true, "primary": true}
-    //console.log(await this.userModel.aggregate( [ {"$project": { "matchedIndex": { "$indexOfArray": [ "$contact", queryData]}}}]));
     
     const checkVerified = await this.userModel.findOne({'contact.email' : code.data});
-    console.log(checkVerified);
     const arr = checkVerified.contact;
     for(let e of arr){
       if (e.email == code.data && e.verified == true){
-        console.log('Email has already been verified');
         throw new HttpException('Email has already been verified', HttpStatus.CONFLICT);
       }
     }
 
-    //if( checkVerified.contact)
-    //console.log(checkVerified);
-
     await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
-    console.log('Email verified!');
   }
 
   async sendPasswordResetRequest(user: any){
     const ota = await generateCode(user.contact);
-    console.log(ota);
     return await this.sgService.resetPassword({...user, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
   }
 

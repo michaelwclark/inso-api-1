@@ -34,8 +34,6 @@ export class AuthService {
             throw new HttpException('Email does not exist in database', HttpStatus.NOT_FOUND);
         }
 
-        console.log("validate user function, user: " + user);
-
         if(!user.password) {
             throw new HttpException('User has Google SSO configured. Please login through Google', HttpStatus.BAD_REQUEST);
         }

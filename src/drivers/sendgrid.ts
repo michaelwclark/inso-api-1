@@ -1,5 +1,5 @@
 import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
 
 enum SENDGRID_TEMPLATES {
@@ -64,7 +64,9 @@ export class SGService {
     };
 
     await this.sgclient.send(email).catch((error) => {
-      console.log(error);
+      if(error){
+        throw new HttpException(error, HttpStatus.BAD_REQUEST);
+      }
     });
   }
 
@@ -85,7 +87,6 @@ export class SGService {
         template: SENDGRID_TEMPLATES.CONFIRM_EMAIL,
         data: user
       });
-    console.log(`Email verification sent!`);
   }
 
   async resetPassword(user: any){
@@ -97,7 +98,6 @@ export class SGService {
       template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST,
       data: user
     });
-    console.log(`Password reset request sent!`);
   }
 
   async confirmPassword(user: any){
@@ -109,6 +109,5 @@ export class SGService {
       template: SENDGRID_TEMPLATES.PASSWORD_RESET_CONFIRMATION,
       data: user
     });
-    console.log(`Password reset confirmation sent!`);
   }
 }
