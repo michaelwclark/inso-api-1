@@ -84,7 +84,7 @@ export class ReactionController {
   @ApiUnauthorizedResponse({ description: 'User is not logged in'})
   @ApiForbiddenResponse({ description: 'User cannot delete a reaction for another user'})
   @ApiTags('Reaction')
-  async deleteReaction(@Param('postId') postId: string, @Param('reactionId') reactionId: string) {
+  async deletePostReaction(@Param('postId') postId: string, @Param('reactionId') reactionId: string) {
     if(!Types.ObjectId.isValid(postId)) {
       throw new HttpException(`${postId} is not a valid postId`, HttpStatus.BAD_REQUEST);
     }
