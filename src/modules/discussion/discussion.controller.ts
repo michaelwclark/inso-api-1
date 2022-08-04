@@ -284,11 +284,20 @@ export class DiscussionController {
     @Query('facilitator') facilitator: boolean,
     @Query('text') text: string,
     @Query('archived') archived: boolean,
-    @Query('sort') sort: string
+    @Query('sort') sort: string,
+    @Request() req
   ): Promise<any []> {
-
     if(!Types.ObjectId.isValid(userId)) {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.userModel.findOne({_id: userId});
+    if(!user){
+      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if(req.user.userId != userId){
+      throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
     }
 
     // TODO add search for inso code and text
