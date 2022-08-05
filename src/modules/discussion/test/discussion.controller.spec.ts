@@ -544,7 +544,7 @@ describe('AppController', () => {
           "grade": null
           }; 
         const error = new HttpException("User is not a participant or a facilitator of the discussion", HttpStatus.FORBIDDEN);
-        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de1', '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
+        return expect(appController.muteUserInDiscussion('62b276fda78b2a00063b1de1', '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
         });
       });
 
@@ -558,7 +558,7 @@ describe('AppController', () => {
           "grade": null
           }; 
         const error = new HttpException("User or discussion trying to mute does not exist", HttpStatus.NOT_FOUND);
-        return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
+        return expect(appController.muteUserInDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).rejects.toThrow(error);
         });
       });
    
