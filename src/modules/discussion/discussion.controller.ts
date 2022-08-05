@@ -430,6 +430,7 @@ export class DiscussionController {
     grade: null
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+    
   }
 
   @Patch('/discussion/:discussionId/participants/:participantId/mute')
