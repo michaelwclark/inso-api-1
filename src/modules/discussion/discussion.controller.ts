@@ -214,7 +214,9 @@ export class DiscussionController {
 
     //Duplicate the score
     const score = await this.scoreModel.findOne({ _id: settings.score });
-    delete score._id;
+    if(score){
+      delete score._id;
+    }
     const newScore = new this.scoreModel(score);
     const newScoreId = await newScore.save();
 
@@ -460,13 +462,8 @@ export class DiscussionController {
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async deleteDiscussion(
-    @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string
-    ): Promise<void> {
-    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
-    if(entity !== 'discussion'){
-      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
-    }
+    @Param('discussionId') discussionId: string
+    ): Promise<string> {
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
@@ -474,7 +471,7 @@ export class DiscussionController {
       throw new HttpException("Cannot delete a discussion that has posts", HttpStatus.CONFLICT);
     }
     await this.discussionModel.deleteOne({ _id: discussion });
-    return;
+    return 'Discussion deleted';
   }
 
 
