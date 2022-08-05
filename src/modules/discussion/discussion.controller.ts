@@ -81,7 +81,11 @@ export class DiscussionController {
       const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if(!found) {
-        const setting = new this.settingModel();
+        const inspirations = await this.post_inspirationModel.find().lean();
+        const inspirationIds = inspirations.map(inspo => {
+          return inspo._id;
+        })
+        const setting = new this.settingModel({post_inspirations: inspirationIds});
         setting.userId = discussion.poster;
         const settingId = await setting.save();
 
