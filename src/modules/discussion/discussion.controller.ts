@@ -16,7 +16,6 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
-import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
@@ -82,7 +81,11 @@ export class DiscussionController {
       const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if(!found) {
-        const setting = new this.settingModel();
+        const inspirations = await this.post_inspirationModel.find().lean();
+        const inspirationIds = inspirations.map(inspo => {
+          return inspo._id;
+        })
+        const setting = new this.settingModel({post_inspirations: inspirationIds});
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
@@ -277,11 +280,12 @@ export class DiscussionController {
   @UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
-    @Query('participant') participant: boolean,
-    @Query('facilitator') facilitator: boolean,
+    @Query('participant') participant: string,
+    @Query('facilitator') facilitator: string,
     @Query('text') text: string,
-    @Query('archived') archived: boolean,
-    @Query('sort') sort: string
+    @Query('archived') archived: string,
+    @Query('sort') sort: string,
+    @Query('text') query: any
   ): Promise<any []> {
 
     if(!Types.ObjectId.isValid(userId)) {
@@ -290,24 +294,23 @@ export class DiscussionController {
 
     // TODO add search for inso code and text
     const aggregation = [];
-    if(text !== undefined) {
-      // Lookup text queries and such
-      aggregation.push();
-    }
+    // if(text !== undefined) {
+    //   // Lookup text queries and such
+    //   aggregation.push();
+    // }
     if(participant === undefined && facilitator === undefined) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
-      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
+      aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
     }
-    if(participant === true) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
+    if(participant === 'true') {
+      aggregation.push({ $match: { 'participants.user': new Types.ObjectId(userId)}});
     }
-    if(facilitator === true) {
+    if(facilitator === 'true') {
       aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }})
     }
     if(archived !== undefined) {
-      if(archived === false) {
+      if(archived === 'false') {
         aggregation.push({ $match: { archived: null }});
-      } else if (archived === true) {
+      } else if (archived === 'true') {
         aggregation.push({ $match: { archived: { $ne: null }}});
       }
     }
@@ -316,7 +319,6 @@ export class DiscussionController {
     } else {
       aggregation.push({ $sort: { created: -1}});
     }
-
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
