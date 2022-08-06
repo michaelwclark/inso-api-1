@@ -21,7 +21,8 @@ export class BulkReadDiscussionDTO {
         Object.assign(this, partial);
         // Map the poster to what we want to return
         this.poster = {
-          _id: partial.poster._id,
+          _id: partial.poster.
+          _id,
           username: partial.poster.username,
           f_name: partial.poster.f_name,
           l_name: partial.poster.l_name

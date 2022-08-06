@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsReactionCreatorGuard } from 'src/auth/guards/userGuards/isReactionCreator.guard';
+import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { CreateReactionDTO } from 'src/entities/reaction/create-reaction';
@@ -31,7 +32,11 @@ export class ReactionController {
   @ApiBadRequestResponse({ description: 'postId is not valid or the emoji option is not valid'})
   @ApiNotFoundResponse({ description: 'The post to react to was not found'})
   @ApiTags('Reaction')
-  async createReaction(@Param('postId') postId: string, @Body() reaction: CreateReactionDTO) {
+  async createReaction(
+    @Param('postId') postId: string, 
+    @Body() reaction: CreateReactionDTO,
+    @Request() req
+    ) {
     // Validate postId
     if(!Types.ObjectId.isValid(postId)) {
       throw new HttpException(`${postId} is not valid`, HttpStatus.BAD_REQUEST);
@@ -44,6 +49,12 @@ export class ReactionController {
     }
 
     const user = await this.userModel.findOne({ _id: reaction.userId});
+    if(!user){
+      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+    }
+    if(req.user.userId !== reaction.userId){
+      throw new HttpException('Body user id does not match user in request', HttpStatus.BAD_REQUEST);
+    }
     const checkReaction = new Reaction({ ...reaction, postId: new Types.ObjectId(postId)});
     const newReaction = new this.reactionModel(checkReaction);
     // Generate a notification
