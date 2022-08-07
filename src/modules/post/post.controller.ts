@@ -56,6 +56,9 @@ export class PostController {
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
+      post.comment_for = new Types.ObjectId(post.comment_for);
+    } else {
+      post.comment_for = null;
     }
     const user = await this.userModel.findOne({_id: req.user.userId});
 
@@ -74,7 +77,7 @@ export class PostController {
       discussionId: new Types.ObjectId(discussionId),
       userId: new Types.ObjectId(req.user.userId),
       date: new Date(),
-      comment_for: new Types.ObjectId(post.comment_for)
+      comment_for: post.comment_for
     });
     const newPostId = await newPost.save();
     return newPostId._id;
