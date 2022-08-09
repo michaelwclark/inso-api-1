@@ -11,15 +11,6 @@ jobs:
 
     - run: echo "::workflow-command::eb status Insoproduction-env"
 
-    - name: Checkout source code
-      uses: actions/checkout@v2
-
-    - name: Beanstalk Deploy
-      uses: einaregilsson/beanstalk-deploy@v20
-      with:
-            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            application_name: inso-production
-            environment_name: Insoproduction-env
-            version_label: 0.0.2
-            region: us-east-1
+    - name: get-npm-version
+      id: package-version
+      uses: martinbeentjes/npm-get-version-action@main
