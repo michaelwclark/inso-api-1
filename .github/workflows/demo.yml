@@ -9,12 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - run: echo "::workflow-command::eb status Insoproduction-env"
-
     - name: Get current package version
       id: package-version
       uses: martinbeentjes/npm-get-version-action@v1.2.3
-
 
     - name: Checkout source code
       uses: actions/checkout@v2
