@@ -5,9 +5,12 @@ on:
     - main
 
 jobs:
+  eb status environment-name
   build:
     runs-on: ubuntu-latest
     steps:
+
+    - run: echo "::workflow-command :: eb status Insoproduction-env"
 
     - name: Checkout source code
       uses: actions/checkout@v2
@@ -19,4 +22,5 @@ jobs:
             aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             application_name: inso-production
             environment_name: Insoproduction-env
+            version_label: 12345
             region: us-east-1
