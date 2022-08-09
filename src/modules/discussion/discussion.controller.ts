@@ -21,6 +21,7 @@ import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussio
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
 
 @Controller()
 export class DiscussionController {
@@ -440,11 +441,37 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: ''})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
-  async muteParticipant(
+  @UseGuards(JwtAuthGuard, RequesterIsUserGuard)
+  async posterMuteUser(
     @Param('discussion') discussionId: string,
-    @Param('participant') participantId: string): Promise<any>{
+    @Param('userId') userId: string): Promise<any>{
 
+      //400 error user id (also facilitator?)
+      if(!Types.ObjectId.isValid(userId)) {
+        throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
+      }
+      //400 error discussion id
+      if(!Types.ObjectId.isValid(discussionId)) {
+        throw new HttpException('DiscussionId is not valid', HttpStatus.BAD_REQUEST)
+      }
+  
+      //404 error check for user  (facilitator?)
+      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
+      if(!findUser){
+        throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+      }
+  
+      //404 error - check for discusionId 
+      const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId });
+      if(!foundDiscussion) {
+        throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
+      }
+    
+    const foundParticipant = await this.userModel.findOneAndUpdate({_id: userId }, {$push: {mutedDiscussions: discussionId}});
+    
+    return foundParticipant;
+
+  
     }
 
   @Delete('discussion/:discussionId')

@@ -60,6 +60,10 @@ export class User {
     @Prop(String)
     public role: string;
 
+    @Prop({type: [Types.ObjectId], default:[]})
+    public mutedDiscussions: Types.ObjectId[];
+
+
     constructor(partial: Partial<User>) {
         Object.assign(this, partial);
     }
