@@ -1,2 +1,4 @@
 - name: Beanstalk Deploy
   uses: einaregilsson/beanstalk-deploy@v20
+  run: |
+    eb deploy
