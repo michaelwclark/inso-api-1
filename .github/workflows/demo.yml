@@ -11,9 +11,10 @@ jobs:
 
     - run: echo "::workflow-command::eb status Insoproduction-env"
 
-    - name: get-npm-version
+    - name: Get current package version
       id: package-version
-      uses: martinbeentjes/npm-get-version-action@main
+      uses: martinbeentjes/npm-get-version-action@v1.2.3
+
 
     - name: Checkout source code
       uses: actions/checkout@v2
