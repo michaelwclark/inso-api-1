@@ -182,13 +182,13 @@ export class ScoreEditDTO {
     public post_inspirations: EditPostInspirationOptions;
 
     @ApiProperty({
-        name: 'posts_made',
+        name: 'criteria',
         description: 'Requirements for rubric based scoring',
         required: false,
         type: [EditGradingCriteria],
         isArray: true
     })
-    @IsOptional()
+    @IsNotEmpty()
     @ValidateNested({ each: true })
     @Type(() => EditGradingCriteria)
     public criteria: EditGradingCriteria [];

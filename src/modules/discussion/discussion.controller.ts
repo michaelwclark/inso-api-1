@@ -86,6 +86,7 @@ export class DiscussionController {
           return inspo._id;
         })
         const setting = new this.settingModel({post_inspirations: inspirationIds});
+        setting.userId = discussion.poster;
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
@@ -108,7 +109,6 @@ export class DiscussionController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(
     @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string,
     @Body() discussion: DiscussionEditDTO
   ): Promise<any> {
     // Check that discussion exists
@@ -129,6 +129,10 @@ export class DiscussionController {
       discussion.facilitators = discussion.facilitators.filter((c, index) => {
         return discussion.facilitators.indexOf(c) === index;
       });
+    }
+    // Does not allow adding participants through this route
+    if(discussion.participants != undefined && JSON.stringify(discussion.participants) != JSON.stringify(found.participants)){
+      throw new HttpException('Cannot edit discussion participants using this route', HttpStatus.BAD_REQUEST);
     }
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
@@ -210,7 +214,9 @@ export class DiscussionController {
 
     //Duplicate the score
     const score = await this.scoreModel.findOne({ _id: settings.score });
-    delete score._id;
+    if(score){
+      delete score._id;
+    }
     const newScore = new this.scoreModel(score);
     const newScoreId = await newScore.save();
 
@@ -282,14 +288,23 @@ export class DiscussionController {
     @Param('userId') userId: string,
     @Query('participant') participant: string,
     @Query('facilitator') facilitator: string,
-    @Query('text') text: string,
+    //@Query('text') text: string,
+    @Request() req,
     @Query('archived') archived: string,
     @Query('sort') sort: string,
     @Query('text') query: any
   ): Promise<any []> {
-
     if(!Types.ObjectId.isValid(userId)) {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.userModel.findOne({_id: userId});
+    if(!user){
+      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if(req.user.userId != userId){
+      throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
     }
 
     // TODO add search for inso code and text
@@ -420,7 +435,8 @@ export class DiscussionController {
     }
 
     // Add the participants to the discussion
-    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    const queryId = new Types.ObjectId(userId);
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": queryId  });
     if(foundParticipant) {
       throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
     }
@@ -433,7 +449,7 @@ export class DiscussionController {
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
 
-    
+    return 'Particpant ' + userId + ' added to discussion'
   }
 
   @Delete('discussion/:discussionId')
@@ -446,13 +462,8 @@ export class DiscussionController {
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async deleteDiscussion(
-    @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string
-    ): Promise<void> {
-    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
-    if(entity !== 'discussion'){
-      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
-    }
+    @Param('discussionId') discussionId: string
+    ): Promise<string> {
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
@@ -460,7 +471,7 @@ export class DiscussionController {
       throw new HttpException("Cannot delete a discussion that has posts", HttpStatus.CONFLICT);
     }
     await this.discussionModel.deleteOne({ _id: discussion });
-    return;
+    return 'Discussion deleted';
   }
 
 

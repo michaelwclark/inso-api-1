@@ -46,7 +46,7 @@ export class DiscussionEditDTO {
     public settings: Types.ObjectId;
 
     @ApiProperty({
-      name: 'settings',
+      name: 'facilitators',
       description: 'The ObjectId of the users that will be the facilitators for the discussion',
       required: false,
       type: [Types.ObjectId],

@@ -1,25 +1,35 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
-import { plainToClass } from 'class-transformer';
 import { Model, Types } from 'mongoose';
-import { authenticate } from 'passport';
-import { async } from 'rxjs';
 import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
-import { ContactEditDTO, UserEditDTO } from 'src/entities/user/edit-user';
+import { UserEditDTO } from 'src/entities/user/edit-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
-import { Contact, User, UserDocument } from 'src/entities/user/user';
+import { User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
+import { SGService } from 'src/drivers/sendgrid';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
-import { length } from 'class-validator';
-
-
+import { decodeOta, generateCode } from 'src/drivers/otaDriver';
 
 @Controller()
 export class UserController {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>
-    ) {}
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private sgService: SGService
+  ) {}
+
+  //** TEMPORARY GET REQUEST, for password reset route. Will delete soon. */
+  @Get('password-reset')
+  async passwordTest(@Query('ota') ota: string){
+    console.log(ota); // test the ota is passed through
+    return 'Success!'
+  }
+
+  @Get('email-verified')
+  async verifyEmailRoute(@Query('ota') ota: string){
+    this.verifyEmailToken(ota);
+    return 'Email Verified!'
+  }
 
   @Get('user/:userId')
   async getUser(@Param('userId') userId: string) {
@@ -36,7 +46,6 @@ export class UserController {
     }
 
     const returnUser = new UserReadDTO(foundUser);
-    
     return returnUser;
   }
 
@@ -80,7 +89,32 @@ export class UserController {
     const newUser = new this.userModel({...user, 'dateJoined': new Date(), username: username });
     await newUser.save();
 
-    return 'User Created!';
+    const verifyUser = { 
+      name: user.f_name + ' ' + user.l_name, 
+      username: username, 
+      contact: user.contact[0].email 
+    }
+    await this.sendEmailVerification(verifyUser);
+
+    return 'User Created! Please check your email inbox to verify your email address';
+  }
+
+  @Post('password-reset/:email')
+  async resetPasswordRequest(@Param('email') email: string){
+    if(isEmail(email) == false ){
+      throw new HttpException('Please enter a valid email address', HttpStatus.BAD_REQUEST);
+    }
+    const foundUser = await this.userModel.findOne({'contact.email': email});
+    if(!foundUser){ 
+      throw new HttpException("No account associated with email: " + email, HttpStatus.NOT_FOUND); 
+    }
+    const userPasswordRequest = {
+      name: foundUser.f_name + ' ' + foundUser.l_name, 
+      username: foundUser.username, 
+      contact: email 
+    }
+    this.sendPasswordResetRequest(userPasswordRequest);
+    return 'Password reset request has been sent to email: ' + email;
   }
 
   @Patch('user/:userId')
@@ -176,29 +210,55 @@ export class UserController {
     return 'User Updated';
   }
 
-
-//////////////////////////////////
-
-/** removes contacts with delete boolean marker as true, for patch route */
-  public removeUnwantedContacts(array: ContactEditDTO[]){
-
-    var contactsToDelete = array.filter(function (e) {
-      return e.delete == true;
-    }); // new array of elements to remove from current contacts
-    var contactsToKeep = array.filter(function (e) {
-      return e.delete != true;
-    }); // new array of new elements to add to current contacts
-
-    for (var i = 0; i < contactsToDelete.length; i++) {
-    this.userModel.updateMany(
-      {},
-      { $pull: { contact : {email: contactsToDelete[i].email} } }
-      )
+  @Patch('password-reset')
+  async resetPassword(
+    @Body() newPassword:{ password: string, confirmPassword: string },
+    @Query('ota') ota: string
+  ){
+    if(newPassword.password !== newPassword.confirmPassword){
+      throw new HttpException('Password and confirm password fields must match', HttpStatus.BAD_REQUEST);
     }
-
-    return contactsToKeep;
+    validatePassword(newPassword.password);
+    this.verifyPasswordResetToken(ota, newPassword.password);
   }
 
+  //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
+  async sendEmailVerification(user: any){
+    const ota = await generateCode(user.contact);
+    return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+  }
+
+  async verifyEmailToken(ota: string){
+    const code = await decodeOta(ota);
+    
+    const checkVerified = await this.userModel.findOne({'contact.email' : code.data});
+    const arr = checkVerified.contact;
+    for(let e of arr){
+      if (e.email == code.data && e.verified == true){
+        throw new HttpException('Email has already been verified', HttpStatus.CONFLICT);
+      }
+    }
+
+    await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
+  }
+
+  async sendPasswordResetRequest(user: any){
+    const ota = await generateCode(user.contact);
+    return await this.sgService.resetPassword({...user, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
+  }
+
+  async verifyPasswordResetToken(ota: string, password: string){
+    const code = await decodeOta(ota);
+    const saltRounds = 10;
+    const newPassword = await bcrypt.hash(password, saltRounds);
+    const user = await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
+    const userConfirmPwd = {
+      name: user.f_name + ' ' + user.l_name, 
+      username: user.username, 
+      contact: code.data
+    };
+    this.sgService.confirmPassword(userConfirmPwd);
+  }
 }
 
 /** validates the username for a new user or when updating a username, the value meets all  required conditions */
@@ -243,4 +303,3 @@ function checkForDuplicateContacts(array: ContactCreateDTO[]){
   else { return unique }
 
 }
-
