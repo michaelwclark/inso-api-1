@@ -26,5 +26,5 @@ jobs:
             aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
             application_name: inso-production
             environment_name: Insoproduction-env
-            version_label: ${{ steps.package-version.outputs.current-version}}
+            versionLabels: ${{ steps.package-version.outputs.current-version}}
             region: us-east-1
