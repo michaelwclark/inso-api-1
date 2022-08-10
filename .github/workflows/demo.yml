@@ -16,6 +16,23 @@ jobs:
       id: package-version
       uses: martinbeentjes/npm-get-version-action@v1.2.3
 
+    - name: Docker Login
+      uses: docker/login-action@v1.8.0
+      with:
+      username: ${{secrets.DOCKERHUB_USERNAME}}
+      logout: true
+
+    - name: Build Server image
+      run: docker build -t pz0342/inso-api -f
+                ./Server/Dockerfile ./Server
+
+    - name: Tag our Image
+      run: docker tag pz0342/inso-api 
+                pz0342/inso-api:latest
+
+    - name: Push to dockerhub
+      run: docker push pz0342/inso-api
+
     - name: Beanstalk Deploy
       uses: einaregilsson/beanstalk-deploy@v20
       with:
