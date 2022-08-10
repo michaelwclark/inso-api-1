@@ -26,11 +26,11 @@ jobs:
     - name: Build Server image
       run: docker build -t latest .
 
-    # - name: Tag our Image
-      # run: docker tag pz0342/inso-api:latest latest
+    - name: Tag our Image
+      run: docker tag inso-api:latest pz0342/inso-api:latest
 
     - name: Push to dockerhub
-      run: docker push pz0342/inso-api:latest
+      run: docker push pz0342/inso-api:latest 
 
     - name: Beanstalk Deploy
       uses: einaregilsson/beanstalk-deploy@v20
