@@ -25,7 +25,7 @@ jobs:
 
     - name: Build Server image
       run: docker build -t pz0342/inso-api -f
-                ./Server/Dockerfile ./Server
+                ./Dockerfile
 
     - name: Tag our Image
       run: docker tag pz0342/inso-api 
