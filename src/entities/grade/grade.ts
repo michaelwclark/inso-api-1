@@ -8,9 +8,6 @@ export type GradeDocument = Grade & Document;
 @Schema()
 export class Grade {
     @Prop(Types.ObjectId)
-    public id: Types.ObjectId;
-
-    @Prop(Types.ObjectId)
     public discussionId: Types.ObjectId;
 
     @Prop(Types.ObjectId)
@@ -22,8 +19,15 @@ export class Grade {
     @Prop(Number)
     public maxScore: number;
 
-    @Prop(Number)
+    @Prop(String)
     public comment: string;
+
+    @Prop({ type: { criteria: String, max_points: Number, earned: Number}, _id: false})
+    public rubric: {
+        criteria: string;
+        max_points: number;
+        earned: number;
+    }
 
     @Prop(Types.ObjectId)
     public facilitator: Types.ObjectId;
