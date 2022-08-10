@@ -19,8 +19,8 @@ jobs:
     - name: Docker Login
       uses: docker/login-action@v1.8.0
       with:
-      username: ${{secrets.DOCKERHUB_USERNAME}}
-      logout: true
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        logout: true
 
     - name: Build Server image
       run: docker build -t pz0342/inso-api -f
