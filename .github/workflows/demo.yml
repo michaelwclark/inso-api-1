@@ -27,7 +27,7 @@ jobs:
       run: docker build -t latest .
 
     - name: Tag our Image
-      run: docker tag latest
+      run: docker tag pz0342/inso-api:latest latest
 
     - name: Push to dockerhub
       run: docker push pz0342/inso-api:latest
