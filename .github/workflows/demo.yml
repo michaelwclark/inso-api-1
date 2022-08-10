@@ -24,8 +24,7 @@ jobs:
         logout: true
 
     - name: Build Server image
-      run: docker build -t pz0342/inso-api -f
-                ./Dockerfile https://github.com/inso-education/inso-api
+      run: docker build -t latest .
 
     - name: Tag our Image
       run: docker tag pz0342/inso-api 
