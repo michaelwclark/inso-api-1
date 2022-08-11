@@ -42,3 +42,4 @@ jobs:
         version_label: ${{ steps.package-version.outputs.current-version }}
         region: us-east-1
         deployment_package: ./aws/Dockerrun.aws.json
+        use_existing_version_if_available: true
