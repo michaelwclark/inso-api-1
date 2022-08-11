@@ -10,6 +10,6 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    return 'Welcome to the Inso API!'
+    return 'Welcome to the Inso API! UPDATED'
   }
 }
