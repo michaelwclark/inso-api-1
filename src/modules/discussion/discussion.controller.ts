@@ -168,6 +168,16 @@ export class DiscussionController {
       posts.push(postWithComments);
     }
     // TODO Tags for the discussion
+    //console.log(posts);
+    const { removeStopwords } = require('stopword')
+    const oldString = 'This is random but it is in my house and this is just random in my house again. Sorry it is random'.split(' ')
+    const newString = removeStopwords(oldString)
+    console.log(newString);
+    let duplicatesRemoved = [... new Set(newString)];
+    console.log(duplicatesRemoved);
+
+    let tagsArray = [];
+    
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
