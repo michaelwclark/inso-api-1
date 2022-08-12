@@ -35,9 +35,6 @@ export class GradeController {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND)
     }
     const newDiscussion = new DiscussionReadDTO( discussion );
-    if(newDiscussion.settings.scores.type === 'auto') {
-      throw new HttpException('Cannot create a grade for an autograded discussion. Please use PATCH /discussions/:discussionId/participants/:participantId/grade to update grade', HttpStatus.BAD_REQUEST);
-    }
 
     // Make sure the participant is apart of the discussion and not already graded
     const participant = discussion.participants.map(part => {
