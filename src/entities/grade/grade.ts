@@ -22,12 +22,12 @@ export class Grade {
     @Prop(String)
     public comment: string;
 
-    @Prop({ type: { criteria: String, max_points: Number, earned: Number}, _id: false})
+    @Prop({ type: [{ criteria: String, max_points: Number, earned: Number}], _id: false})
     public rubric: {
         criteria: string;
         max_points: number;
         earned: number;
-    }
+    } []
 
     @Prop(Types.ObjectId)
     public facilitator: Types.ObjectId;
