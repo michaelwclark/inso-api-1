@@ -1,30 +1,9 @@
-import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class DiscussionEditDTO {
-
-    @ApiProperty({
-      name: 'id',
-      description: 'The ObjectId of the discussion',
-      required: true,
-      type: Types.ObjectId,
-      isArray: false,
-      example: '507f1f77bcf86cd799439011'
-    })
-    @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Discussion Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
-    public id: Types.ObjectId;
-
     @ApiProperty({
       name: 'name',
       description: 'The updated name of the discussion',
@@ -46,6 +25,7 @@ export class DiscussionEditDTO {
       isArray: false,
       example: 'Fri Apr 15 2022 13:01:58 GMT-0400 (Eastern Daylight Time)'
     })
+    @IsOptional()
     @IsNotEmpty()
     @Type(() => Date)
     @IsDate()
@@ -61,18 +41,12 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
+    @IsMongoId()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Settings Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
     public settings: Types.ObjectId;
 
     @ApiProperty({
-      name: 'settings',
+      name: 'facilitators',
       description: 'The ObjectId of the users that will be the facilitators for the discussion',
       required: false,
       type: [Types.ObjectId],
@@ -81,15 +55,9 @@ export class DiscussionEditDTO {
     })
     @IsOptional()
     @IsNotEmpty()
+    @IsMongoId({ each: true })
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Facilitator Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
-    public facilitators: Types.ObjectId [];
+    public facilitators: Types.ObjectId[];
     
     @ApiProperty({
       name: 'calendar',
@@ -102,14 +70,22 @@ export class DiscussionEditDTO {
     @IsOptional()
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
-    @Transform((id:any) => {
-        if (!Types.ObjectId.isValid(id.value)) {
-          throw new BadRequestException(['Invalid ObjectId for Calendar Id']);
-        }
-    
-        return new Types.ObjectId(id.value);
-    })
+    @IsMongoId()
     public set: Types.ObjectId;
+
+    @ApiProperty({
+      name: 'participants',
+      description: 'The users that are a participant of a discussion',
+      required: false,
+      type: Types.ObjectId,
+      isArray: true,
+      example: ['62b276fda78b2a00063b1de1']
+    })
+    @IsOptional()
+    @IsNotEmpty()
+    @Type(() => Types.ObjectId)
+    @IsMongoId()
+    public participants: Types.ObjectId [];
 
     
     constructor(partial: Partial<DiscussionEditDTO>) {

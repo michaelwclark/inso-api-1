@@ -1,5 +1,16 @@
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+
+export type InspirationDocument = Inspiration & Document;
+
+@Schema({ _id : false })
 export class Outline {
+    @Prop(String)
     public header: string;
+
+    @Prop(String)
     public prompt: string;
 
     constructor(partial: Partial<Outline>) {
@@ -7,13 +18,23 @@ export class Outline {
     }
 }
 
+@Schema({ _id: true })
 export class Inspiration {
-    public id: string;
+    @Prop(String)
     public type: string;
+
+    @Prop(String)
+    public name: string;
+
+    @Prop(String)
     public instructions: string;
+
+    @Prop([Outline])
     public outline: Outline [];
 
     constructor(partial: Partial<Inspiration>) {
         Object.assign(this, partial);
     }
 }
+
+export const InspirationSchema = SchemaFactory.createForClass(Inspiration);

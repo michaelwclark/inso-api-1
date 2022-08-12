@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,7 @@ async function bootstrap() {
     })
   );
 
+  
   const config = new DocumentBuilder()
     .setTitle('Inso API')
     .setDescription('API for Inso system')
@@ -24,6 +26,9 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api', app, document);
   
-  await app.listen(3000);
+  app.enableCors();
+  app.use(helmet());
+  
+  await app.listen(process.env.PORT);
 }
 bootstrap();

@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { GradeController } from './grade.controller';
 
 @Module({
-    imports: [],
+    // TODO Add Schema
+    //imports: [MongooseModule.forFeature([{ name: '', schema: '' }])],
     controllers: [GradeController],
     providers: [],
 })
