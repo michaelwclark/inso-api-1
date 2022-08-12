@@ -167,22 +167,12 @@ export class DiscussionController {
       const postWithComments = await this.getPostsAndComments(post);
       posts.push(postWithComments);
     }
+
     // TODO Tags for the discussion
-    
     let tagsArray = [];
     if(posts.length > 0){
-      //console.log('posts:' + posts);
-      //console.log(posts[0].post);
-      const { removeStopwords } = require('stopword')
-      const oldString = 'This is random but it is in my house and this is just random in my house again. Sorry it is random just forgive me'.split(' ')
-      const newString = removeStopwords(oldString)
-      //console.log(newString);
+      const { removeStopwords } = require('stopword');
       var count = require('count-array-values');
-      //console.log(count(newString, 'tag'));
-      // let duplicatesRemoved = [... new Set(newString)];
-      // console.log(duplicatesRemoved);
-
-      //let tagsArray = count(newString, 'tag');
 
       let strings = [];
       var postElement;
@@ -193,31 +183,18 @@ export class DiscussionController {
         postElement = posts[i].post.split(' ');
         postNoStopWords = removeStopwords(postElement);
         temp = postNoStopWords.join(' ');
-
         strings.push(temp)
       }
 
-      // for(var i = 0; i < posts.length; i++){
-      //   strings.push(posts[i].post);
-      // }
-
-      // strings.forEach( element => {
-      //   element = element.split(' ');
-      //   element = removeStopwords(element)
-      // })
-
-      //console.log(strings);
-
       var allPosts = strings.join(' ');
-      //console.log(allPosts);
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
       var newArray = allPosts.split(' ');
-      //console.log(newArray);
+      newArray = newArray.map( element => element = element.toLowerCase() );
       tagsArray = count(newArray, 'tag');
-      //console.log(tagsArray);
-      //console.log(tagsArray.length);
-      tagsArray = tagsArray.slice(0, 15);
-      //console.log(tagsArray);
-      //console.log(tagsArray.length);
+      tagsArray = tagsArray.slice(0, 15); // keep only top 15
     }
 
     const discussionRead = new DiscussionReadDTO({
