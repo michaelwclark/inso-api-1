@@ -362,7 +362,7 @@ export class DiscussionController {
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
 
-    //check discussionId is valid]
+    //check discussionId is valid
     if(!Types.ObjectId.isValid(discussionId)){
       throw new HttpException('Discussion Id is invalid', HttpStatus.BAD_REQUEST)
     }
@@ -451,6 +451,58 @@ export class DiscussionController {
 
     return 'Particpant ' + userId + ' added to discussion'
   }
+
+  @Patch('users/:userId/discussions/:discussionId/mute')
+  @ApiOperation({description: 'The ability to mute a user in a discussion'})
+  @ApiOkResponse({ description: 'Discussion has been muted'})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async muteUserInDiscussion(
+    @Param('userId') userId: string,
+    @Param('discussionId') discussionId: string): Promise<any> {
+
+
+      //Invalid UserId and DiscussionId
+      if(!Types.ObjectId.isValid(userId)) {
+        throw new HttpException('UserId is invalid', HttpStatus.BAD_REQUEST);
+      }
+
+      if(!Types.ObjectId.isValid(discussionId)){
+        throw new HttpException('DiscussionId is invalid', HttpStatus.BAD_REQUEST);
+      }
+
+      //UserId and DiscussionId not found
+      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)});
+      if (!findUser){
+        throw new HttpException('UserId was not found', HttpStatus.NOT_FOUND);
+      }
+
+      const findDiscussion = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)});
+      if(!findDiscussion){
+        throw new HttpException('DiscussionId was not found', HttpStatus.NOT_FOUND);
+      }
+
+      //The user is not a participant or a facilitator of the discussion 403 - forbidden status
+      const findParticipant = await this.discussionModel.findOne({"discussion.facilitators": userId }, {"participants.user": userId})
+      if(!findParticipant){
+        throw new HttpException('User is not a participant or a facilitator of the discussion', HttpStatus.FORBIDDEN)
+      }
+
+      //find and update participant set mute to true
+      //const muted: boolean = false
+     
+      await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.user": userId, muted: true});
+      
+      const newParticipant = {
+        user: new Types.ObjectId(userId),
+        joined: new Date,
+        muted: false,
+        grade: null
+        } 
+        await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.muted": true}); 
+      
+    }
+
 
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
