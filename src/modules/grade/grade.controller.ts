@@ -6,8 +6,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
-import { CreateGradeDTO } from 'src/entities/grade/create-grade';
-import { UpdateGradeDTO } from 'src/entities/grade/edit-grade';
+import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 
 
@@ -21,11 +20,11 @@ export class GradeController {
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
   @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   @ApiTags('Grade')
-  @ApiOperation('Updates a grade for a user')
+  @ApiOperation({ description: 'Updates a grade for a user'})
   async createGradeForParticipant(
     @Param('discussionId') discussionId: string,
     @Param('participantId') participantId: string,
-    @Body() grade: CreateGradeDTO,
+    @Body() grade: GradeDTO,
     @Req() req
   ) {
     // Check that the discussion exists and the participant is actually a participant
@@ -50,7 +49,7 @@ export class GradeController {
       throw new HttpException('Participant is not a part of this discussion and can\'t receive a grade', HttpStatus.BAD_REQUEST);
     }
 
-    const confirmedGrade = new CreateGradeDTO(grade);
+    const confirmedGrade = new GradeDTO(grade);
     if(confirmedGrade.criteria.length !== newDiscussion.settings.scores.criteria.length) {
       throw new HttpException('Criteria for score not all included', HttpStatus.BAD_REQUEST)
     }
