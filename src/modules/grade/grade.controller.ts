@@ -8,13 +8,15 @@ import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussi
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
+import { GradeService } from './grade.service';
 
 
 @Controller()
 export class GradeController {
   constructor(
     @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
-    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
+    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
+    private gradeService: GradeService
   ) {}
 
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
@@ -76,8 +78,14 @@ export class GradeController {
    */
   @Patch('/discussion/:discussionId/participants/autograde')
   @UseGuards()
-  async autoGradeParticipants() {
-
+  async autoGradeParticipants(
+    @Param('discussionId') discussionId: string
+  ) {
+    if(Types.ObjectId.isValid(discussionId)) {
+      return await this.gradeService.gradeDiscussion(discussionId);
+    } else {
+      throw new HttpException('DiscussionId is not valid', HttpStatus.BAD_REQUEST);
+    }
   }
 
 }
