@@ -59,7 +59,7 @@ export class GradeService {
 
         // Go through each participant and grade them according to the auto grading requirements
         for await(const participant of newDiscussion.participants) {
-            await this.gradeParticipant(newDiscussion._id, newDiscussion.poster, participant.user, newDiscussion.settings.scores);
+            //await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster), participant.user, newDiscussion.settings.scores);
         }
     }
 
