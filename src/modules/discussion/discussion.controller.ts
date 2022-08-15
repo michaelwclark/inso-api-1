@@ -440,6 +440,7 @@ export class DiscussionController {
     if(foundParticipant) {
       throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
     }
+    console.log(foundParticipant);
 
     const newParticipant = {
     user: new Types.ObjectId(userId),
@@ -449,7 +450,8 @@ export class DiscussionController {
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
 
-    return 'Particpant ' + userId + ' added to discussion'
+    // return discussionId
+    return;
   }
 
   @Patch('users/:userId/discussions/:discussionId/mute')
