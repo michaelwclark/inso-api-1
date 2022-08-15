@@ -59,11 +59,37 @@ export class GradeService {
 
         // Go through each participant and grade them according to the auto grading requirements
         for await(const participant of newDiscussion.participants) {
-            //await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster), participant.user, newDiscussion.settings.scores);
+            await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster._id), new Types.ObjectId(participant.user), newDiscussion.settings.scores);
         }
     }
 
     private async gradeParticipant(discussionId: Types.ObjectId, facilitator: Types.ObjectId, participantId: Types.ObjectId, rubric: any) {
+        const total = rubric.total;
+        let gradeCriteria = {
+          posts_made: rubric.posts_made ? rubric.posts_made : null,
+          active_days: rubric.active_days ? rubric.active_days : null,
+          comments_received: rubric.comments_received? rubric.comments_received : null,
+          post_inspirations: rubric.post_inspirations? rubric.post_inspirations : null
+        };
+        let grade = {
+
+        };
+        // Retrieve the users posts in the discussionId and any of there posts and reactions to determine the following
+        const posts = [];
+        if(gradeCriteria.posts_made !== null) {
+          if(posts.length !== gradeCriteria.posts_made.required) {
+            // Determine how many they are off and calculate the grade
+          }
+        }
+        if(gradeCriteria.active_days !== null) {
+          // Determine the number of days that they either posted or made a reaction in the discussion
+        }
+        if(gradeCriteria.comments_received) {
+          // Determine if the number of comments received on the first post suffices. If they have multiple posts determine if they have comments
+        }
+        if(gradeCriteria.post_inspirations) {
+          // See if any of the posts used a post inspiration
+        }
         console.log(discussionId);
         console.log(facilitator);
         console.log(participantId);
