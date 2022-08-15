@@ -32,13 +32,79 @@ export class InspirationController {
   @ApiOperation({description: 'Gets all valid inspirations on the system'})
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: ''})
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   @ApiTags('Inspiration')
   async getInspirations(): Promise<InspirationReadResponse> {
-    const posting = await this.inspirationModel.find({ type: 'posting'});
-    const responding = await this.inspirationModel.find({ type: 'responding'});
-    const synthesizing = await this.inspirationModel.find({ type: 'synthesizing'});
+    const postingVals = await this.inspirationModel.find({ type: 'posting'});
+    const posting = { 
+      "ask_something": [],
+      "connect_something": [],
+      "create_something": [],
+      "share_something": [],
+      "start_something": []
 
+    }
+    postingVals.forEach(inspo => {
+      if(inspo.subCat === 'ask_something') {
+        posting.ask_something.push(inspo);
+      }
+      if(inspo.subCat === 'connect_something') {
+        posting.connect_something.push(inspo);
+      }
+      if(inspo.subCat === 'create_something') {
+        posting.create_something.push(inspo);
+      }
+      if(inspo.subCat === 'share_something') {
+        posting.share_something.push(inspo);
+      }
+      if(inspo.subCat === 'start_something') {
+        posting.start_something.push(inspo);
+      }
+    });
+
+
+    const respondingVals = await this.inspirationModel.find({ type: 'responding'});
+    const responding = {
+      "add": [],
+      "answer": [],
+      "ask": [],
+      "evaluate": [],
+      "react": []
+    }
+    respondingVals.forEach(inspo => {
+      if(inspo.subCat === 'add') {
+        responding.add.push(inspo);
+      }
+      if(inspo.subCat === 'answer') {
+        responding.answer.push(inspo)
+      }
+      if(inspo.subCat === 'ask') {
+        responding.ask.push(inspo);
+      }
+      if(inspo.subCat === 'evaluate') {
+        responding.evaluate.push(inspo);
+      }
+      if(inspo.subCat === 'react') {
+        responding.react.push(inspo);
+      }
+    })
+    const synthesizingVals = await this.inspirationModel.find({ type: 'synthesizing'});
+    const synthesizing = {
+      "connections": [],
+      "tags": [],
+      "threads": []
+    }
+    respondingVals.forEach(inspo => {
+      if(inspo.subCat === 'connections') {
+        synthesizing.connections.push(inspo);
+      }
+      if(inspo.subCat === 'tags') {
+        synthesizing.tags.push(inspo);
+      }
+      if(inspo.subCat === 'threads') {
+        synthesizing.threads.push(inspo);
+      }
+    })
     return { posting, responding, synthesizing };
   }
 

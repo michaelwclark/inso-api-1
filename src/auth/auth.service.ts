@@ -94,7 +94,8 @@ export class AuthService {
                 ]
             });
             const userSave = new this.userModel({ ...newUser, dateJoined: new Date() });
-            return userSave.save();
+            await userSave.save();
+            return;
         } else {
             const payload = { 'username': user.username, 'sub': user._id };
             return {

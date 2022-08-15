@@ -1,8 +1,8 @@
-name: Deploy main
+name: Deploy releases
 on:
   push:
     branches:
-    - main
+    - releases
 
 jobs:
   build:
