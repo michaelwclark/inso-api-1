@@ -25,10 +25,6 @@ export class NotificationService {
         return await this.notificationModel.findOneAndUpdate({ _id: notificationId}, { read: true });
     }
 
-    async deleteNotification(notificationId: Types.ObjectId) {
-
-    }
-
     async getNotifications(userId: Types.ObjectId) {
         return this.notificationModel.find({ userId: userId}).sort({ date: -1});
     }
