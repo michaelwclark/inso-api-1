@@ -173,10 +173,10 @@ export class DiscussionReadDTO {
       // Map the participants
       this.participants = partial.participants ? partial.participants.map(participant => {
         return {
-          user: participant.user,
-          joined: participant.joined,
-          muted: participant.muted,
-          grade: participant.grade
+          _id: participant._id,
+          f_name: participant.f_name,
+          l_name: participant.l_name,
+          username: participant.username
         }
       }) : null
 

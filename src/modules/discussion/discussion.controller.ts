@@ -158,6 +158,11 @@ export class DiscussionController {
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
+    const participants = [];
+    for await(let participant of discussion.participants) {
+      const part = await this.userModel.findOne({ _id: participant.user });
+      participants.push(part);
+    }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
@@ -201,6 +206,7 @@ export class DiscussionController {
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
+      participants: participants,
       posts: posts,
       tags: tagsArray
     });

@@ -43,4 +43,5 @@ export class Discussion {
     }
 }
 
+
 export const DiscussionSchema = SchemaFactory.createForClass(Discussion);
