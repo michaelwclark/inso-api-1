@@ -32,7 +32,7 @@ export class InspirationController {
   @ApiOperation({description: 'Gets all valid inspirations on the system'})
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: ''})
-  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiTags('Inspiration')
   async getInspirations(): Promise<InspirationReadResponse> {
     const postingVals = await this.inspirationModel.find({ type: 'posting'});

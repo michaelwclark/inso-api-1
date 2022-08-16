@@ -18,6 +18,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppService } from './app.service';
 import { GoogleStrategy } from './auth/guards/google.strategy';
 import { UploadModule } from './modules/upload/upload.module';
+import { MilestoneModule } from './modules/milestone/milestone.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UploadModule } from './modules/upload/upload.module';
     CalendarModule,
     PostModule,
     UploadModule,
+    MilestoneModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(
       process.env.MONGO_CONNECTION_STRING,
