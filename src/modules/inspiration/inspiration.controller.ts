@@ -37,72 +37,162 @@ export class InspirationController {
   async getInspirations(): Promise<InspirationReadResponse> {
     const postingVals = await this.inspirationModel.find({ type: 'posting'});
     const posting = { 
-      "ask_something": [],
-      "connect_something": [],
-      "create_something": [],
-      "share_something": [],
-      "start_something": []
-
+      "ask_something": {
+        category: 'Ask Something',
+        categoryIcon: '',
+        inspirations: []
+      },
+      "connect_something": { 
+        category: 'Connect Something',
+        categoryIcon: '',
+        inspirations: []
+      },
+      "create_something": {
+        category: 'Create Something',
+        categoryIcon: '',
+        inspirations: []
+      },
+      "share_something": { 
+        category: 'Share Something',
+        categoryIcon: '',
+        inspirations: []
+      },
+      "start_something": { 
+        category: 'Start Something',
+        categoryIcon: '',
+        inspirations: []
+      }
     }
     postingVals.forEach(inspo => {
       if(inspo.subCat === 'ask_something') {
-        posting.ask_something.push(inspo);
+        if(posting.ask_something.categoryIcon === '') {
+          posting.ask_something.categoryIcon = inspo.icon;
+        }
+        posting.ask_something.inspirations.push(inspo);
       }
       if(inspo.subCat === 'connect_something') {
-        posting.connect_something.push(inspo);
+        if(posting.connect_something.categoryIcon === '') {
+          posting.connect_something.categoryIcon = inspo.icon;
+        }
+        posting.connect_something.inspirations.push(inspo);
       }
       if(inspo.subCat === 'create_something') {
-        posting.create_something.push(inspo);
+        if(posting.create_something.categoryIcon === '') {
+          posting.create_something.categoryIcon = inspo.icon;
+        }
+        posting.create_something.inspirations.push(inspo);
       }
       if(inspo.subCat === 'share_something') {
-        posting.share_something.push(inspo);
+        if(posting.share_something.categoryIcon === '') {
+          posting.share_something.categoryIcon = inspo.icon;
+        }
+        posting.share_something.inspirations.push(inspo);
       }
       if(inspo.subCat === 'start_something') {
-        posting.start_something.push(inspo);
+        if(posting.start_something.categoryIcon === '') {
+          posting.start_something.categoryIcon = inspo.icon;
+        }
+        posting.start_something.inspirations.push(inspo);
       }
     });
 
 
     const respondingVals = await this.inspirationModel.find({ type: 'responding'});
     const responding = {
-      "add": [],
-      "answer": [],
-      "ask": [],
-      "evaluate": [],
-      "react": []
+      "add": {
+        category: "Add",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "answer": {
+        category: "Answer",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "ask": {
+        category: "Ask",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "evaluate": {
+        category: "Evaluate",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "react": {
+        category: "React",
+        categoryIcon: '',
+        inspirations: []
+      }
     }
     respondingVals.forEach(inspo => {
       if(inspo.subCat === 'add') {
-        responding.add.push(inspo);
+        if(responding.add.categoryIcon === '') {
+          responding.add.categoryIcon = inspo.icon;
+        }
+        responding.add.inspirations.push(inspo);
       }
       if(inspo.subCat === 'answer') {
-        responding.answer.push(inspo)
+        if(responding.answer.categoryIcon === '') {
+          responding.answer.categoryIcon = inspo.icon;
+        }
+        responding.answer.inspirations.push(inspo)
       }
       if(inspo.subCat === 'ask') {
-        responding.ask.push(inspo);
+        if(responding.ask.categoryIcon === '') {
+          responding.ask.categoryIcon = inspo.icon;
+        }
+        responding.ask.inspirations.push(inspo);
       }
       if(inspo.subCat === 'evaluate') {
-        responding.evaluate.push(inspo);
+        if(responding.evaluate.categoryIcon === '') {
+          responding.evaluate.categoryIcon = inspo.icon;
+        }
+        responding.evaluate.inspirations.push(inspo);
       }
       if(inspo.subCat === 'react') {
-        responding.react.push(inspo);
+        if(responding.react.categoryIcon === '') {
+          responding.react.categoryIcon = inspo.icon;
+        }
+        responding.react.inspirations.push(inspo);
       }
     })
     const synthesizingVals = await this.inspirationModel.find({ type: 'synthesizing'});
     const synthesizing = {
-      "connections": [],
-      "tags": [],
-      "threads": []
+      "connections": {
+        category: "Connections",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "tags": {
+        category: "Tags",
+        categoryIcon: '',
+        inspirations: []
+      },
+      "threads": {
+        category: "Threads",
+        categoryIcon: '',
+        inspirations: []
+      }
     }
-    respondingVals.forEach(inspo => {
+    synthesizingVals.forEach(inspo => {
       if(inspo.subCat === 'connections') {
-        synthesizing.connections.push(inspo);
+        if(synthesizing.connections.categoryIcon === '') {
+          synthesizing.connections.categoryIcon = inspo.icon;
+        }
+        synthesizing.connections.inspirations.push(inspo);
       }
       if(inspo.subCat === 'tags') {
-        synthesizing.tags.push(inspo);
+        if(synthesizing.tags.categoryIcon === '') {
+          synthesizing.tags.categoryIcon = inspo.icon;
+        }
+        synthesizing.tags.inspirations.push(inspo);
       }
       if(inspo.subCat === 'threads') {
-        synthesizing.threads.push(inspo);
+        if(synthesizing.threads.categoryIcon === '') {
+          synthesizing.threads.categoryIcon = inspo.icon;
+        }
+        synthesizing.threads.inspirations.push(inspo);
       }
     })
     return { posting, responding, synthesizing };
