@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { Notification, NotificationDocument } from "src/entities/notification/notification";
+import { NotificationReadDTO } from "src/entities/notification/read-notification";
 import { User, UserDocument } from "src/entities/user/user";
 
 @Injectable()
@@ -26,6 +27,9 @@ export class NotificationService {
     }
 
     async getNotifications(userId: Types.ObjectId) {
-        return this.notificationModel.find({ userId: userId}).sort({ date: -1});
+        const notifications = await this.notificationModel.find({ userId: userId, read: false }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'contact.email', 'username']);
+        return await notifications.map(notification => {
+            return new NotificationReadDTO(notification);
+        });
     }
 }

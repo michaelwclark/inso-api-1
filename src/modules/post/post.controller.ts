@@ -76,11 +76,13 @@ export class PostController {
 
     // Create a notification for each facilitator
     for await(const facilitator of discussion.facilitators) {
-      await this.notificationService.createNotification(facilitator, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+      console.log('f', facilitator)
+      await this.notificationService.createNotification(facilitator._id, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
     }
     
     // Create a notification for each participant
     for await(const participant of discussion.participants) {
+      console.log(participant)
       await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`});
 
       // Check for milestone achievement
