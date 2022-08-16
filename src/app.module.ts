@@ -40,7 +40,7 @@ import { MilestoneModule } from './modules/milestone/milestone.module';
       process.env.MONGO_CONNECTION_STRING,
       {
         useUnifiedTopology: true,
-        useNewUrlParser: true
+        useNewUrlParser: true,
       }
     ),
     SendGridModule.forRoot({ 

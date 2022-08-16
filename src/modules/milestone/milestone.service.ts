@@ -84,6 +84,9 @@ export class MilestoneService {
 
         // See if they have achieved any new ones
         const newMilestones = [];
+        milestones.forEach(milestone => {
+            console.log(milestone);
+        })
         // Add those to the database if they have
         for await(let newMilestone of newMilestones) {
             const milestone = new this.milestoneModel({

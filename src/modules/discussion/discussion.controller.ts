@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
+import { Discussion, DiscussionDocument, DiscussionSchema } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
@@ -32,7 +32,9 @@ export class DiscussionController {
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
-  ) {}
+  ) {
+    DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
+  }
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -168,7 +170,7 @@ export class DiscussionController {
       posts.push(postWithComments);
     }
 
-    // TODO Tags for the discussion
+    // Add Tags for the discussion
     let tagsArray = [];
     if(posts.length > 0){
       const { removeStopwords } = require('stopword');
@@ -317,7 +319,6 @@ export class DiscussionController {
     @Param('userId') userId: string,
     @Query('participant') participant: string,
     @Query('facilitator') facilitator: string,
-    //@Query('text') text: string,
     @Request() req,
     @Query('archived') archived: string,
     @Query('sort') sort: string,
@@ -336,12 +337,16 @@ export class DiscussionController {
       throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
     }
 
-    // TODO add search for inso code and text
+    // Add search for inso code and text
     const aggregation = [];
-    // if(text !== undefined) {
-    //   // Lookup text queries and such
-    //   aggregation.push();
-    // }
+    if(query !== undefined) {
+      // Lookup text queries and such
+      aggregation.push({
+        $match: {
+          $text: { $search: query }
+        }
+      });
+    }
     if(participant === undefined && facilitator === undefined) {
       aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
     }
