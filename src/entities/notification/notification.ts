@@ -18,6 +18,9 @@ export class Notification {
     @Prop()
     text: string;
 
+    @Prop()
+    type: string;
+
     @Prop({ default: false })
     read: boolean;
 

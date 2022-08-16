@@ -52,6 +52,14 @@ export class NotificationReadDTO {
     })
     notificationText: string;
 
+    @ApiProperty({
+        name: 'type',
+        description: 'Is either post, reply, upvote, reaction',
+        required: true,
+        example: "Notification body"
+    })
+    type: string;
+
     constructor(partial: any) {
         if(partial) {
             this._id = partial._id;
@@ -64,6 +72,7 @@ export class NotificationReadDTO {
             this.date = partial.date;
             this.notificationHeader = partial.header;
             this.notificationText = partial.text;
+            this.type = partial.type;
         }
     }
 }

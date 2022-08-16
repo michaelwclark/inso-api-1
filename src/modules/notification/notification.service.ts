@@ -17,7 +17,7 @@ export class NotificationService {
      * @param userId 
      * @param notification 
      */
-    async createNotification(userId: any, notification: { header: string, text: string }) {
+    async createNotification(userId: any, notification: { header: string, text: string, type: string }) {
         const newNotification = new this.notificationModel({ ...notification, userId, date: new Date()});
         return newNotification.save();
     }
