@@ -3,8 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
-import { IsDiscussionParticipantGuard } from 'src/auth/guards/userGuards/isDiscussionParticipant.guard';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
@@ -36,7 +35,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
-  @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard, IsDiscussionFacilitatorGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async createPost(
     @Param('discussionId') discussionId: string,
     @Body() post: PostCreateDTO,
@@ -76,18 +75,19 @@ export class PostController {
 
     // Create a notification for each facilitator
     for await(const facilitator of discussion.facilitators) {
-      console.log('f', facilitator)
-      await this.notificationService.createNotification(facilitator._id, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
+      await this.notificationService.createNotification(facilitator._id, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.FRONTEND_DISCUSSION_REDIRECT}/${discussionId}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'post'})
     }
     
     // Create a notification for each participant
     for await(const participant of discussion.participants) {
-      console.log(participant)
-      await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`});
+      await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'post'});
 
       // Check for milestone achievement
       await this.milestoneService.checkUserMilestoneProgress(participant.user);
     }
+
+    // Create a notification for the post that it is commented for
+
     return newPostId._id;
   }
 
