@@ -176,7 +176,9 @@ export class DiscussionReadDTO {
           _id: participant._id,
           f_name: participant.f_name,
           l_name: participant.l_name,
-          username: participant.username
+          username: participant.username,
+          muted: participant.muted,
+          grade: participant.grade
         }
       }) : null
 

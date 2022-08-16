@@ -160,8 +160,9 @@ export class DiscussionController {
 
     const participants = [];
     for await(let participant of discussion.participants) {
-      const part = await this.userModel.findOne({ _id: participant.user });
-      participants.push(part);
+      const part = await this.userModel.findOne({ _id: participant.user }).lean();
+      console.log({ ...part, muted: participant.muted })
+      participants.push({ ...part, muted: participant.muted, grade: participant.grade });
     }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
