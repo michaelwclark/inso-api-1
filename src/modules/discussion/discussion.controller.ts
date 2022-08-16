@@ -167,11 +167,40 @@ export class DiscussionController {
       const postWithComments = await this.getPostsAndComments(post);
       posts.push(postWithComments);
     }
+
     // TODO Tags for the discussion
+    let tagsArray = [];
+    if(posts.length > 0){
+      const { removeStopwords } = require('stopword');
+      var count = require('count-array-values');
+
+      let strings = [];
+      var postElement;
+      var postNoStopWords;
+      var temp;
+
+      for(var i = 0; i < posts.length; i++){
+        postElement = posts[i].post.split(' ');
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      tagsArray = count(newArray, 'tag');
+      tagsArray = tagsArray.slice(0, 15); // keep only top 15
+    }
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
-      posts: posts
+      posts: posts,
+      tags: tagsArray
     });
 
     return discussionRead;
