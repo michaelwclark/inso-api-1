@@ -82,8 +82,9 @@ export class GradeService {
           if(posts.length !== gradeCriteria.posts_made.required) {
             // Determine how many they are off and calculate the grade
             console.log('posts: ' + gradeCriteria.posts_made)
+            console.log(await this.discussionPostModel.find({ discussionId: new Types.ObjectId(discussionId), draft: false, userId: new Types.ObjectId(participantId) }))
             const dbPosts = await this.discussionPostModel.find({ discussionId: new Types.ObjectId(discussionId), draft: false, userId: new Types.ObjectId(participantId) });
-            console.log('User made ' + dbPosts.length + ' posts.');
+            console.log('User made ' + dbPosts + ' posts.');
             var tempGrade =  ( dbPosts.length / gradeCriteria.posts_made.max_points ) * 100;
             console.log('final grade would be: ' + tempGrade);
           }
