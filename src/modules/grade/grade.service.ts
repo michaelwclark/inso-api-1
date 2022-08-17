@@ -4,6 +4,7 @@ import { Model, Types } from "mongoose";
 import { Discussion, DiscussionDocument } from "src/entities/discussion/discussion";
 import { DiscussionReadDTO } from "src/entities/discussion/read-discussion";
 import * as AWS from "aws-sdk";
+import { DiscussionPost, DiscussionPostDocument } from "src/entities/post/post";
 
 @Injectable()
 export class GradeService {
@@ -18,6 +19,7 @@ export class GradeService {
 
     constructor(
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
+        @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>
     ) {}
 
     async addEventForAutoGrading() {
@@ -79,16 +81,24 @@ export class GradeService {
         if(gradeCriteria.posts_made !== null) {
           if(posts.length !== gradeCriteria.posts_made.required) {
             // Determine how many they are off and calculate the grade
+            console.log('posts: ' + gradeCriteria.posts_made)
+            const dbPosts = await this.discussionPostModel.find({ discussionId: new Types.ObjectId(discussionId), draft: false, userId: new Types.ObjectId(participantId) });
+            console.log('User made ' + dbPosts.length + ' posts.');
+            var tempGrade =  ( dbPosts.length / gradeCriteria.posts_made.max_points ) * 100;
+            console.log('final grade would be: ' + tempGrade);
           }
         }
         if(gradeCriteria.active_days !== null) {
           // Determine the number of days that they either posted or made a reaction in the discussion
+          console.log('active days: ' + gradeCriteria.active_days)
         }
         if(gradeCriteria.comments_received) {
           // Determine if the number of comments received on the first post suffices. If they have multiple posts determine if they have comments
+          console.log('comments recieved: ' + gradeCriteria.comments_received)
         }
         if(gradeCriteria.post_inspirations) {
           // See if any of the posts used a post inspiration
+          console.log('post inspirations: ' + gradeCriteria.post_inspirations)
         }
         console.log(discussionId);
         console.log(facilitator);
