@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
+import { Discussion, DiscussionDocument, DiscussionSchema } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
@@ -32,7 +32,9 @@ export class DiscussionController {
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
-  ) {}
+  ) {
+    DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
+  }
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -156,6 +158,12 @@ export class DiscussionController {
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
+    const participants = [];
+    for await(let participant of discussion.participants) {
+      const part = await this.userModel.findOne({ _id: participant.user }).lean();
+      console.log({ ...part, muted: participant.muted })
+      participants.push({ ...part, muted: participant.muted, grade: participant.grade });
+    }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
@@ -167,11 +175,41 @@ export class DiscussionController {
       const postWithComments = await this.getPostsAndComments(post);
       posts.push(postWithComments);
     }
-    // TODO Tags for the discussion
+
+    // Add Tags for the discussion
+    let tagsArray = [];
+    if(posts.length > 0){
+      const { removeStopwords } = require('stopword');
+      var count = require('count-array-values');
+
+      let strings = [];
+      var postElement;
+      var postNoStopWords;
+      var temp;
+
+      for(var i = 0; i < posts.length; i++){
+        postElement = posts[i].post.split(' ');
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      tagsArray = count(newArray, 'tag');
+      tagsArray = tagsArray.slice(0, 15); // keep only top 15
+    }
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
-      posts: posts
+      participants: participants,
+      posts: posts,
+      tags: tagsArray
     });
 
     return discussionRead;
@@ -288,7 +326,6 @@ export class DiscussionController {
     @Param('userId') userId: string,
     @Query('participant') participant: string,
     @Query('facilitator') facilitator: string,
-    //@Query('text') text: string,
     @Request() req,
     @Query('archived') archived: string,
     @Query('sort') sort: string,
@@ -307,12 +344,16 @@ export class DiscussionController {
       throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
     }
 
-    // TODO add search for inso code and text
+    // Add search for inso code and text
     const aggregation = [];
-    // if(text !== undefined) {
-    //   // Lookup text queries and such
-    //   aggregation.push();
-    // }
+    if(query !== undefined) {
+      // Lookup text queries and such
+      aggregation.push({
+        $match: {
+          $text: { $search: query }
+        }
+      });
+    }
     if(participant === undefined && facilitator === undefined) {
       aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
     }
@@ -447,9 +488,8 @@ export class DiscussionController {
     muted: false,
     grade: null
     } 
-    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
-
-    return 'Particpant ' + userId + ' added to discussion'
+    const discussion = await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+    return discussion._id;
   }
 
   @Patch('users/:userId/discussions/:discussionId/mute')

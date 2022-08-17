@@ -7,10 +7,10 @@ export type DiscussionDocument = Discussion & Document;
 @Schema()
 export class Discussion {
 
-    @Prop(String)
+    @Prop({ type: String, index: true })
     public insoCode: string;
 
-    @Prop(String)
+    @Prop({ type: String, index: true })
     public name: string;
 
     @Prop({ Date, default: Date.now })
@@ -42,5 +42,6 @@ export class Discussion {
         Object.assign(this, partial);
     }
 }
+
 
 export const DiscussionSchema = SchemaFactory.createForClass(Discussion);
