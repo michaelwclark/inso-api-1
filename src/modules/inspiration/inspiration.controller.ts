@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
@@ -34,9 +34,9 @@ export class InspirationController {
   @ApiUnauthorizedResponse({ description: ''})
   @UseGuards(JwtAuthGuard)
   @ApiTags('Inspiration')
-  async getInspirations(): Promise<InspirationReadResponse> {
+  async getInspirations(@Query('type') type: string): Promise<InspirationReadResponse> {
     const postingVals = await this.inspirationModel.find({ type: 'posting'});
-    const posting = { 
+    const posting = {
       "ask_something": {
         category: 'Ask Something',
         categoryIcon: '',
@@ -62,7 +62,7 @@ export class InspirationController {
         categoryIcon: '',
         inspirations: []
       }
-    }
+    };
     postingVals.forEach(inspo => {
       if(inspo.subCat === 'ask_something') {
         if(posting.ask_something.categoryIcon === '') {
@@ -194,8 +194,25 @@ export class InspirationController {
         }
         synthesizing.threads.inspirations.push(inspo);
       }
-    })
-    return { posting, responding, synthesizing };
+    });
+    const postingReturn = [];
+    const respondingReturn = [];
+    const synthesizingReturn = [];
+
+    for (const property in posting) {
+      postingReturn.push(posting[property]);
+    }
+    for (const property in responding) {
+      respondingReturn.push(responding[property]);
+    }
+    for(const property in synthesizing) {
+      synthesizingReturn.push(synthesizing[property]);
+    }
+    return { 
+      posting: postingReturn, 
+      responding: respondingReturn,
+      synthesizing: synthesizingReturn
+    };
   }
 
   // @Patch('inspiration/:inspirationId')
