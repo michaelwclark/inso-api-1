@@ -161,7 +161,7 @@ export class DiscussionController {
     const participants = [];
     for await(let participant of discussion.participants) {
       const part = await this.userModel.findOne({ _id: participant.user }).lean();
-      console.log({ ...part, muted: participant.muted })
+      //console.log({ ...part, muted: participant.muted })
       participants.push({ ...part, muted: participant.muted, grade: participant.grade });
     }
     if(!discussion) {
