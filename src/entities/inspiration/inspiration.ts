@@ -24,6 +24,12 @@ export class Inspiration {
     public type: string;
 
     @Prop(String)
+    public subCat: string;
+
+    @Prop(String)
+    public icon: string;
+
+    @Prop(String)
     public name: string;
 
     @Prop(String)

@@ -59,8 +59,12 @@ export class ReactionController {
     const newReaction = new this.reactionModel(checkReaction);
     // Generate a notification
     const discussion = await this.discussionModel.findOne({_id: post.discussionId});
-    await this.notificationService.createNotification(post.userId, { header: `<h1 class="notification-header"><span class="username">@${user.username}</span> reacted in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`})
-    return await newReaction.save();
+    if(reaction.reaction !== '+1') {
+      await this.notificationService.createNotification(post.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'reaction'});
+    } else {
+      await this.notificationService.createNotification(post.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'upvote'});
+    }
+      return await newReaction.save();
   }
 
   @Patch('post/:postId/reaction/:reactionId')

@@ -15,7 +15,7 @@ export class MilestoneInfo {
         date: Date
     }[];
 
-    @Prop()
+    @Prop(Number)
     total: number;
 
     constructor(partial: Partial<MilestoneInfo>) {
@@ -36,6 +36,9 @@ export class Milestone {
     @Prop()
     date: Date;
 
+    @Prop(String)
+    milestone: string;
+
     @Prop()
     info: MilestoneInfo;
 
@@ -43,6 +46,7 @@ export class Milestone {
         this.userId = partial.userId;
         this.type = partial.type;
         this.date = partial.date;
+        this.milestone = partial.milestone;
         this.info = new MilestoneInfo(partial.info)
     }
 }
