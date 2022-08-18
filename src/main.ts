@@ -26,8 +26,18 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api', app, document);
   
+  var whitelist = ['https://inso.ai', 'https://inso.ai', 'http://localhost:3001', /\.inso.ai$/, 'http://inso-staging.s3-website-us-east-1.amazonaws.com/'];
   app.enableCors({
-    origin: ["http://inso.ai", /\.inso\.ai$/]
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  allowedHeaders: 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, Observe',
+  methods: "GET,PUT,POST,DELETE,UPDATE,OPTIONS",
+  credentials: true,
   });
   app.use(helmet());
   
