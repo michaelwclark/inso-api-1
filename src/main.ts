@@ -26,7 +26,9 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api', app, document);
   
-  app.enableCors();
+  app.enableCors({
+    origin: /https?:\/\/(([^/]+\.)?inso\.ai)$/i,
+  });
   app.use(helmet());
   
   await app.listen(process.env.PORT);
