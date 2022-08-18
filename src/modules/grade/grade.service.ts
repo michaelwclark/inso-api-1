@@ -163,14 +163,14 @@ export class GradeService {
               for(var i = 0; i < dbPosts.length && stopFlag == false; i++){
                 if(Types.ObjectId.isValid(dbPosts[i].post_inspiration)){
                   stopFlag = true;
-                }
+                } // checks if any of the user's posts to the discussion, actually used an inspiration
               }
             }
 
             var inspirationsGrade = 0;
             if(stopFlag == true){
               inspirationsGrade = gradeCriteria.post_inspirations.max_points;
-            }
+            } // if an inspiration was used on any of the user's posts, full credit is awarded
             grade.criteria.push({
               criteria: 'post inspirations',
               max_points: gradeCriteria.comments_received.max_points,
