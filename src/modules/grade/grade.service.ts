@@ -61,10 +61,16 @@ export class GradeService {
         if(!discussion) {
             throw new HttpException(`${discussionId} does not exist as a discussion`, HttpStatus.NOT_FOUND);
         }
+        if(newDiscussion.settings.scores == undefined) {
+          throw new HttpException(`${discussionId} is missing a rubric`, HttpStatus.BAD_REQUEST);
+        }
         if(newDiscussion.settings.scores.type !== 'auto') {
             throw new HttpException(`${discussionId} is not set for autograding`, HttpStatus.BAD_REQUEST);
         }
 
+        if(discussion.participants.length == 0){
+          throw new HttpException('Discussion has no participants to grade', HttpStatus.BAD_REQUEST);
+        }
         // Go through each participant and grade them according to the auto grading requirements
         for await(const participant of discussion.participants) {
             await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster._id), new Types.ObjectId(participant.user), newDiscussion.settings.scores);
