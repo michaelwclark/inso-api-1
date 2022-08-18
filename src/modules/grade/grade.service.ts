@@ -6,6 +6,9 @@ import { DiscussionReadDTO } from "src/entities/discussion/read-discussion";
 import * as AWS from "aws-sdk";
 import { DiscussionPost, DiscussionPostDocument } from "src/entities/post/post";
 import { GradeDTO } from "src/entities/grade/create-grade";
+import { DiscussionController } from "../discussion/discussion.controller";
+import { Setting, SettingDocument } from "src/entities/setting/setting";
+import { Grade, GradeDocument } from "src/entities/grade/grade";
 
 @Injectable()
 export class GradeService {
@@ -20,7 +23,9 @@ export class GradeService {
 
     constructor(
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
-        @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>
+        @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
+        @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
+        @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {}
 
     async addEventForAutoGrading() {
@@ -77,13 +82,7 @@ export class GradeService {
 
         let grade = {
           total: 0,
-          criteria: [
-          //  {
-          //   criteria: "",
-          //   max_points: 0,
-          //   earned: 0
-          // }
-        ],
+          criteria: [],
         comments: ""
         };
 
@@ -104,6 +103,7 @@ export class GradeService {
             grade.total = grade.total + tempGrade;
           }
         }
+
         if(gradeCriteria.active_days !== null) {
           // Determine the number of days that they either posted or made a reaction in the discussion
 
@@ -118,6 +118,7 @@ export class GradeService {
           // if(activeDates.length < gradeCriteria.active_days.required ){
           //   throw new HttpException('Number of active days is below requirement', HttpStatus.BAD_REQUEST);
           // }
+
           const activeDatesGrade = (activeDates.length / gradeCriteria.active_days.max_points) * 10;
           grade.criteria.push({
             criteria: 'active days',
@@ -126,33 +127,65 @@ export class GradeService {
           });
           grade.total = grade.total + activeDatesGrade;
         }
+
         if(gradeCriteria.comments_received) {
           // Determine if the number of comments received on the first post suffices. If they have multiple posts determine if they have comments
           
-          var commentsToUser = 0
-
+          var commentsToUser = 0;
           var commentsArray = await this.discussionPostModel.find({ discussionId: new Types.ObjectId(discussionId), draft: false, comment_for:{$ne:null} });
           
-          commentsArray.forEach( async element => {
+          for await (var element of commentsArray) {
             var tempCom = await this.discussionPostModel.findOne({ _id: element.comment_for })
-            console.log(tempCom.userId);
-            console.log(participantId);
             if(new Types.ObjectId(tempCom.userId).equals(participantId)){
-              console.log('match!');
               commentsToUser = commentsToUser + 1;
-              console.log(commentsToUser);
             }
-          });
+            break;
+          };
 
-          console.log(commentsToUser)
-        
+          const commentsGrade = commentsToUser; // may need math
+          grade.criteria.push({
+            criteria: 'comments received',
+            max_points: gradeCriteria.comments_received.max_points,
+            earned: commentsGrade
+          });
+          grade.total = grade.total + commentsGrade;
         }
+
         if(gradeCriteria.post_inspirations) {
           // See if any of the posts used a post inspiration
           
+          if(gradeCriteria.post_inspirations.selected == true){
+
+            const discussion = await this.discussionModel.findOne({ _id: discussionId});
+            const setting = await this.settingModel.findOne({_id: discussion.settings});
+            var stopFlag = false;
+            if(setting.post_inspirations.length > 0 && dbPosts.length > 0){
+              for(var i = 0; i < dbPosts.length && stopFlag == false; i++){
+                if(Types.ObjectId.isValid(dbPosts[i].post_inspiration)){
+                  stopFlag = true;
+                }
+              }
+            }
+
+            var inspirationsGrade = 0;
+            if(stopFlag == true){
+              inspirationsGrade = gradeCriteria.post_inspirations.max_points;
+            }
+            grade.criteria.push({
+              criteria: 'post inspirations',
+              max_points: gradeCriteria.comments_received.max_points,
+              earned: inspirationsGrade
+            });
+            grade.total = grade.total + inspirationsGrade;
+          }
         }
         
         const confirmedGrade = new GradeDTO(grade);
-        console.log(confirmedGrade);
+        var max = 0;
+        for(var i = 0; i < confirmedGrade.criteria.length; i++){
+          max = max + confirmedGrade.criteria[i].max_points
+        }
+        const saveGrade = new this.gradeModel({grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, discussionId: discussionId, userId: participantId, facilitator: facilitator, comment: confirmedGrade.comments});
+        await saveGrade.save();
     }
 }
