@@ -99,8 +99,19 @@ export class GradeService {
         if(gradeCriteria.posts_made !== null) {
           if(posts.length !== gradeCriteria.posts_made.required) {
             // Determine how many they are off and calculate the grade
-            
-            var tempGrade =  dbPosts.length; // / gradeCriteria.posts_made.max_points ;
+
+            console.log('user: ' + participantId);
+
+            console.log(gradeCriteria);
+
+
+            var percentage = ( dbPosts.length / gradeCriteria.posts_made.required ) * 100;
+            if(percentage > 100){
+              percentage = 100;
+            }
+
+            var tempGrade = (gradeCriteria.posts_made.max_points / 100) * percentage;
+
             grade.criteria.push({
               criteria: 'posts made',
               max_points: gradeCriteria.posts_made.max_points,
@@ -125,7 +136,12 @@ export class GradeService {
           //   throw new HttpException('Number of active days is below requirement', HttpStatus.BAD_REQUEST);
           // }
 
-          const activeDatesGrade = (activeDates.length / gradeCriteria.active_days.max_points) * 10;
+          var percentage = (activeDates.length / gradeCriteria.active_days.required) * 100;
+          if(percentage > 100){
+            percentage = 100
+          }
+          var activeDatesGrade = (gradeCriteria.active_days.max_points / 100) * percentage;
+
           grade.criteria.push({
             criteria: 'active days',
             max_points: gradeCriteria.active_days.max_points,
@@ -148,7 +164,13 @@ export class GradeService {
             break;
           };
 
-          const commentsGrade = commentsToUser; // may need math
+          var percentage = ( commentsToUser / gradeCriteria.comments_received.required ) * 100;
+          if(percentage > 100){
+            percentage = 100;
+          }
+
+          var commentsGrade = (gradeCriteria.comments_received.max_points / 100) * percentage;
+
           grade.criteria.push({
             criteria: 'comments received',
             max_points: gradeCriteria.comments_received.max_points,
@@ -185,8 +207,9 @@ export class GradeService {
             grade.total = grade.total + inspirationsGrade;
           }
         }
-        
+        console.log(grade);
         const confirmedGrade = new GradeDTO(grade);
+        
         var max = 0;
         for(var i = 0; i < confirmedGrade.criteria.length; i++){
           max = max + confirmedGrade.criteria[i].max_points
