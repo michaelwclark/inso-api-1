@@ -1,11 +1,26 @@
 import { Types } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { User } from '../user/user';
-import { Discussion } from '../discussion/discussion';
 
 
 export type DiscussionPostDocument = DiscussionPost & Document;
+
+@Schema({ _id: false})
+export class PostType {
+
+    @Prop({ type: String })
+    public post: string;
+
+    @Prop({ type: () => [Object] })
+    public outline: Object;
+
+    constructor(partial: Partial<PostType>) {
+        if(partial) {
+            this.post = partial.post;
+            this.outline = partial.outline;
+        }
+    }
+}
 
 @Schema()
 export class DiscussionPost {
@@ -25,8 +40,8 @@ export class DiscussionPost {
     @Prop({ type: Types.ObjectId, ref: 'DiscussionPost' })
     public comment_for: Types.ObjectId;
 
-    @Prop(String)
-    public post: string;
+    @Prop({type: () => PostType})
+    public post: PostType
 
     @Prop({ type: Types.ObjectId, ref: 'Inspiration'})
     public post_inspiration: Types.ObjectId;
