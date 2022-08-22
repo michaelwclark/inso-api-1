@@ -100,11 +100,6 @@ export class GradeService {
           if(posts.length !== gradeCriteria.posts_made.required) {
             // Determine how many they are off and calculate the grade
 
-            console.log('user: ' + participantId);
-
-            console.log(gradeCriteria);
-
-
             var percentage = ( dbPosts.length / gradeCriteria.posts_made.required ) * 100;
             if(percentage > 100){
               percentage = 100;
@@ -131,10 +126,6 @@ export class GradeService {
             dates.push(newDate);
             activeDates = [...new Set(dates)];
           })
-
-          // if(activeDates.length < gradeCriteria.active_days.required ){
-          //   throw new HttpException('Number of active days is below requirement', HttpStatus.BAD_REQUEST);
-          // }
 
           var percentage = (activeDates.length / gradeCriteria.active_days.required) * 100;
           if(percentage > 100){
@@ -207,7 +198,7 @@ export class GradeService {
             grade.total = grade.total + inspirationsGrade;
           }
         }
-        console.log(grade);
+
         const confirmedGrade = new GradeDTO(grade);
         
         var max = 0;
