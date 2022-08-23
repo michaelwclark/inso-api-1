@@ -9,18 +9,10 @@ import { GradeDTO } from "src/entities/grade/create-grade";
 import { DiscussionController } from "../discussion/discussion.controller";
 import { Setting, SettingDocument } from "src/entities/setting/setting";
 import { Grade, GradeDocument } from "src/entities/grade/grade";
+import * as schedule from 'node-schedule';
 
 @Injectable()
 export class GradeService {
-
-    eventBridge = new AWS.EventBridge({
-        credentials: {
-          accessKeyId: process.env.AWS_EVENTBRIDGE_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_EVENTBRIDGE_SECRET,
-        },
-        region: process.env.AWS_REGION,
-      });
-
     constructor(
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
         @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
@@ -29,28 +21,12 @@ export class GradeService {
     ) {}
 
     async addEventForAutoGrading(details: any) {
-        const params = {
-            Entries: [
-              {
-                Source: 'node-js-test', // Must match with the source defined in rules
-                Detail: '{ "key1": "value1", "key2": "value2" }', // Need to swap them in for the discussionId and the time
-                Resources: ['resource1', 'resource2'],
-                DetailType: 'myDetailType',
-              },
-            ],
-          };
-          try {
-            const event = await this.eventBridge.putEvents(params).promise();
-            return { success: true, event };
-          } catch (error) {
-            return { success: false, error };
-          }
-    }
+      const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
 
-    async updateEventForAutoGrading(eventId: string, details: any) {
-        // Delete the rule
-        // Then update the new one
-        this.addEventForAutoGrading(details);
+      const job = schedule.scheduleJob(date, function(){
+        console.log('The world is going to end today.');
+      });
+      console.log(job);
     }
 
     async gradeDiscussion(discussionId: string) {
@@ -80,6 +56,7 @@ export class GradeService {
     }
 
     private async gradeParticipant(discussionId: Types.ObjectId, facilitator: Types.ObjectId, participantId: Types.ObjectId, rubric: any) {
+      // Add check to see if the discussion is actually closed
         const total = rubric.total;
         let gradeCriteria = {
           posts_made: rubric.posts_made ? rubric.posts_made : null,
