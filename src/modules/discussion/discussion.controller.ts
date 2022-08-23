@@ -188,7 +188,10 @@ export class DiscussionController {
       var temp;
 
       for(var i = 0; i < posts.length; i++){
-        postElement = posts[i].post.split(' ');
+        // Iterate the keys later
+        const vars = posts[i].post.outline.stringify;
+        const text = posts[i].post + vars;
+        postElement = text.split(' ');
         // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
         temp = postNoStopWords.join(' ');
