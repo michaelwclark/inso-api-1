@@ -161,7 +161,7 @@ export class DiscussionController {
     const participants = [];
     for await(let participant of discussion.participants) {
       const part = await this.userModel.findOne({ _id: participant.user }).lean();
-      console.log({ ...part, muted: participant.muted })
+      //console.log({ ...part, muted: participant.muted })
       participants.push({ ...part, muted: participant.muted, grade: participant.grade });
     }
     if(!discussion) {
@@ -201,6 +201,9 @@ export class DiscussionController {
       allPosts = allPosts.split('?').join(''); // remove question marks from strings
       var newArray = allPosts.split(' ');
       newArray = newArray.map( element => element = element.toLowerCase() );
+      newArray = newArray.filter(function(x) {
+        return x !== ''
+      });
       tagsArray = count(newArray, 'tag');
       tagsArray = tagsArray.slice(0, 15); // keep only top 15
     }

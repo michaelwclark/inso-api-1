@@ -26,7 +26,6 @@ async function bootstrap() {
   });
   SwaggerModule.setup('api', app, document);
   
-  var whitelist = ['https://inso.ai', 'http://inso.ai', 'http://localhost:3001', /\.inso.ai$/, 'http://inso-staging.s3-website-us-east-1.amazonaws.com'];
   app.enableCors();
 
   app.use(helmet());
