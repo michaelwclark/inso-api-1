@@ -28,7 +28,7 @@ export class GradeService {
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {}
 
-    async addEventForAutoGrading() {
+    async addEventForAutoGrading(details: any) {
         const params = {
             Entries: [
               {
@@ -47,8 +47,10 @@ export class GradeService {
           }
     }
 
-    async updateEventForAutoGrading() {
-        // Delete the rule and then put it back with the new date to run at 
+    async updateEventForAutoGrading(eventId: string, details: any) {
+        // Delete the rule
+        // Then update the new one
+        this.addEventForAutoGrading(details);
     }
 
     async gradeDiscussion(discussionId: string) {
