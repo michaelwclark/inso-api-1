@@ -20,6 +20,8 @@ import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussio
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+const { removeStopwords } = require('stopword');
+var count = require('count-array-values');
 
 @Controller()
 export class DiscussionController {
@@ -161,7 +163,6 @@ export class DiscussionController {
     const participants = [];
     for await(let participant of discussion.participants) {
       const part = await this.userModel.findOne({ _id: participant.user }).lean();
-      console.log({ ...part, muted: participant.muted })
       participants.push({ ...part, muted: participant.muted, grade: participant.grade });
     }
     if(!discussion) {
@@ -179,8 +180,6 @@ export class DiscussionController {
     // Add Tags for the discussion
     let tagsArray = [];
     if(posts.length > 0){
-      const { removeStopwords } = require('stopword');
-      var count = require('count-array-values');
 
       let strings = [];
       var postElement;
@@ -189,8 +188,18 @@ export class DiscussionController {
 
       for(var i = 0; i < posts.length; i++){
         // Iterate the keys later
-        const vars = posts[i].post.outline.stringify;
-        const text = posts[i].post + vars;
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            console.log(key)
+            console.log(posts[i].post.outline[key]);
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        console.log(text)
         postElement = text.split(' ');
         // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
