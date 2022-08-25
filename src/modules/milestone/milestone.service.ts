@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Milestone, MilestoneDocument } from 'src/entities/milestone/milestone';
 import { User, UserDocument } from 'src/entities/user/user';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class MilestoneService {
@@ -13,17 +14,14 @@ export class MilestoneService {
     public validSystemProgress = [ 
         "5th Post",
         "10th Post",
-        "50th Post",
         "100th Post",
         "1000th Post",
         "5th Use of Post Inspiration",
         "10th Use of Post Inspiration",
-        "50th Use of Post Inspiration",
         "100th Use of Post Inspiration",
         "1000th Use of Post Inspiration",
         "5th Upvote",
         "10th Upvote",
-        "50th Upvote",
         "100th Upvote",
         "1000th Upvote",
         "5th Reaction",
@@ -36,13 +34,13 @@ export class MilestoneService {
         "1000th Perfect Score",
         "5th Discussion Created",
         "10th Discussion Created",
-        "50th Discussion Created",
         "100th Discussion Created",
         "1000th Discussion Created"
     ];
     constructor(
         @InjectModel(Milestone.name) private milestoneModel: Model<MilestoneDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        private notificationService: NotificationService,
     ) {}
 
     async createMilestoneForUser(
@@ -67,7 +65,9 @@ export class MilestoneService {
             milestone: milestoneName,
             info: info
         });
-        return await milestone.save();
+        const savedMilestone = await milestone.save();
+        await this.notificationService.createNotification(userId, { header: `<h1 className="notification-header">You have achieved a badge!"</h1>`, text: `${milestoneName}`, type: 'badge'});
+        return savedMilestone;
     }
 
     getMilestoneForUser(
@@ -75,7 +75,7 @@ export class MilestoneService {
         type: string,
         milestoneName: string,
     ) {
-
+        
     }
 
     async checkUserMilestoneProgress(userId: Types.ObjectId) {
@@ -89,6 +89,7 @@ export class MilestoneService {
         })
         // Add those to the database if they have
         for await(let newMilestone of newMilestones) {
+            //this.createMilestoneForUser(userId, newMilestone.type, newMilestone.milestone, )
             const milestone = new this.milestoneModel({
                 userId: userId,
                 type: newMilestone.type,
@@ -103,11 +104,7 @@ export class MilestoneService {
     getMilestonesForUser(
         userId: Types.ObjectId
     ) {
-
-    }
-
-    getPossibleMilestones() {
-
+        return this.milestoneModel.find({ userId: userId });
     }
 
 }

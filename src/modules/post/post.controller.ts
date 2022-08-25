@@ -53,8 +53,9 @@ export class PostController {
       throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
     }
 
+    let postForComment;
     if(post.comment_for) {
-      const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
+      postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
@@ -85,6 +86,11 @@ export class PostController {
 
       // Check for milestone achievement
       await this.milestoneService.checkUserMilestoneProgress(participant.user);
+    }
+
+    // If the post is a comment_for something notify that particpant that someone responded to them
+    if(newPost.comment_for) {
+      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'replies'})
     }
 
     // Create a notification for the post that it is commented for

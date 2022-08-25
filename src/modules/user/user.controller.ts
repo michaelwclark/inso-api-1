@@ -31,23 +31,6 @@ export class UserController {
     return 'Email Verified!'
   }
 
-  // @Get('user/:userId')
-  // async getUser(@Param('userId') userId: string) {
-    
-  //   if(userId === null){ 
-  //     throw new HttpException("No user id provided", HttpStatus.BAD_REQUEST); 
-  //   }
-  //   if(!Types.ObjectId.isValid(userId)){ 
-  //     throw new HttpException("User id is not valid", HttpStatus.BAD_REQUEST); 
-  //   }
-  //   const foundUser = await this.userModel.findOne({_id: userId}, {password: 0, sso: 0},).lean();
-  //   if(!foundUser){ 
-  //     throw new HttpException("User does not exist", HttpStatus.NOT_FOUND); 
-  //   }
-
-  //   const returnUser = new UserReadDTO(foundUser);
-  //   return returnUser;
-  // }
 
   @Get('users')
   async searchUsers(@Query('text') text: string) {
