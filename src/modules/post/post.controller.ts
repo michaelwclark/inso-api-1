@@ -75,14 +75,16 @@ export class PostController {
     });
     const newPostId = await newPost.save();
 
+    const notificationText = post.post.post !== undefined ? post.post.post : "Go to discussion to see response";
+
     // Create a notification for each facilitator
     for await(const facilitator of discussion.facilitators) {
-      await this.notificationService.createNotification(facilitator._id, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.FRONTEND_DISCUSSION_REDIRECT}/${discussionId}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'post'})
+      await this.notificationService.createNotification(facilitator._id, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.FRONTEND_DISCUSSION_REDIRECT}/${discussionId}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'})
     }
     
     // Create a notification for each participant
     for await(const participant of discussion.participants) {
-      await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'post'});
+      await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
 
       // Check for milestone achievement
       await this.milestoneService.checkUserMilestoneProgress(participant.user);
@@ -90,7 +92,7 @@ export class PostController {
 
     // If the post is a comment_for something notify that particpant that someone responded to them
     if(newPost.comment_for) {
-      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`, type: 'replies'})
+      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
     }
 
     // Create a notification for the post that it is commented for
