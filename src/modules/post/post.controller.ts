@@ -64,6 +64,7 @@ export class PostController {
     }
     const user = await this.userModel.findOne({_id: req.user.userId});
 
+    const checkPost = new PostCreateDTO(post);
     const newPost = new this.discussionPostModel({ 
       ...post,
       discussionId: new Types.ObjectId(discussionId),
@@ -113,7 +114,7 @@ export class PostController {
       await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
     }
 
-
+    const newPost = new PostUpdateDTO(postUpdates);
     const postUpdate = await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { post: postUpdates.post, post_inspiration: postUpdates.post_inspiration });
     if(postUpdate === null) {
       throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
