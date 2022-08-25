@@ -55,7 +55,7 @@ export class GradeCriteria {
     }
 }
 
-export class GradeCreateDTO {
+export class GradeDTO {
     @IsDefined()
     @IsNotEmpty()
     @IsNumber()
@@ -73,7 +73,7 @@ export class GradeCreateDTO {
     @IsString()
     public comments: string;
 
-    constructor(partial: Partial<GradeCreateDTO>) {
+    constructor(partial: Partial<GradeDTO>) {
         if(partial) {
             this.total = partial.total;
             this.criteria = partial.criteria.map(criteria => {

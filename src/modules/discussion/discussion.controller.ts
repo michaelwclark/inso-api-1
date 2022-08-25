@@ -20,6 +20,7 @@ import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussio
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { Grade, GradeDocument } from 'src/entities/grade/grade';
 const { removeStopwords } = require('stopword');
 var count = require('count-array-values');
 
@@ -33,7 +34,8 @@ export class DiscussionController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
-    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
   ) {
     DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
   }
@@ -163,7 +165,8 @@ export class DiscussionController {
     const participants = [];
     for await(let participant of discussion.participants) {
       const part = await this.userModel.findOne({ _id: participant.user }).lean();
-      participants.push({ ...part, muted: participant.muted, grade: participant.grade });
+      const grade = await this.gradeModel.findOne({ discussionId: discussion._id, userId: participant.user }).lean()
+      participants.push({ ...part, muted: participant.muted, grade: grade });
     }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
