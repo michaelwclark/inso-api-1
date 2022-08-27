@@ -77,6 +77,8 @@ export class GradeController {
    * This route is only for the autograding of a discussion 1 minute after the discussion closes 
    */
   @Patch('/discussion/:discussionId/participants/autograde')
+  @ApiTags('Grade')
+  @ApiOperation({ description: 'Autogrades a discussion'})
   @UseGuards()
   async autoGradeParticipants(
     @Param('discussionId') discussionId: string
