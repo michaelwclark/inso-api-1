@@ -205,7 +205,12 @@ export class GradeService {
         for(var i = 0; i < confirmedGrade.criteria.length; i++){
           max = max + confirmedGrade.criteria[i].max_points
         }
-        const saveGrade = new this.gradeModel({grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, discussionId: discussionId, userId: participantId, facilitator: facilitator, comment: confirmedGrade.comments});
+        const graded = await this.gradeModel.findOne({ discussionId: discussionId, userId: participantId }).lean();
+        if(!graded) {
+          const saveGrade = new this.gradeModel({grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, discussionId: discussionId, userId: participantId, facilitator: facilitator, comment: confirmedGrade.comments});
         await saveGrade.save();
+        } else {
+          await this.gradeModel.findOneAndUpdate({ discussionId: discussionId, userId: participantId}, {grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, facilitator: facilitator, comment: confirmedGrade.comments})
+        }
     }
 }
