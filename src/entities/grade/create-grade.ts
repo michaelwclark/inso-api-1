@@ -68,6 +68,7 @@ export class GradeDTO {
     @Type(() => GradeCriteria)
     public criteria: GradeCriteria[];
 
+    @IsOptional()
     @IsDefined()
     @IsNotEmpty()
     @IsString()
