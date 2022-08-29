@@ -56,18 +56,43 @@ export class GradeCriteria {
 }
 
 export class GradeDTO {
+
+    @ApiProperty({
+        name: 'total',
+        description: 'The total grade',
+        required: false,
+        type: Number,
+        isArray: false,
+        example: 100
+    })
     @IsDefined()
     @IsNotEmpty()
     @IsNumber()
     @Min(0)
     public total: number;
 
+    @ApiProperty({
+        name: 'criteria',
+        description: 'Criteria for the grade',
+        required: false,
+        type: GradeCriteria,
+        isArray: true,
+    })
     @IsDefined()
     @IsNotEmpty()
     @ValidateNested()
     @Type(() => GradeCriteria)
     public criteria: GradeCriteria[];
 
+
+    @ApiProperty({
+        name: 'comments',
+        description: 'The total grade',
+        required: false,
+        type: String,
+        isArray: false,
+        example: 'Excellent work!'
+    })
     @IsOptional()
     @IsDefined()
     @IsNotEmpty()
