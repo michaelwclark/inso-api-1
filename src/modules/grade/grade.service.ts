@@ -192,7 +192,7 @@ export class GradeService {
             } // if an inspiration was used on any of the user's posts, full credit is awarded
             grade.criteria.push({
               criteria: 'post inspirations',
-              max_points: gradeCriteria.comments_received.max_points,
+              max_points: gradeCriteria.post_inspirations.max_points,
               earned: inspirationsGrade
             });
             grade.total = grade.total + inspirationsGrade;
