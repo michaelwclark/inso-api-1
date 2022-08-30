@@ -94,8 +94,6 @@ export class GradeDTO {
         example: 'Excellent work!'
     })
     @IsOptional()
-    @IsDefined()
-    @IsNotEmpty()
     @IsString()
     public comments: string;
 
