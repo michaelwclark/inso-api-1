@@ -40,14 +40,14 @@ export class GradeController {
     const newDiscussion = new DiscussionReadDTO( discussion );
 
     // Make sure the participant is apart of the discussion and not already graded
-    // const participant = discussion.participants.filter(part => {
-    //   if(part.user.toString() === participantId) {
-    //     return part;
-    //   }
-    // })[0];
-    // if(!participant) {
-    //   throw new HttpException('Participant is not a part of this discussion and can\'t receive a grade', HttpStatus.BAD_REQUEST);
-    // }
+    const participant = discussion.participants.filter(part => {
+      if(part.user.toString() === participantId) {
+        return part;
+      }
+    })[0];
+    if(!participant) {
+      throw new HttpException('Participant is not a part of this discussion and can\'t receive a grade', HttpStatus.BAD_REQUEST);
+    }
 
     const confirmedGrade = new GradeDTO(grade);
     if(confirmedGrade.criteria.length !== newDiscussion.settings.scores.criteria.length) {
