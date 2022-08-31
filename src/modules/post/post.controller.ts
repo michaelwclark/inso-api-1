@@ -1,9 +1,9 @@
-import { Body, ConsoleLogger, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { IsDiscussionParticipantGuard } from 'src/auth/guards/userGuards/isDiscussionParticipant.guard';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
@@ -12,6 +12,7 @@ import { PostUpdateDTO } from 'src/entities/post/edit-post';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { User, UserDocument } from 'src/entities/user/user';
+import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 
 
@@ -23,7 +24,8 @@ export class PostController {
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
     @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private milestoneService: MilestoneService
   ) {}
 
   @Post('discussion/:discussionId/post')
@@ -33,7 +35,7 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
-  @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async createPost(
     @Param('discussionId') discussionId: string,
     @Body() post: PostCreateDTO,
@@ -51,8 +53,9 @@ export class PostController {
       throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
     }
 
+    let postForComment;
     if(post.comment_for) {
-      const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
+      postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
@@ -62,16 +65,7 @@ export class PostController {
     }
     const user = await this.userModel.findOne({_id: req.user.userId});
 
-    // Create a notification for each facilitator
-    for await(const facilitator of discussion.facilitators) {
-      await this.notificationService.createNotification(facilitator, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
-    }
-    
-    // Create a notification for each participant
-    for await(const participant of discussion.participants) {
-      await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
-    }
-
+    const checkPost = new PostCreateDTO(post);
     const newPost = new this.discussionPostModel({ 
       ...post,
       discussionId: new Types.ObjectId(discussionId),
@@ -80,6 +74,29 @@ export class PostController {
       comment_for: post.comment_for
     });
     const newPostId = await newPost.save();
+
+    const notificationText = post.post.post !== undefined ? post.post.post : "Go to discussion to see response";
+
+    // Create a notification for each facilitator
+    for await(const facilitator of discussion.facilitators) {
+      await this.notificationService.createNotification(facilitator._id, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.FRONTEND_DISCUSSION_REDIRECT}/${discussionId}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'})
+    }
+    
+    // Create a notification for each participant
+    for await(const participant of discussion.participants) {
+      await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
+
+      // Check for milestone achievement
+      await this.milestoneService.checkUserMilestoneProgress(participant.user);
+    }
+
+    // If the post is a comment_for something notify that particpant that someone responded to them
+    if(newPost.comment_for) {
+      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
+    }
+
+    // Create a notification for the post that it is commented for
+
     return newPostId._id;
   }
 
@@ -105,11 +122,13 @@ export class PostController {
       await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
     }
 
-
+    const newPost = new PostUpdateDTO(postUpdates);
     const postUpdate = await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { post: postUpdates.post, post_inspiration: postUpdates.post_inspiration });
     if(postUpdate === null) {
       throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
     }
+
+    await this.milestoneService.checkUserMilestoneProgress(postUpdate.userId);
     return postUpdate;
   }
 
@@ -156,6 +175,8 @@ export class PostController {
 
     const deleteMarker = await this.discussionPostModel.deleteOne({ _id: new Types.ObjectId(postId)});
     if(deleteMarker.deletedCount === 1) {
+      // TODO Remove any milestones achieved that are not longer valid because of delete operation. I.E. this was the 5th post and now they are back to 4
+      //await this.milestoneService.checkUserMilestoneProgress(.userId);
       return `${postId} deleted`;
     } else {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
@@ -191,22 +212,5 @@ export class PostController {
     if(!settings.post_inspirations.includes(inspiration._id)) {
       throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
     }
-  }
-
-  async generateNotifications() {
-    // If new post '@username posted in discussion' for facilitators
-    // Build a notification service that will handle the inserting and checking if it exists and stuff
-    // If new comment '@username responded to your post'
-
-  }
-
-  async checkAndGenerateMilestones() {
-    // If first post
-
-    // If 10th post
-
-    // If 100th post
-
-    // Generate notification if milestone is reached
   }
 }

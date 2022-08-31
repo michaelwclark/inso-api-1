@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards, Request, Body, Req } from "@nestjs/common";
+import { Controller, Get, Post, UseGuards, Request, Body, Req, Res, Redirect } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
@@ -18,8 +18,10 @@ export class GoogleAuthController{
     @Get('redirect')
     @UseGuards(AuthGuard('google'))
     @ApiOperation({ description: 'Redirect from Google. Not used for anything else'})
+    @Redirect(process.env.SSO_REDIRECT)
     @ApiTags('User')
-    googleAuthRedirect(@Req() req) {
-        return this.authService.googleLogin(req)
+    async googleAuthRedirect(@Req() req, @Res() res) {
+        const jwt = await this.authService.googleLogin(req);
+        return { url: process.env.SSO_REDIRECT + `?t=` + jwt.access_token};
     }
 }

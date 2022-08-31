@@ -13,12 +13,14 @@ import { validatePassword } from 'src/entities/user/commonFunctions/validatePass
 import { GoogleUserDTO } from 'src/entities/user/google-user';
 import { UserReadDTO } from 'src/entities/user/read-user';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { MilestoneService } from 'src/modules/milestone/milestone.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtService: JwtService,
         private sgService: SGService,
+        private milestoneService: MilestoneService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
@@ -94,7 +96,8 @@ export class AuthService {
                 ]
             });
             const userSave = new this.userModel({ ...newUser, dateJoined: new Date() });
-            return userSave.save();
+            await userSave.save();
+            return;
         } else {
             const payload = { 'username': user.username, 'sub': user._id };
             return {
@@ -147,7 +150,7 @@ export class AuthService {
         const posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)});
         stats.posts_made = posts_made.length;
 
-        const milestones = this.getMilestones();
+        const milestones = this.milestoneService.getMilestonesForUser(new Types.ObjectId(userId));
 
         // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
         const postIds = posts_made.map(post => {
@@ -250,9 +253,5 @@ export class AuthService {
                 throw new HttpException(`${id} is not a valid Mongo Id`, HttpStatus.BAD_REQUEST);
             }
         });
-    }
-
-    getMilestones() {
-        return [];
     }
 }

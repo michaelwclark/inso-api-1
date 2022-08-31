@@ -6,7 +6,7 @@ export type NotificationDocument = Notification & Document;
 @Schema()
 export class Notification {
 
-    @Prop()
+    @Prop({ type: Types.ObjectId, ref: 'User' })
     userId: Types.ObjectId;
 
     @Prop()
@@ -17,6 +17,9 @@ export class Notification {
 
     @Prop()
     text: string;
+
+    @Prop()
+    type: string;
 
     @Prop({ default: false })
     read: boolean;

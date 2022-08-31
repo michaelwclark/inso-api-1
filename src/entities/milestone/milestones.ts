@@ -1,20 +1,44 @@
-const milestones = {
-    "firstPost": {
-        "total": 1
+const milestones = [
+    {
+        milestone: "1st Post",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     },
-    "tenthPost": {
-        "total": 10
+    {
+        milestone: "Use Post Inspiration",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     },
-    "hundrethPost": {
-        total: 100
+    {
+        milestone: "Comment Received on Post",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     },
-    "firstReaction": {
-        "total": 1
+    {
+        milestone: "1st Upvote",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     },
-    "tenthReaction": {
-        "total": 10
+    {
+        milestone: "Perfect Score",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     },
-    "thirtyUpvotes": {
-        "total": 30
+    {
+        milestone: "Discussion Created",
+        type: "system achievement",
+        info: {
+            total: 1
+        }
     }
-}
+]
