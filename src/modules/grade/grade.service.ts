@@ -171,7 +171,7 @@ export class GradeService {
             } // if an inspiration was used on any of the user's posts, full credit is awarded
             grade.criteria.push({
               criteria: 'post inspirations',
-              max_points: gradeCriteria.comments_received.max_points,
+              max_points: gradeCriteria.post_inspirations.max_points,
               earned: inspirationsGrade
             });
             grade.total = grade.total + inspirationsGrade;
@@ -184,7 +184,12 @@ export class GradeService {
         for(var i = 0; i < confirmedGrade.criteria.length; i++){
           max = max + confirmedGrade.criteria[i].max_points
         }
-        const saveGrade = new this.gradeModel({grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, discussionId: discussionId, userId: participantId, facilitator: facilitator, comment: confirmedGrade.comments});
+        const graded = await this.gradeModel.findOne({ discussionId: discussionId, userId: participantId }).lean();
+        if(!graded) {
+          const saveGrade = new this.gradeModel({grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, discussionId: discussionId, userId: participantId, facilitator: facilitator, comment: confirmedGrade.comments});
         await saveGrade.save();
+        } else {
+          await this.gradeModel.findOneAndUpdate({ discussionId: discussionId, userId: participantId}, {grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, facilitator: facilitator, comment: confirmedGrade.comments})
+        }
     }
 }

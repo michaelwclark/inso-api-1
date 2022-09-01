@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiBadRequestResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
@@ -20,6 +20,7 @@ export class GradeController {
   ) {}
 
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
+  @ApiBody({ type: GradeDTO })
   @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   @ApiTags('Grade')
   @ApiOperation({ description: 'Updates a grade for a user'})
@@ -39,7 +40,7 @@ export class GradeController {
     const newDiscussion = new DiscussionReadDTO( discussion );
 
     // Make sure the participant is apart of the discussion and not already graded
-    const participant = discussion.participants.map(part => {
+    const participant = discussion.participants.filter(part => {
       if(part.user.toString() === participantId) {
         return part;
       }
@@ -77,6 +78,8 @@ export class GradeController {
    * This route is only for the autograding of a discussion 1 minute after the discussion closes 
    */
   @Patch('/discussion/:discussionId/participants/autograde')
+  @ApiTags('Grade')
+  @ApiOperation({ description: 'Autogrades a discussion'})
   @UseGuards()
   async autoGradeParticipants(
     @Param('discussionId') discussionId: string

@@ -20,6 +20,9 @@ import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussio
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { Grade, GradeDocument } from 'src/entities/grade/grade';
+const { removeStopwords } = require('stopword');
+var count = require('count-array-values');
 
 @Controller()
 export class DiscussionController {
@@ -31,7 +34,8 @@ export class DiscussionController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
-    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
   ) {
     DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
   }
@@ -161,8 +165,8 @@ export class DiscussionController {
     const participants = [];
     for await(let participant of discussion.participants) {
       const part = await this.userModel.findOne({ _id: participant.user }).lean();
-      //console.log({ ...part, muted: participant.muted })
-      participants.push({ ...part, muted: participant.muted, grade: participant.grade });
+      const grade = await this.gradeModel.findOne({ discussionId: discussion._id, userId: participant.user }).lean()
+      participants.push({ ...part, muted: participant.muted, grade: grade });
     }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
@@ -179,8 +183,6 @@ export class DiscussionController {
     // Add Tags for the discussion
     let tagsArray = [];
     if(posts.length > 0){
-      const { removeStopwords } = require('stopword');
-      var count = require('count-array-values');
 
       let strings = [];
       var postElement;
@@ -188,7 +190,21 @@ export class DiscussionController {
       var temp;
 
       for(var i = 0; i < posts.length; i++){
-        postElement = posts[i].post.split(' ');
+        // Iterate the keys later
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            console.log(key)
+            console.log(posts[i].post.outline[key]);
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        console.log(text)
+        postElement = text.split(' ');
+        // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
         temp = postNoStopWords.join(' ');
         strings.push(temp)

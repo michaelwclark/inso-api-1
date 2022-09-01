@@ -17,12 +17,14 @@ import { Score, ScoreSchema } from 'src/entities/score/score';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { SGService } from 'src/drivers/sendgrid';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
+import { MilestoneModule } from 'src/modules/milestone/milestone.module';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy, SGService],
   imports: [
     UserModule,
     SGService,
+    MilestoneModule,
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
