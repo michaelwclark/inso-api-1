@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
@@ -181,6 +182,23 @@ export class PostController {
     } else {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Get('discussion/:discussionId/participant/:participantId/posts')
+  @ApiOperation({description: 'Get all top level and response posts for a user'})
+  @ApiOkResponse({ description: 'Posts for the given user'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User is not a facilitator of the discussion'})
+  @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
+  @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async getPostsForUser(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string): Promise<any> {
+    const discussion = await this.verifyDiscussion(discussionId);
+    if(!Types.ObjectId.isValid(participantId)) {
+      throw new HttpException(`${participantId} is not a valid participantId`, HttpStatus.BAD_REQUEST);
+    }
+
+    
   }
 
 
