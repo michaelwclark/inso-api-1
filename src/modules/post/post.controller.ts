@@ -203,7 +203,6 @@ export class PostController {
     const posts = await this.discussionPostModel.find({ discussionId: discussion._id}).sort({ date: -1 }).lean();
     const newPosts = [];
 
-    const postIds = [];
     for await(const post of posts) {
       if(post.userId.toString() === participantId) {
         if(post.comment_for === null) {
