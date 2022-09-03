@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from 'src/auth/auth.module';
-import { NotificationSchema, Notification } from 'src/entities/notification/notification';
-import { User, UserSchema } from 'src/entities/user/user';
+import { AuthModule } from '../../auth/auth.module';
+import { NotificationSchema, Notification } from '../../entities/notification/notification';
+import { User, UserSchema } from '../../entities/user/user';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
 

@@ -2,17 +2,17 @@ import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch,
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
-import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
-import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
-import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
-import { PostCreateDTO } from 'src/entities/post/create-post';
-import { PostUpdateDTO } from 'src/entities/post/edit-post';
-import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
-import { Setting, SettingDocument } from 'src/entities/setting/setting';
-import { User, UserDocument } from 'src/entities/user/user';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from '../../auth/guards/userGuards/isDiscussionMember.guard';
+import { IsPostCreatorGuard } from '../../auth/guards/userGuards/isPostCreator.guard';
+import { Discussion, DiscussionDocument } from '../../entities/discussion/discussion';
+import { Inspiration, InspirationDocument } from '../../entities/inspiration/inspiration';
+import { PostCreateDTO } from '../../entities/post/create-post';
+import { PostUpdateDTO } from '../../entities/post/edit-post';
+import { DiscussionPost, DiscussionPostDocument } from '../../entities/post/post';
+import { Setting, SettingDocument } from '../../entities/setting/setting';
+import { User, UserDocument } from '../../entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 
@@ -198,7 +198,7 @@ export class PostController {
       throw new HttpException(`${participantId} is not a valid participantId`, HttpStatus.BAD_REQUEST);
     }
 
-    
+
   }
 
 
