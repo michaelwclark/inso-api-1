@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { AuthModule } from '../../auth/auth.module';
 import { Discussion, DiscussionSchema } from '../../entities/discussion/discussion';
 import { Inspiration, InspirationSchema } from '../../entities/inspiration/inspiration';
@@ -19,6 +20,7 @@ import { PostController } from './post.controller';
         MilestoneModule,
         MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
         MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
+        MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }]),
         MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
         MongooseModule.forFeature([{ name: Milestone.name, schema: MilestoneSchema }]),
         MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }]),
