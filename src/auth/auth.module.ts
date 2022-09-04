@@ -3,21 +3,20 @@ import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
-import { User, UserSchema } from 'src/entities/user/user';
-import { UserController } from 'src/modules/user/user.controller';
-import { UserModule } from 'src/modules/user/user.module';
+import { User, UserSchema } from '../entities/user/user';
+import { UserModule } from '../modules/user/user.module';
 import { AuthService } from './auth.service';
 import { LocalStrategy } from './guards/local.strategy';
 import { jwtConstants } from './constants';
 import { AuthController } from './auth.controller';
 import { GoogleAuthController } from './googleAuth.controller';
-import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion';
-import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
-import { Score, ScoreSchema } from 'src/entities/score/score';
-import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
-import { SGService } from 'src/drivers/sendgrid';
-import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
-import { MilestoneModule } from 'src/modules/milestone/milestone.module';
+import { Discussion, DiscussionSchema } from '../entities/discussion/discussion';
+import { DiscussionPost, DiscussionPostSchema } from '../entities/post/post';
+import { Score, ScoreSchema } from '../entities/score/score';
+import { Calendar, CalendarSchema } from '../entities/calendar/calendar';
+import { SGService } from '../drivers/sendgrid';
+import { Reaction, ReactionSchema } from '../entities/reaction/reaction';
+import { MilestoneModule } from '../modules/milestone/milestone.module';
 
 @Module({
   providers: [AuthService, LocalStrategy, JwtStrategy, SGService],

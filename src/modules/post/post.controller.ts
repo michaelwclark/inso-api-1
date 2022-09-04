@@ -1,17 +1,19 @@
-import { Body, Controller, Delete, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
-import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
-import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
-import { PostCreateDTO } from 'src/entities/post/create-post';
-import { PostUpdateDTO } from 'src/entities/post/edit-post';
-import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
-import { Setting, SettingDocument } from 'src/entities/setting/setting';
-import { User, UserDocument } from 'src/entities/user/user';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from '../../auth/guards/userGuards/isDiscussionMember.guard';
+import { IsPostCreatorGuard } from '../../auth/guards/userGuards/isPostCreator.guard';
+import { Discussion, DiscussionDocument } from '../../entities/discussion/discussion';
+import { Inspiration, InspirationDocument } from '../../entities/inspiration/inspiration';
+import { PostCreateDTO } from '../../entities/post/create-post';
+import { PostUpdateDTO } from '../../entities/post/edit-post';
+import { DiscussionPost, DiscussionPostDocument } from '../../entities/post/post';
+import { Setting, SettingDocument } from '../../entities/setting/setting';
+import { User, UserDocument } from '../../entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 
@@ -24,6 +26,7 @@ export class PostController {
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
     @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService
   ) {}
@@ -183,6 +186,38 @@ export class PostController {
     }
   }
 
+  @Get('discussion/:discussionId/participant/:participantId/posts')
+  @ApiOperation({description: 'Get all top level and response posts for a user'})
+  @ApiOkResponse({ description: 'Posts for the given user'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User is not a facilitator of the discussion'})
+  @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
+  @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async getPostsForUser(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string): Promise<any> {
+    const discussion = await this.verifyDiscussion(discussionId);
+    if(!Types.ObjectId.isValid(participantId)) {
+      throw new HttpException(`${participantId} is not a valid participantId`, HttpStatus.BAD_REQUEST);
+    }
+
+    const posts = await this.discussionPostModel.find({ discussionId: discussion._id}).sort({ date: -1 }).lean();
+    const newPosts = [];
+
+    const postIds = [];
+    for await(const post of posts) {
+      if(post.userId.toString() === participantId) {
+        if(post.comment_for === null) {
+          const newPost = await this.getPostsAndCommentsFromTop(post);
+          newPosts.push(newPost);
+        } else if(post.comment_for) {
+          const newPost = await this.getPostTree(post);
+          newPosts.push(newPost);
+        }
+      }
+    }
+    return newPosts;
+  }
+
 
   /** PRIVATE FUNCTIONS */
 
@@ -212,5 +247,47 @@ export class PostController {
     if(!settings.post_inspirations.includes(inspiration._id)) {
       throw new HttpException(`${inspiration._id} is not an inspiration for this discussion`, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  /**
+   * Recursively retrieves a post down a tree
+   * @param post 
+   * @returns 
+   */
+
+  async getPostsAndCommentsFromTop(post: any) {
+    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const freshComments = [];
+    if(comments.length) {
+      for await(const comment of comments) {
+        const post = await this.getPostsAndCommentsFromTop(comment);
+        freshComments.push(post);
+      }
+    }
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
+    delete newPost.userId;
+    return newPost;
+  }
+
+
+    /**
+   * Recursively retrieves a post up a tree
+   * @param post 
+   * @returns 
+   */
+  async getPostTree(post: any) {
+    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean() as any;
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+  
+    comment.comments = [];
+    comment.comments.push(post)
+
+    if(comment.comment_for !== null) {
+      const post = await this.getPostTree(comment);
+      comment.comments.push(post);
+    }
+    let newPost = { ...comment, user: post.userId, reactions: reactions};
+    return newPost;
   }
 }
