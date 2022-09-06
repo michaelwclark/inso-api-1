@@ -1,13 +1,9 @@
-import { Module, forwardRef } from '@nestjs/common';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from 'src/auth/auth.module';
-import { AuthService } from 'src/auth/auth.service';
-import { jwtConstants } from 'src/auth/constants';
-import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
-import { SGService } from 'src/drivers/sendgrid';
-import { User, UserSchema } from 'src/entities/user/user';
-import { DiscussionModule } from '../discussion/discussion.module';
+import { JwtStrategy } from '../../auth/guards/jwt.strategy';
+import { SGService } from '../../drivers/sendgrid';
+import { User, UserSchema } from '../../entities/user/user';
 import { UserController } from './user.controller';
 
 @Module({

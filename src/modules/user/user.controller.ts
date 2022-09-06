@@ -2,14 +2,13 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patc
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { ContactCreateDTO, UserCreateDTO } from 'src/entities/user/create-user';
-import { UserEditDTO } from 'src/entities/user/edit-user';
-import { UserReadDTO } from 'src/entities/user/read-user';
-import { User, UserDocument } from 'src/entities/user/user';
+import { ContactCreateDTO, UserCreateDTO } from '../../entities/user/create-user';
+import { UserEditDTO } from '../../entities/user/edit-user';
+import { User, UserDocument } from '../../entities/user/user';
 import * as bcrypt from 'bcrypt';
-import { SGService } from 'src/drivers/sendgrid';
-import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
-import { decodeOta, generateCode } from 'src/drivers/otaDriver';
+import { SGService } from '../../drivers/sendgrid';
+import { validatePassword } from '../../entities/user/commonFunctions/validatePassword';
+import { decodeOta, generateCode } from '../../drivers/otaDriver';
 
 @Controller()
 export class UserController {

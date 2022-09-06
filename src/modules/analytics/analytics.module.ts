@@ -7,32 +7,24 @@ import { Score, ScoreSchema } from 'src/entities/score/score';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
-import { DiscussionController } from './discussion.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from '../user/user.module';
 import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { AnalyticsController } from './analytics.controller';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
-        MongooseModule.forFeature([{name: Setting.name, schema: SettingSchema}]),
         MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema}]),
-        MongooseModule.forFeature([{name: Score.name, schema: ScoreSchema}]),
-        MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema}]),
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-        MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
         MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
         MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }]),
-        MongooseModule.forFeature([{ name: Grade.name, schema: GradeSchema }]),
         AuthModule,
         UserModule
     ],
-    controllers: [DiscussionController],
-    providers: [DiscussionController, JwtStrategy],
-    exports: [DiscussionController]
+    controllers: [AnalyticsController],
+    providers: [AnalyticsController, JwtStrategy],
 })
-export class DiscussionModule {}
-
-
+export class AnalyticsModule {}
