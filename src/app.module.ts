@@ -13,6 +13,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from './auth/auth.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppService } from './app.service';
@@ -23,6 +24,7 @@ import { MilestoneModule } from './modules/milestone/milestone.module';
 @Module({
   imports: [
     AuthModule,
+    AnalyticsModule,
     UserModule,
     ScoreModule,
     ReactionModule,

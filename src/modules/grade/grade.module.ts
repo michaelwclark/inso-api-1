@@ -5,7 +5,6 @@ import { Discussion, DiscussionSchema } from 'src/entities/discussion/discussion
 import { GradeSchema, Grade } from 'src/entities/grade/grade';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
-import { DiscussionController } from '../discussion/discussion.controller';
 import { GradeController } from './grade.controller';
 import { GradeService } from './grade.service';
 
@@ -19,7 +18,7 @@ import { GradeService } from './grade.service';
         
     ],
     controllers: [GradeController],
-    providers: [GradeService], //, DiscussionController],
+    providers: [GradeService],
     exports: [GradeService]
 })
 export class GradeModule {}
