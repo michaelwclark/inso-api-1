@@ -516,5 +516,3 @@ describe('AppController', () => {
   });
 
 });
-
- 

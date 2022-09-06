@@ -455,8 +455,9 @@ export class DiscussionController {
         throw new HttpException('DiscussionId is not valid', HttpStatus.BAD_REQUEST)
       }
   
-      //404 error check for user  (facilitator?)
-      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
+      //404 error check for user 
+      // const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId), _id: new Types.ObjectId(discussionId)})
+      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId) && new Types.ObjectId(discussionId)})
       if(!findUser){
         throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
       }
