@@ -44,7 +44,7 @@ export class UploadController {
   @ApiUnauthorizedResponse({ description: 'The user does not have a valid token'})
   @ApiForbiddenResponse({ description: 'The user is not allowed to upload a file for the entity id provided'})
   @ApiNotFoundResponse({ description: 'The discussion, profile, or post was not found'})
-  @ApiBadRequestResponse({ description: 'A file was not sent, the file is too large, or the file does not have a valid extension.'})
+  @ApiBadRequestResponse({ description: 'A file was not sent, the file is too large (>200MB), or the file does not have a valid extension.'})
   @ApiTags('File Upload')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
@@ -58,7 +58,7 @@ export class UploadController {
         throw new HttpException('File was not sent', HttpStatus.BAD_REQUEST);
     }
     // Check file size
-    if(file.size/1000 > 200) {
+    if((file.size/1000) > 200) {
         throw new HttpException('File is too large. File must be under 200MB', HttpStatus.BAD_REQUEST)
     }
     // Make sure they are trying to upload to a valid entity 
