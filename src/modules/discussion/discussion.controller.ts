@@ -456,16 +456,29 @@ export class DiscussionController {
       }
   
       //404 error check for user 
-      // const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId), _id: new Types.ObjectId(discussionId)})
-      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId) && new Types.ObjectId(discussionId)})
+      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
       if(!findUser){
         throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
       }
+
+      if()
+      for await (const user of discussionId){
+        let foundUser = await this.discussionModel.findOne({_id: userId});
+        if(foundUser){
+          throw new HttpException("User is part of discussion", HttpStatus.NOT_FOUND)
+        }
+
+      }
+
   
       //404 error - check for discusionId 
       const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId });
       if(!foundDiscussion) {
         throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
+      }
+
+      for(var i = 0; i < foundDiscussion.participants.length; i++){
+
       }
     
     const foundParticipant = await this.userModel.findOneAndUpdate({_id: userId }, {$push: {mutedDiscussions: discussionId}});
