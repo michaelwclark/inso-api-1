@@ -200,11 +200,11 @@ export class PostController {
       throw new HttpException(`${participantId} is not a valid participantId`, HttpStatus.BAD_REQUEST);
     }
 
-    const posts = await this.discussionPostModel.find({ discussionId: discussion._id}).sort({ date: -1 }).lean();
+    const posts = await this.discussionPostModel.find({ discussionId: discussion._id}).populate('userId', ['_id', 'f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
     const newPosts = [];
 
     for await(const post of posts) {
-      if(post.userId.toString() === participantId) {
+      if(post.userId._id.toString() === participantId) {
         if(post.comment_for === null) {
           const newPost = await this.getPostsAndCommentsFromTop(post);
           newPosts.push(newPost);
@@ -280,13 +280,16 @@ export class PostController {
     const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
   
     comment.comments = [];
-    comment.comments.push(post)
+    const initialPost = { ...post, user: post.userId, reactions: reactions};
+    delete initialPost.userId;
+    comment.comments.push(initialPost)
 
     if(comment.comment_for !== null) {
       const post = await this.getPostTree(comment);
       comment.comments.push(post);
     }
-    let newPost = { ...comment, user: post.userId, reactions: reactions};
+    let newPost = { ...comment, user: comment.userId, reactions: reactions};
+    delete newPost.userId;
     return newPost;
   }
 }
