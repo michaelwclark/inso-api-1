@@ -511,6 +511,19 @@ export class DiscussionController {
     return discussion._id;
   }
 
+  @Patch('discussions/:discussionId/participants/:participantId/remove')
+  @ApiOperation({description: 'The ability to remove a participant from a discussion'})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async removeParticipant(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string) {
+    const discussionParticipant = await this.discussionModel.findOne({ _id: discussionId, "participants.user": participantId}).lean();
+    if(!discussionParticipant) {
+      throw new HttpException(`${participantId} is not a member of the discussion and cannot be removed`, HttpStatus.BAD_REQUEST);
+    }
+    // Remove that participant object from the discussion participants array
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId}, { $pull: { "participants.user": participantId }});
+  }
+
   @Patch('users/:userId/discussions/:discussionId/mute')
   @ApiOperation({description: 'The ability to mute a user in a discussion'})
   @ApiOkResponse({ description: 'Discussion has been muted'})
