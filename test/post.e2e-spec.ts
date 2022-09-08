@@ -1,21 +1,30 @@
+import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PostController } from './post.controller';
+import { appendFile } from 'fs';
+import * as request from 'supertest';
+import { PostController } from '../src/modules/post/post.controller';
+import { PostModule } from '../src/modules/post/post.module';
 
 describe('AppController', () => {
-  let appController: PostController;
+  let app: INestApplication;
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [PostController],
-      providers: [],
-    }).compile();
-
-    appController = app.get<PostController>(PostController);
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [PostModule]
+    })
+      .compile();
+    
+      app = moduleRef.createNestApplication();
+      await app.init();
   });
 
   describe('POST discussion/:discussionId/post', () => {
     it('should return a 200 for a valid post', () => {
-
+      return request(app.getHttpServer())
+        .post('/discussion/123/post')
+        .expect({
+          data: {}
+        });
     });
     it('should return a 400 for an invalid discussionId', () => {
       
@@ -93,4 +102,8 @@ describe('AppController', () => {
       
     });
   })
+
+  afterAll(async () => {
+    await app.close();
+  });
 });

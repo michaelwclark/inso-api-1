@@ -2,8 +2,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Milestone, MilestoneDocument } from 'src/entities/milestone/milestone';
-import { User, UserDocument } from 'src/entities/user/user';
+import { Milestone, MilestoneDocument } from '../../entities/milestone/milestone';
+import { User, UserDocument } from '../../entities/user/user';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()

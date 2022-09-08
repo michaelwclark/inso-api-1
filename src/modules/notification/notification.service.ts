@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
-import { Notification, NotificationDocument } from "src/entities/notification/notification";
-import { NotificationReadDTO } from "src/entities/notification/read-notification";
-import { User, UserDocument } from "src/entities/user/user";
+import { Notification, NotificationDocument } from "../../entities/notification/notification";
+import { NotificationReadDTO } from "../../entities/notification/read-notification";
+import { User, UserDocument } from "../../entities/user/user";
 
 @Injectable()
 export class NotificationService {

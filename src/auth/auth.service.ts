@@ -3,17 +3,17 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
-import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
-import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
-import { Score, ScoreDocument } from 'src/entities/score/score';
-import { User, UserDocument } from 'src/entities/user/user';
-import { SGService } from 'src/drivers/sendgrid';
-import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
-import { GoogleUserDTO } from 'src/entities/user/google-user';
-import { UserReadDTO } from 'src/entities/user/read-user';
-import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
-import { MilestoneService } from 'src/modules/milestone/milestone.service';
+import { Discussion, DiscussionDocument } from '../entities/discussion/discussion';
+import { DiscussionPost, DiscussionPostDocument } from '../entities/post/post';
+import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
+import { Score, ScoreDocument } from '../entities/score/score';
+import { User, UserDocument } from '../entities/user/user';
+import { SGService } from '../drivers/sendgrid';
+import { validatePassword } from '../entities/user/commonFunctions/validatePassword';
+import { GoogleUserDTO } from '../entities/user/google-user';
+import { UserReadDTO } from '../entities/user/read-user';
+import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
+import { MilestoneService } from '../modules/milestone/milestone.service';
 
 @Injectable()
 export class AuthService {

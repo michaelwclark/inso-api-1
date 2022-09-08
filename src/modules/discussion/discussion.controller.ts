@@ -55,7 +55,7 @@ export class DiscussionController {
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
     if(!user) {
-      throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("User trying to create discussion does not exist", HttpStatus.NOT_FOUND);
     }
 
     // Compare poster to user in request from JWT for authorization
@@ -485,7 +485,7 @@ export class DiscussionController {
     //check for user
     const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
     if(!findUser){
-      throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+      throw new HttpException('UserId not found', HttpStatus.NOT_FOUND)
     }
 
     //check for discusionId 
@@ -540,25 +540,9 @@ export class DiscussionController {
       if(!findDiscussion){
         throw new HttpException('DiscussionId was not found', HttpStatus.NOT_FOUND);
       }
-
-      //The user is not a participant or a facilitator of the discussion 403 - forbidden status
-      const findParticipant = await this.discussionModel.findOne({"discussion.facilitators": userId }, {"participants.user": userId})
-      if(!findParticipant){
-        throw new HttpException('User is not a participant or a facilitator of the discussion', HttpStatus.FORBIDDEN)
-      }
-
-      //find and update participant set mute to true
-      //const muted: boolean = false
-     
-      await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.user": userId, muted: true});
-      
-      const newParticipant = {
-        user: new Types.ObjectId(userId),
-        joined: new Date,
-        muted: false,
-        grade: null
-        } 
-        await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.muted": true}); 
+      // TODO FIX THIS UPDATE
+      // TODO ADD 409 if user is already muted
+      //await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.muted": true}); 
       
     }
 

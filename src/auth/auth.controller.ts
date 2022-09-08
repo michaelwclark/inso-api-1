@@ -1,7 +1,7 @@
-import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Query, Param, HttpException, HttpStatus } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiBearerAuth, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiProperty, ApiResponse, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
-import { PasswordResetDTO } from "src/entities/user/password-reset";
-import { UserReadDTO } from "src/entities/user/read-user";
+import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Param, HttpException, HttpStatus } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiProperty, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
+import { PasswordResetDTO } from "../entities/user/password-reset";
+import { UserReadDTO } from "../entities/user/read-user";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { LocalAuthGuard } from "./guards/local-auth.guard";

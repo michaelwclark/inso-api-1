@@ -2,10 +2,10 @@ import { Controller, Get, HttpException, HttpStatus, Param, Patch, UseGuards } f
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
-import { NotificationReadDTO } from 'src/entities/notification/read-notification';
-import { User, UserDocument } from 'src/entities/user/user';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RequesterIsUserGuard } from '../../auth/guards/userGuards/requesterIsUser.guard';
+import { NotificationReadDTO } from '../../entities/notification/read-notification';
+import { User, UserDocument } from '../../entities/user/user';
 import { NotificationService } from './notification.service';
 
 
