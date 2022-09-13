@@ -225,8 +225,8 @@ export class PostController {
       throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
@@ -255,8 +255,8 @@ export class PostController {
    */
 
   async getPostsAndCommentsFromTop(post: any) {
-    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -276,8 +276,8 @@ export class PostController {
    * @returns 
    */
   async getPostTree(post: any) {
-    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean() as any;
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean() as any;
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
   
     comment.comments = [];
     const initialPost = { ...post, user: post.userId, reactions: reactions};

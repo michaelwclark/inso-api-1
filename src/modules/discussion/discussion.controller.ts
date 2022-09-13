@@ -21,6 +21,7 @@ import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscu
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
+import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 const { removeStopwords } = require('stopword');
 var count = require('count-array-values');
 
@@ -158,8 +159,8 @@ export class DiscussionController {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: discussionId })
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
     const participants = [];
@@ -173,7 +174,7 @@ export class DiscussionController {
     }
 
     // Get posts 
-    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username','profilePicture']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
       const postWithComments = await this.getPostsAndComments(post);
@@ -181,48 +182,8 @@ export class DiscussionController {
     }
 
     // Add Tags for the discussion
-    let tagsArray = [];
-    if(posts.length > 0){
-
-      let strings = [];
-      var postElement;
-      var postNoStopWords;
-      var temp;
-
-      for(var i = 0; i < posts.length; i++){
-        // Iterate the keys later
-        let vars = '';
-        // Get the values in the outline 
-        if(posts[i].post.outline) {
-          const outline = posts[i].post.outline;
-          for (var key in outline) {
-            console.log(key)
-            console.log(posts[i].post.outline[key]);
-            vars = vars + ' ' + posts[i].post.outline[key];
-          }
-        }
-        const text = posts[i].post.post + vars;
-        console.log(text)
-        postElement = text.split(' ');
-        // TODO: Change the tags here
-        postNoStopWords = removeStopwords(postElement);
-        temp = postNoStopWords.join(' ');
-        strings.push(temp)
-      }
-
-      var allPosts = strings.join(' ');
-      allPosts = allPosts.split('.').join(''); // remove periods from strings
-      allPosts = allPosts.split(',').join(''); // remove commas from strings
-      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
-      allPosts = allPosts.split('?').join(''); // remove question marks from strings
-      var newArray = allPosts.split(' ');
-      newArray = newArray.map( element => element = element.toLowerCase() );
-      newArray = newArray.filter(function(x) {
-        return x !== ''
-      });
-      tagsArray = count(newArray, 'tag');
-      tagsArray = tagsArray.slice(0, 15); // keep only top 15
-    }
+    let tagsArray = await this.getTags(posts, discussion.tags);
+    
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
@@ -511,6 +472,37 @@ export class DiscussionController {
     return discussion._id;
   }
 
+  @Patch('discussions/:discussionId/participants/:participantId/remove')
+  @ApiOperation({description: 'The ability to remove a participant from a discussion'})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async removeParticipant(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string) {
+    const discussionParticipant = await this.discussionModel.findOne({ _id: discussionId, "participants.user": participantId}).lean();
+    if(!discussionParticipant) {
+      throw new HttpException(`${participantId} is not a member of the discussion and cannot be removed`, HttpStatus.BAD_REQUEST);
+    }
+    // Remove that participant object from the discussion participants array
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId}, { $pull: { "participants.user": participantId }});
+  }
+
+  @Post('discussions/:discussionId/tags')
+  @ApiOperation({description: 'The ability to remove a participant from a discussion'})
+  @ApiBody({ type: DiscussionTagCreateDTO })
+  @ApiTags('Tags')
+  //@UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  async addTag(@Param('discussionId') discussionId: string, @Body('tag') tag: string) {
+    const discussion = await this.discussionModel.findOne({ _id: discussionId }).lean();
+    if(!discussion) {
+      throw new HttpException(`Discussion does not exist`, HttpStatus.NOT_FOUND);
+    }
+    // Check if the tag is already in the array
+    if(discussion.tags.includes(tag.toString())) {
+      throw new HttpException(`${discussionId} already has tag ${tag}`, HttpStatus.BAD_REQUEST);
+    }
+    // Add the tag to the tags array on the discussion
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId }, { $push: { "tags": tag.toString()}});
+  }
+
   @Patch('users/:userId/discussions/:discussionId/mute')
   @ApiOperation({description: 'The ability to mute a user in a discussion'})
   @ApiOkResponse({ description: 'Discussion has been muted'})
@@ -574,8 +566,8 @@ export class DiscussionController {
   //** PRIVATE FUNCTIONS */
 
   async getPostsAndComments(post: any) {
-    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -586,5 +578,61 @@ export class DiscussionController {
     let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
     delete newPost.userId;
     return newPost;
+  }
+
+
+  async getTags(posts: any, tags: string[]) {
+    let tagsArray = [];
+    if(posts.length > 0){
+
+      let strings = [];
+      let postElement;
+      let postNoStopWords;
+      let temp;
+
+      for(var i = 0; i < posts.length; i++){
+        // Iterate the keys later
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        // Remove any html tags
+        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
+        postElement = cleanText.split(' ');
+        // TODO: Change the tags here
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      allPosts = allPosts.split('#').join(''); // remove existing tag signifier from array
+
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      newArray = newArray.filter(function(x) {
+        return x !== ''
+      });
+
+      tagsArray = count(newArray, 'tag');
+      
+      const stringTags = tagsArray.map(tag => { return tag.tag});
+      
+      stringTags.forEach((tag, i) => {
+        if(tags.includes(tag)) {
+          tagsArray = [...tagsArray.slice(i), ...tagsArray.slice(0, i)]
+        }
+      })
+    }
+    return tagsArray;
   }
 }

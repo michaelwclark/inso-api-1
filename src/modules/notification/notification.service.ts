@@ -27,7 +27,7 @@ export class NotificationService {
     }
 
     async getNotifications(userId: Types.ObjectId) {
-        const notifications = await this.notificationModel.find({ userId: userId, read: false }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'contact.email', 'username']);
+        const notifications = await this.notificationModel.find({ userId: userId, read: false }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture']);
         return await notifications.map(notification => {
             return new NotificationReadDTO(notification);
         });

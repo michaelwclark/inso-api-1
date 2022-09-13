@@ -77,7 +77,7 @@ export class AnalyticsController {
 
   async getPostsAndCommentsFromTop(post: any) {
     const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
