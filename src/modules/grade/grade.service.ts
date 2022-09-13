@@ -20,14 +20,14 @@ export class GradeService {
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {}
 
-    async addEventForAutoGrading(details: any) {
-      const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
+    // async addEventForAutoGrading(details: any) {
+    //   const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
 
-      const job = schedule.scheduleJob(date, function(){
-        console.log('The world is going to end today.');
-      });
-      console.log(job);
-    }
+    //   const job = schedule.scheduleJob(date, function(){
+    //     console.log('The world is going to end today.');
+    //   });
+    //   console.log(job);
+    // }
 
     async gradeDiscussion(discussionId: string) {
         // Retrieve the discussion and make sure it exists and that it is set for autograding
@@ -36,16 +36,22 @@ export class GradeService {
           ).populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
         
 
+        const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId })
+          .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+          .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+          .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
+
         var now = new Date();
-        // if(discussion.settings.calendar.close > now){
-        //   throw new HttpException('Discussion has not been closed yet', HttpStatus.BAD_REQUEST);
-        // }
-        //console.log(discussion);
+        //console.log(now);
 
-        const newDiscussion = new DiscussionReadDTO(discussion);
-        console.log(newDiscussion);
+        const newDiscussion = new DiscussionReadDTO(foundDiscussion);
+        //console.log(newDiscussion.settings.calendar.close);
 
-        if(!discussion) {
+        var closeDate = new Date(newDiscussion.settings.calendar.close);
+        //console.log(closeDate);
+        
+        //console.log(foundDiscussion.settings);
+        if(discussion) {
             throw new HttpException(`${discussionId} does not exist as a discussion`, HttpStatus.NOT_FOUND);
         }
         if(newDiscussion.settings.scores == undefined) {
@@ -54,14 +60,28 @@ export class GradeService {
         if(newDiscussion.settings.scores.type !== 'auto') {
             throw new HttpException(`${discussionId} is not set for autograding`, HttpStatus.BAD_REQUEST);
         }
-
+        if(closeDate < now){
+          throw new HttpException('Discussion has not been closed yet', HttpStatus.BAD_REQUEST);
+        }
         if(discussion.participants.length == 0){
           throw new HttpException('Discussion has no participants to grade', HttpStatus.BAD_REQUEST);
         }
         // Go through each participant and grade them according to the auto grading requirements
-        for await(const participant of discussion.participants) {
+        // for await(const participant of discussion.participants) {
+        //     await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster._id), new Types.ObjectId(participant.user), newDiscussion.settings.scores);
+        // }
+
+        //const schedule = require('node-schedule');  imported at top
+
+        // const job = schedule.scheduleJob('12 * * * *', function(){
+        //   console.log('The answer to life, the universe, and everything!');
+        // });
+
+        const job = schedule.scheduleJob(closeDate, async function(){
+          for await(const participant of discussion.participants) {
             await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster._id), new Types.ObjectId(participant.user), newDiscussion.settings.scores);
-        }
+          }
+        });
     }
 
     private async gradeParticipant(discussionId: Types.ObjectId, facilitator: Types.ObjectId, participantId: Types.ObjectId, rubric: any) {
