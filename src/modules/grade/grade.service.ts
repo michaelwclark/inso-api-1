@@ -35,7 +35,16 @@ export class GradeService {
             { _id: discussionId}
           ).populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
         
+
+        var now = new Date();
+        // if(discussion.settings.calendar.close > now){
+        //   throw new HttpException('Discussion has not been closed yet', HttpStatus.BAD_REQUEST);
+        // }
+        //console.log(discussion);
+
         const newDiscussion = new DiscussionReadDTO(discussion);
+        console.log(newDiscussion);
+
         if(!discussion) {
             throw new HttpException(`${discussionId} does not exist as a discussion`, HttpStatus.NOT_FOUND);
         }
