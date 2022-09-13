@@ -33,7 +33,7 @@ export class AnalyticsController {
         if(!found) {
             throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
         }
-        
+
         query = new AnalyticsQueryDto(query);
         let chord = new ChordChartData();
         let burst = new BurstChartData();
@@ -56,14 +56,39 @@ export class AnalyticsController {
   /** PRIVATE FUNCTIONS */
 
   async getChordChartData(discussionId: Types.ObjectId): Promise<ChordChartData> {
+    // Get the tags for a discussion and all of the people that have used them
+    // Build the array of people in the order that they were used in the discussion
+    // Build the 2D array 
     return new ChordChartData();
   }
 
   async getBurstChartData(discussionId: Types.ObjectId): Promise<BurstChartData> {
+    // Get the top 5 tags for the a discussion and all of the people that have used them as top level comments
+    // Set the flare for the discussion as the discussion name
+    // For each tag set the children of tag
     return new BurstChartData();
   }
 
   async getDirectedChartData(discussionId: Types.ObjectId): Promise<DirectedChartData> {
-    return new DirectedChartData;
+    // Get the 
+    return new DirectedChartData();
+  }
+
+
+  async getPostsAndCommentsFromTop(post: any) {
+    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const freshComments = [];
+    if(comments.length) {
+      for await(const comment of comments) {
+        const post = await this.getPostsAndCommentsFromTop(comment);
+        freshComments.push(post);
+      }
+    }
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
+    delete newPost.userId;
+    return newPost;
   }
 }
+
+
