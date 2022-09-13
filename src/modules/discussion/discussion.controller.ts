@@ -159,8 +159,8 @@ export class DiscussionController {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: discussionId })
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
     const participants = [];
@@ -174,7 +174,7 @@ export class DiscussionController {
     }
 
     // Get posts 
-    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username','profilePicture']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
       const postWithComments = await this.getPostsAndComments(post);
@@ -566,8 +566,8 @@ export class DiscussionController {
   //** PRIVATE FUNCTIONS */
 
   async getPostsAndComments(post: any) {
-    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
