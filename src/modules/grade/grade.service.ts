@@ -20,14 +20,14 @@ export class GradeService {
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {}
 
-    // async addEventForAutoGrading(details: any) {
-    //   const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
+    async addEventForAutoGrading(details: any) { // needs discussion id and close date
+      const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
 
-    //   const job = schedule.scheduleJob(date, function(){
-    //     console.log('The world is going to end today.');
-    //   });
-    //   console.log(job);
-    // }
+      const job = schedule.scheduleJob(date, function(){
+        console.log('The world is going to end today.');
+      });
+      console.log(job);
+    }
 
     async gradeDiscussion(discussionId: string) {
         // Retrieve the discussion and make sure it exists and that it is set for autograding
