@@ -31,5 +31,8 @@ async function bootstrap() {
   app.use(helmet());
   
   await app.listen(process.env.PORT);
+
+  // go through all discussions in the db and find the ones that have a close date after today
+  // Use the node scheduler to add each close as an event in the queue 
 }
 bootstrap();
