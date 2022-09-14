@@ -182,7 +182,7 @@ export class DiscussionController {
     }
 
     // Add Tags for the discussion
-    let tagsArray = await this.getTags(posts, discussion.tags);
+    let tagsArray = await this.getTags(posts, discussion.tags? discussion.tags : []);
     
 
     const discussionRead = new DiscussionReadDTO({
