@@ -475,14 +475,15 @@ export class DiscussionController {
   @Patch('discussions/:discussionId/participants/:participantId/remove')
   @ApiOperation({description: 'The ability to remove a participant from a discussion'})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async removeParticipant(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string) {
-    const discussionParticipant = await this.discussionModel.findOne({ _id: discussionId, "participants.user": participantId}).lean();
+    const discussionParticipant = await this.discussionModel.findOne({ _id: discussionId, "participants.user": new Types.ObjectId(participantId) }).lean();
     if(!discussionParticipant) {
       throw new HttpException(`${participantId} is not a member of the discussion and cannot be removed`, HttpStatus.BAD_REQUEST);
     }
     // Remove that participant object from the discussion participants array
-    return await this.discussionModel.findOneAndUpdate({ _id: discussionId}, { $pull: { "participants.user": participantId }});
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId}, { $pull: { participants: { user: new Types.ObjectId(participantId)} }});
+    
   }
 
   @Post('discussions/:discussionId/tags')
