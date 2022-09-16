@@ -1,4 +1,3 @@
-import { HttpException, HttpStatus } from "@nestjs/common";
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDefined, IsMongoId, IsString } from "class-validator";
 import { Types } from "mongoose";
