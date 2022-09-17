@@ -32,4 +32,8 @@ export class NotificationService {
             return new NotificationReadDTO(notification);
         });
     }
+
+    async deleteNotification(notificationId: Types.ObjectId) {
+        return await this.notificationModel.findOneAndDelete({ _id: notificationId});
+    }
 }
