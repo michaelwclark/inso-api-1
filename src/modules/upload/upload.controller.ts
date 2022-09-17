@@ -46,7 +46,7 @@ export class UploadController {
   @ApiNotFoundResponse({ description: 'The discussion, profile, or post was not found'})
   @ApiBadRequestResponse({ description: 'A file was not sent, the file is too large (>200MB), or the file does not have a valid extension.'})
   @ApiTags('File Upload')
-  //a@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
