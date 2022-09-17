@@ -59,7 +59,7 @@ export class AnalyticsController {
     // Get the tags for a discussion and all of the people that have used them
     // Build the array of people in the order that they were used in the discussion
     // Build the 2D array 
-    return new ChordChartData();
+    return new ChordChartData({ keys: ['Josh', 'Paige', 'Nick'], data: [ [0, 32, 12], [32, 0, 24], [12, 24, 0] ]});
   }
 
   async getBurstChartData(discussionId: Types.ObjectId): Promise<BurstChartData> {
@@ -70,8 +70,63 @@ export class AnalyticsController {
   }
 
   async getDirectedChartData(discussionId: Types.ObjectId): Promise<DirectedChartData> {
-    // Get the 
-    return new DirectedChartData();
+    // Get the directed chart data
+    return new DirectedChartData(
+      {
+        trendingUp: {
+          tag: {
+            name: 'Nuclear',
+            count: 13,
+            pastDays: [
+              {
+                date: new Date(),
+                count: 8
+              },
+              {
+                date: new Date(),
+                count: 5
+              }
+            ]
+          }
+        },
+        trendingDown: {
+          tag: {
+            name: 'iPhone',
+            count: 3,
+            pastDays: [
+              {
+                date: new Date(),
+                count: 2
+              },
+              {
+                date: new Date(),
+                count: 1
+              }
+            ]
+          }
+        },
+        random: {
+          tag: {
+            name: 'towson',
+            count: 6,
+            pastDays: [
+              {
+                date: new Date(),
+                count: 1
+              },
+              {
+                date: new Date(),
+                count: 4
+              },
+              {
+                date: new Date(),
+                count: 1
+              }
+            ]
+          }
+        }
+      }
+    );
   }
 
 
