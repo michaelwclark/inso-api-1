@@ -515,4 +515,10 @@ describe('AppController', () => {
     done()
   });
 
+<<<<<<< Updated upstream
 });
+=======
+});
+
+ 
+>>>>>>> Stashed changes

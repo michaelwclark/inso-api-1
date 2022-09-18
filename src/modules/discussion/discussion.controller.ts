@@ -470,7 +470,6 @@ export class DiscussionController {
         }
 
       }
-
   
       //404 error - check for discusionId 
       const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId });
@@ -478,9 +477,8 @@ export class DiscussionController {
         throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
       }
 
-      for(var i = 0; i < foundDiscussion.participants.length; i++){
-
-      }
+      // for(var i = 0; i < foundDiscussion.participants.length; i++){
+      // }
     
     const foundParticipant = await this.userModel.findOneAndUpdate({_id: userId }, {$push: {mutedDiscussions: discussionId}});
     
