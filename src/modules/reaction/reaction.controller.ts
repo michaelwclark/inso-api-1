@@ -87,8 +87,6 @@ export class ReactionController {
     }
 
     await this.reactionModel.findOneAndUpdate({ _id: new Types.ObjectId(reactionId)}, { reaction: reaction.reaction });
-    // Update notifications
-    // Update milestones
     return;
   }
 
@@ -103,10 +101,7 @@ export class ReactionController {
     if(!Types.ObjectId.isValid(postId)) {
       throw new HttpException(`${postId} is not a valid postId`, HttpStatus.BAD_REQUEST);
     }
-
     const deleted = await this.reactionModel.deleteOne({ _id: new Types.ObjectId(reactionId)});
-    // update notifications 
-    // update milestones
     return deleted;
   }
 }

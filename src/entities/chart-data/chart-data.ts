@@ -6,11 +6,25 @@
 export class BurstChartChildren {
     name: string;
     children: BurstChartChildren[];
+
+    constructor(partial?: any) {
+        if(partial) {
+            this.name = partial.name;
+            this.children = partial.children;
+        }
+    }
 }
 
 export class BurstChartData {
     flare: string;
-    children: BurstChartChildren[]
+    children: BurstChartChildren[];
+
+    constructor(partial?: any) {
+        if(partial) {
+            this.flare = partial.flare;
+            this.children = partial.children;
+        }
+    }
 }
 
 /**
@@ -19,6 +33,13 @@ export class BurstChartData {
 export class ChordChartData {
     keys: string[]; // Example: ["name 1", "name 2", "name 3"]
     data: number [][]; // Example: [ [0, 32, 12], [32, 0, 24], [12, 24, 0] ]
+    
+    constructor(partial?: any) {
+        if(partial) {
+            this.keys = partial.keys;
+            this.data = partial.data;
+        }
+    }
 }
 
 
@@ -36,6 +57,14 @@ export class DirectedChartData {
     random: {
         tag: TagData
     }
+
+    constructor(partial?: any) {
+        if(partial) {
+            this.trendingUp = partial.trendingUp;
+            this.trendingDown = partial.trendingDown;
+            this.random = partial.random;
+        }
+    }
 }
 
 
@@ -49,6 +78,8 @@ export class TagData {
         }
     ]
 }
+
+
 export class ChartData {
     chordChartData: ChordChartData;
     burstChartData: BurstChartData;

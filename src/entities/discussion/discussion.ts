@@ -28,6 +28,12 @@ export class Discussion {
     @Prop({ type: Types.ObjectId, ref: 'User' })
     public poster: Types.ObjectId;
     
+    @Prop({ type: [String]})
+    public tags: string[];
+
+    @Prop({ type: [String]})
+    public keywords: string[];
+    
     @Prop()
     public participants: {
         user: Types.ObjectId,

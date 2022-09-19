@@ -69,6 +69,7 @@ export class DiscussionReadDTO {
       username: string;
       f_name: string;
       l_name: string;
+      profilePicture: string;
   };
 
   public participants:{
@@ -157,7 +158,8 @@ export class DiscussionReadDTO {
         _id: partial.poster._id,
         username: partial.poster.username,
         f_name: partial.poster.f_name,
-        l_name: partial.poster.l_name
+        l_name: partial.poster.l_name,
+        profilePicture: partial.poster.profilePicture
       }
 
       // Map the facilitators
