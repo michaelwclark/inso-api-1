@@ -129,6 +129,18 @@ export class UserEditDTO {
     @IsString()
     public role: string;
 
+    @ApiProperty({
+        name: 'profilePicture',
+        description: 'The users profile',
+        required: true,
+        type: String,
+        example: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg'
+    })
+    @IsOptional()
+    @IsNotEmpty()
+    @IsString()
+    public profilePicture: string;
+
     constructor(partial: Partial<UserEditDTO>) {
         Object.assign(this, partial);
     }

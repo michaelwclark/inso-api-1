@@ -30,6 +30,9 @@ export class Discussion {
     
     @Prop({ type: [String]})
     public tags: string[];
+
+    @Prop({ type: [String]})
+    public keywords: string[];
     
     @Prop()
     public participants: {

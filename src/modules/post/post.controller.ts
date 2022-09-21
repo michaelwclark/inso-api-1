@@ -45,8 +45,6 @@ export class PostController {
     @Req() req: any
     ): Promise<string> {
     const discussion = await this.verifyDiscussion(discussionId);
-    // Check that the participant is a part of the array
-    //this.verifyParticipation(req.user.userId.toString(), discussion);
 
     if(discussion.archived !== null) {
       throw new HttpException(`${discussionId} is currently archived and is not accepting posts`, HttpStatus.BAD_REQUEST);
@@ -79,26 +77,19 @@ export class PostController {
     const newPostId = await newPost.save();
 
     const notificationText = post.post.post !== undefined ? post.post.post : "Go to discussion to see response";
-
-    // Create a notification for each facilitator
-    for await(const facilitator of discussion.facilitators) {
-      await this.notificationService.createNotification(facilitator._id, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.FRONTEND_DISCUSSION_REDIRECT}/${discussionId}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'})
-    }
+   
     
-    // Create a notification for each participant
-    for await(const participant of discussion.participants) {
-      await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
-
-      // Check for milestone achievement
-      await this.milestoneService.checkUserMilestoneProgress(participant.user);
+    // Create a notification for each participant if a facilitator posts
+    if(discussion.facilitators.includes(new Types.ObjectId(req.user.userId))) {
+      for await(const participant of discussion.participants) {
+        await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
+      }
     }
 
-    // If the post is a comment_for something notify that particpant that someone responded to them
+    // If the post is a comment_for something notify that participant that someone responded to them
     if(newPost.comment_for) {
       await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
     }
-
-    // Create a notification for the post that it is commented for
 
     return newPostId._id;
   }
@@ -225,8 +216,8 @@ export class PostController {
       throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
@@ -255,8 +246,8 @@ export class PostController {
    */
 
   async getPostsAndCommentsFromTop(post: any) {
-    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -276,8 +267,8 @@ export class PostController {
    * @returns 
    */
   async getPostTree(post: any) {
-    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean() as any;
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean() as any;
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
   
     comment.comments = [];
     const initialPost = { ...post, user: post.userId, reactions: reactions};
