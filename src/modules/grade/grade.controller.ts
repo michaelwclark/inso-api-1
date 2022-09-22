@@ -1,7 +1,9 @@
 import { Body, Controller, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ConnectParticipant } from 'aws-sdk';
 import { Model, Types } from 'mongoose';
+import { partition } from 'rxjs';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
@@ -9,6 +11,7 @@ import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
+import { NotificationService } from '../notification/notification.service';
 
 
 @Controller()
@@ -16,7 +19,8 @@ export class GradeController {
   constructor(
     @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
-    private gradeService: GradeService
+    private gradeService: GradeService,
+    private notificationservice: NotificationService
   ) {}
 
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
@@ -64,6 +68,9 @@ export class GradeController {
       facilitator: req.user.userId,
       comment: confirmedGrade.comments
     }
+
+    await this.notificationservice.createNotification(participant.user, 
+      { header: `<h1 className="notification-header">Recent grade post <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${participant.grade}</a></h1>`, text: `${this.notificationservice}`, type: 'grade'});
     if(participant.grade === null) {
       const newGrade = new this.gradeModel(gradeModel);
       const gradeId = await newGrade.save();
@@ -71,8 +78,8 @@ export class GradeController {
     } else {
       return await this.gradeModel.findOneAndUpdate({ _id: participant.grade }, gradeModel);
     }
+    
   }
-
 
   /**
    * This route is only for the autograding of a discussion 1 minute after the discussion closes 

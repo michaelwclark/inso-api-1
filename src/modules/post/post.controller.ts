@@ -85,6 +85,7 @@ export class PostController {
         await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
       }
     }
+    
 
     // If the post is a comment_for something notify that participant that someone responded to them
     if(newPost.comment_for) {
