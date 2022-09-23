@@ -8,6 +8,8 @@ import { DiscussionPost, DiscussionPostDocument } from "src/entities/post/post";
 import { Reaction, ReactionDocument } from "src/entities/reaction/reaction";
 import { User, UserDocument } from "src/entities/user/user";
 import { AnalyticsQueryDto } from "./types/query";
+const { removeStopwords } = require('stopword');
+var count = require('count-array-values');
 
 @Controller()
 export class AnalyticsController {
@@ -30,9 +32,19 @@ export class AnalyticsController {
         const discussion = new Types.ObjectId(discussionId);
 
         const found = await this.discussionModel.findOne({ _id: discussion }).lean();
+
         if(!found) {
             throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
         }
+
+        const participants = [];
+        for await(let participant of found.participants) {
+          const part = await this.userModel.findOne({ _id: participant.user }).lean();
+          delete part.password;
+          delete part.contact;
+          participants.push({ ...part, muted: participant.muted });
+        }
+        found.participants = participants;
 
         query = new AnalyticsQueryDto(query);
         let chord = new ChordChartData();
@@ -40,36 +52,46 @@ export class AnalyticsController {
         let directedChart = new DirectedChartData();
 
         if(query.chord) {
-            chord = await this.getChordChartData(discussion);
+            chord = await this.getChordChartData(found);
         }
 
         if(query.burst) {
-            burst = await this.getBurstChartData(discussion);
+            burst = await this.getBurstChartData(found);
         }
 
         if(query.directed) {
-            directedChart = await this.getDirectedChartData(discussion);
+            directedChart = await this.getDirectedChartData(found);
         }
     return new ChartData({ chordChartData: chord, burstChartData: burst, directedChartData: directedChart })
   }
 
   /** PRIVATE FUNCTIONS */
 
-  async getChordChartData(discussionId: Types.ObjectId): Promise<ChordChartData> {
+  async getChordChartData(discussion: any): Promise<ChordChartData> {
     // Get the tags for a discussion and all of the people that have used them
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username','profilePicture']).sort({ date: -1 }).lean();
+    const posts = [];
+    for await(const post of dbPosts) {
+      const postWithComments = await this.getPostsAndCommentsFromTop(post);
+      posts.push(postWithComments);
+    }
     // Build the array of people in the order that they were used in the discussion
+    console.log(discussion.participants);
+    const tags = await this.getTags(posts, discussion.tags, discussion.participants);
+    console.log(tags);
     // Build the 2D array 
-    return new ChordChartData({ keys: ['Josh', 'Paige', 'Nick'], data: [ [0, 32, 12], [32, 0, 24], [12, 24, 0] ]});
+    const value = new ChordChartData();
+    return new ChordChartData({ keys: ['Josh', 'Paige', 'Nick'], data: [ [0, 3, 1], [3, 0, 2], [1, 2, 0] ]});
   }
 
-  async getBurstChartData(discussionId: Types.ObjectId): Promise<BurstChartData> {
+  async getBurstChartData(discussion: any): Promise<BurstChartData> {
     // Get the top 5 tags for the a discussion and all of the people that have used them as top level comments
     // Set the flare for the discussion as the discussion name
     // For each tag set the children of tag
     return new BurstChartData();
   }
 
-  async getDirectedChartData(discussionId: Types.ObjectId): Promise<DirectedChartData> {
+  async getDirectedChartData(discussion: any): Promise<DirectedChartData> {
     // Get the directed chart data
     return new DirectedChartData(
       {
@@ -143,6 +165,61 @@ export class AnalyticsController {
     let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
     delete newPost.userId;
     return newPost;
+  }
+
+  async getTags(posts: any, tags: string[], participants: any) {
+    let tagsArray = [];
+    if(posts.length > 0){
+
+      let strings = [];
+      let postElement;
+      let postNoStopWords;
+      let temp;
+
+      for(var i = 0; i < posts.length; i++){
+        // Iterate the keys later
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        // Remove any html tags
+        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
+        postElement = cleanText.split(' ');
+        // TODO: Change the tags here
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      allPosts = allPosts.split('#').join(''); // remove existing tag signifier from array
+
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      newArray = newArray.filter(function(x) {
+        return x !== ''
+      });
+
+      tagsArray = count(newArray, 'tag');
+      
+      const stringTags = tagsArray.map(tag => { return tag.tag});
+      
+      stringTags.forEach((tag, i) => {
+        if(tags.includes(tag)) {
+          tagsArray = [...tagsArray.slice(i), ...tagsArray.slice(0, i)]
+        }
+      })
+    }
+    return tagsArray;
   }
 }
 
