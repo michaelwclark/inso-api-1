@@ -17,12 +17,16 @@ export class Reaction {
 
     @Prop(String)
     public reaction: string;
-    
+
+    @Prop(String)
+    public unified: string;
+
     constructor(partial: Partial<Reaction>) {
         if(partial) {
-            this.userId = new Types.ObjectId(partial.userId),
-            this.postId = new Types.ObjectId(partial.postId),
+            this.userId = new Types.ObjectId(partial.userId);
+            this.postId = new Types.ObjectId(partial.postId);
             this.setReaction(partial.reaction);
+            this.unified = partial.unified;
         }
     }
 

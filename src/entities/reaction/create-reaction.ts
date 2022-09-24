@@ -28,6 +28,18 @@ export class CreateReactionDTO {
     @IsString()
     reaction: string;
 
+    @ApiProperty({
+        name: 'unified',
+        description: 'The unified emoji code for the reaction',
+        required: false,
+        type: String,
+        isArray: false,
+        example: '1f618'
+    })
+    @IsDefined()
+    @IsString()
+    unified: string;
+
     constructor(partial: Partial<CreateReactionDTO>) {
         if(partial) {
             this.userId = new Types.ObjectId(partial.userId);

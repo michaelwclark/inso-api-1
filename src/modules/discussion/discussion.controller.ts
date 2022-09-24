@@ -306,7 +306,7 @@ export class DiscussionController {
     description: 'The sort value of the closing date'
   })
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: string,
@@ -371,6 +371,7 @@ export class DiscussionController {
         returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
       }
     }
+    console.log(discussions)
     return returnDiscussions;
   } 
 

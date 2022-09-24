@@ -75,11 +75,14 @@ export class AnalyticsController {
       const postWithComments = await this.getPostsAndCommentsFromTop(post);
       posts.push(postWithComments);
     }
-    // Build the array of people in the order that they were used in the discussion
+    const tags = await this.getTags(posts, discussion.tags);
+    // Build the array of people that used those specific tags
     console.log(discussion.participants);
-    const tags = await this.getTags(posts, discussion.tags, discussion.participants);
-    console.log(tags);
     // Build the 2D array 
+    const participantArray = discussion.participants.map(participant => {
+      return participant.f_name + " " + participant.l_name;
+    });
+    console.log(participantArray);
     const value = new ChordChartData();
     return new ChordChartData({ keys: ['Josh', 'Paige', 'Nick'], data: [ [0, 3, 1], [3, 0, 2], [1, 2, 0] ]});
   }
@@ -167,7 +170,64 @@ export class AnalyticsController {
     return newPost;
   }
 
-  async getTags(posts: any, tags: string[], participants: any) {
+  async getTagsForUser(posts: any, tags: string[], user: any) {
+    let tagsArray = [];
+    if(posts.length > 0){
+
+      let strings = [];
+      let postElement;
+      let postNoStopWords;
+      let temp;
+
+      for(var i = 0; i < posts.length; i++){
+        // Iterate the keys later
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        // Remove any html tags
+        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
+        postElement = cleanText.split(' ');
+        // TODO: Change the tags here
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        console.log(temp);
+        console.log(posts[i].user);
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      allPosts = allPosts.split('#').join(''); // remove existing tag signifier from array
+
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      newArray = newArray.filter(function(x) {
+        return x !== ''
+      });
+
+      tagsArray = count(newArray, 'tag');
+      
+      const stringTags = tagsArray.map(tag => { return tag.tag});
+      
+      stringTags.forEach((tag, i) => {
+        if(tags.includes(tag)) {
+          tagsArray = [...tagsArray.slice(i), ...tagsArray.slice(0, i)]
+        }
+      })
+    }
+    return tagsArray;
+  }
+
+  async getTags(posts: any, tags: string[]) {
     let tagsArray = [];
     if(posts.length > 0){
 
