@@ -298,10 +298,15 @@ export class DiscussionController {
   @ApiQuery({
     name: 'sort',
     required: false, 
-    description: 'The order to return discussions in'
+    description: 'The sort value of the created date'
+  })
+  @ApiQuery({
+    name: 'closing',
+    required: false, 
+    description: 'The sort value of the closing date'
   })
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
     @Query('participant') participant: string,
@@ -366,6 +371,7 @@ export class DiscussionController {
         returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
       }
     }
+    console.log(discussions)
     return returnDiscussions;
   } 
 

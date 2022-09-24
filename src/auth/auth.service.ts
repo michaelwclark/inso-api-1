@@ -125,7 +125,7 @@ export class AuthService {
         validatePassword(newPassword);
 
         const saltRounds = 10;
-        const password = await bcrypt.hash(user.password, saltRounds);
+        const password = await bcrypt.hash(newPassword, saltRounds);
 
         return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
       }

@@ -60,18 +60,17 @@ export class DiscussionEditDTO {
     public facilitators: Types.ObjectId[];
     
     @ApiProperty({
-      name: 'calendar',
-      description: 'The ObjectId of the calendar associated with the discussion',
+      name: 'keywords',
+      description: 'The array of keywords for the discussion',
       required: false,
-      type: Types.ObjectId,
-      isArray: false,
+      type: [String],
+      isArray: true,
       example: '507f1f77bcf86cd799439011'
     })
     @IsOptional()
     @IsNotEmpty()
-    @Type(() => Types.ObjectId)
-    @IsMongoId()
-    public set: Types.ObjectId;
+    @Type(() => String)
+    public keywords: String [];
 
     @ApiProperty({
       name: 'participants',
@@ -85,7 +84,7 @@ export class DiscussionEditDTO {
     @IsNotEmpty()
     @Type(() => Types.ObjectId)
     @IsMongoId()
-    public participants: Types.ObjectId [];
+    public participants: Types.ObjectId[];
 
     
     constructor(partial: Partial<DiscussionEditDTO>) {
