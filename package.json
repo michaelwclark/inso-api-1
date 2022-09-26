@@ -31,6 +31,7 @@
     "@nestjs/swagger": "^5.2.1",
     "@nestjs/throttler": "^3.0.0",
     "@ntegral/nestjs-sendgrid": "^1.0.0",
+    "add-subtract-date": "^1.0.15",
     "aws-sdk": "^2.1188.0",
     "bad-words": "^3.0.4",
     "bcrypt": "^5.0.1",

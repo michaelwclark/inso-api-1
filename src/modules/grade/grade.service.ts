@@ -49,9 +49,14 @@ export class GradeService {
 
         var closeDate = new Date(newDiscussion.settings.calendar.close);
         //console.log(closeDate);
-        
+        closeDate.setHours(0,0,0,0); // set hour to midnight or beginning of date
+        //console.log(closeDate);
+        const addSubtractDate = require("add-subtract-date");
+        closeDate = addSubtractDate.add(closeDate, 1, "minute"); // add one minute to closing date 
+        //console.log(closeDate);
+
         //console.log(foundDiscussion.settings);
-        if(discussion) {
+        if(!discussion) {
             throw new HttpException(`${discussionId} does not exist as a discussion`, HttpStatus.NOT_FOUND);
         }
         if(newDiscussion.settings.scores == undefined) {
