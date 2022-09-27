@@ -7,6 +7,7 @@ export class DiscussionReadDTO {
   public name: string;
   public created: string;
   public archived: string;
+  public keywords: string [];
 
   public tags: {
     tag: string;
@@ -101,6 +102,7 @@ export class DiscussionReadDTO {
       this.name = partial.name;
       this.created = partial.created;
       this.archived = partial.archived;
+      this.keywords = partial.keywords;
 
       // Set the tags
       if(partial.tags) {
