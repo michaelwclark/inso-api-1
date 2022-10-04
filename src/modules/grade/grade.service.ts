@@ -21,12 +21,23 @@ export class GradeService {
     ) {}
 
     async addEventForAutoGrading(details: any) { // needs discussion id and close date
-      const date = new Date("Tue Aug 23 2022 14:37:30 GMT-0400 (Eastern Daylight Time)");
 
-      const job = schedule.scheduleJob(date, function(){
-        console.log('The world is going to end today.');
+      const discussionId = details.id;
+      const closeDate = details.closeDate;
+
+      
+      const discussion = await this.discussionModel.findOne({ _id: discussionId })
+        .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+        .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+        .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
+      const readDiscussion = new DiscussionReadDTO(discussion);
+
+      const gradingEvent = schedule.scheduleJob(closeDate, async function(){
+        for await(const participant of discussion.participants) {
+          await this.gradeParticipant(new Types.ObjectId(readDiscussion._id), new Types.ObjectId(readDiscussion.poster._id), new Types.ObjectId(participant.user), readDiscussion.settings.scores);
+        }
       });
-      console.log(job);
+      
     }
 
     async gradeDiscussion(discussionId: string) {
@@ -42,20 +53,13 @@ export class GradeService {
           .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
         var now = new Date();
-        //console.log(now);
-
         const newDiscussion = new DiscussionReadDTO(foundDiscussion);
-        //console.log(newDiscussion.settings.calendar.close);
 
         var closeDate = new Date(newDiscussion.settings.calendar.close);
-        //console.log(closeDate);
         closeDate.setHours(0,0,0,0); // set hour to midnight or beginning of date
-        //console.log(closeDate);
         const addSubtractDate = require("add-subtract-date");
         closeDate = addSubtractDate.add(closeDate, 1, "minute"); // add one minute to closing date 
-        //console.log(closeDate);
 
-        //console.log(foundDiscussion.settings);
         if(!discussion) {
             throw new HttpException(`${discussionId} does not exist as a discussion`, HttpStatus.NOT_FOUND);
         }
@@ -71,16 +75,6 @@ export class GradeService {
         if(discussion.participants.length == 0){
           throw new HttpException('Discussion has no participants to grade', HttpStatus.BAD_REQUEST);
         }
-        // Go through each participant and grade them according to the auto grading requirements
-        // for await(const participant of discussion.participants) {
-        //     await this.gradeParticipant(new Types.ObjectId(newDiscussion._id), new Types.ObjectId(newDiscussion.poster._id), new Types.ObjectId(participant.user), newDiscussion.settings.scores);
-        // }
-
-        //const schedule = require('node-schedule');  imported at top
-
-        // const job = schedule.scheduleJob('12 * * * *', function(){
-        //   console.log('The answer to life, the universe, and everything!');
-        // });
 
         const job = schedule.scheduleJob(closeDate, async function(){
           for await(const participant of discussion.participants) {
