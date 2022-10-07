@@ -1,5 +1,5 @@
 import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
-import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
 
 enum SENDGRID_TEMPLATES {

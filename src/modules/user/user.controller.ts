@@ -207,7 +207,7 @@ export class UserController {
   //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
   async sendEmailVerification(user: any){
     const ota = await generateCode(user.contact);
-    return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+    return await this.sgService.sendEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
   }
 
   async verifyEmailToken(ota: string){
