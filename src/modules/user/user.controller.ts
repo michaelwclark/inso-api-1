@@ -25,9 +25,9 @@ export class UserController {
   }
 
   @Get('email-verified')
-  async verifyEmailRoute(@Query('ota') ota: string){
-    this.verifyEmailToken(ota);
-    return 'Email Verified!'
+  async verifyEmailRoute(@Query('ota') ota: string) {
+    await this.verifyEmailToken(ota);
+    return 'Email Verified!';
   }
 
 
