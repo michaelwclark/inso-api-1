@@ -70,24 +70,6 @@ export class SGService {
     });
   }
 
-  private getTemplate(template: MAIL_DEFAULTS.TEMPLATES): string {
-    const id = this.TEMPLATES.get(template);
-    if (id) {
-      return id;
-    }
-    throw new Error(`No existing template for: ${template}`);
-  }
-
-  async verifyEmail(user: any){
-    this.sendEmail({
-        name: user.name,
-        username: user.username,
-        contact: user.contact,
-        action: MAIL_DEFAULTS.TEMPLATES.CONFIRM_EMAIL,
-        template: SENDGRID_TEMPLATES.CONFIRM_EMAIL,
-        data: user
-      });
-  }
 
   async resetPassword(user: any){
     this.sendEmail({

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query, Redirect } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -19,9 +19,14 @@ export class UserController {
 
   //** TEMPORARY GET REQUEST, for password reset route. Will delete soon. */
   @Get('password-reset')
+  @Redirect(process.env.PASSWORD_RESET_PAGE)
   async passwordTest(@Query('ota') ota: string){
-    console.log(ota); // test the ota is passed through
-    return 'Success!'
+    const code = await decodeOta(ota);
+    
+    const checkVerified = await this.userModel.findOne({'contact.email' : code.data});
+
+    await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
+    return { url: process.env.PASSWORD_RESET_PAGE + `?ota=` + ota};
   }
 
   @Get('email-verified')
@@ -95,7 +100,8 @@ export class UserController {
       username: foundUser.username, 
       contact: email 
     }
-    this.sendPasswordResetRequest(userPasswordRequest);
+    const ota = await generateCode(userPasswordRequest.contact);
+    await this.sgService.resetPassword({...userPasswordRequest, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
     return 'Password reset request has been sent to email: ' + email;
   }
 
@@ -222,11 +228,6 @@ export class UserController {
     }
 
     await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
-  }
-
-  async sendPasswordResetRequest(user: any){
-    const ota = await generateCode(user.contact);
-    return await this.sgService.resetPassword({...user, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
   }
 
   async verifyPasswordResetToken(ota: string, password: string){
