@@ -6,9 +6,10 @@ import { ContactCreateDTO, UserCreateDTO } from '../../entities/user/create-user
 import { UserEditDTO } from '../../entities/user/edit-user';
 import { User, UserDocument } from '../../entities/user/user';
 import * as bcrypt from 'bcrypt';
-import { SGService } from '../../drivers/sendgrid';
+import { SENDGRID_TEMPLATES, SGService } from '../../drivers/sendgrid';
 import { validatePassword } from '../../entities/user/commonFunctions/validatePassword';
 import { decodeOta, generateCode } from '../../drivers/otaDriver';
+import * as MAIL_DEFAULTS from "../../drivers/interfaces/mailerDefaults";
 
 @Controller()
 export class UserController {
@@ -30,9 +31,10 @@ export class UserController {
   }
 
   @Get('email-verified')
+  @Redirect(process.env.VERIFIED_REDIRECT)
   async verifyEmailRoute(@Query('ota') ota: string) {
-    await this.verifyEmailToken(ota);
-    return 'Email Verified!';
+    const val = await this.verifyEmailToken(ota);
+    return { url: process.env.VERIFIED_REDIRECT + `val`};
   }
 
 
@@ -213,7 +215,7 @@ export class UserController {
   //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
   async sendEmailVerification(user: any){
     const ota = await generateCode(user.contact);
-    return await this.sgService.sendEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.CONFIRM_EMAIL, action: MAIL_DEFAULTS.SUBJECTS.CONFIRM_EMAIL, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
   }
 
   async verifyEmailToken(ota: string){
@@ -228,6 +230,12 @@ export class UserController {
     }
 
     await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
+    return true;
+  }
+
+  async sendPasswordResetRequest(user: any){
+    const ota = await generateCode(user.contact);
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
   }
 
   async verifyPasswordResetToken(ota: string, password: string){
@@ -235,12 +243,6 @@ export class UserController {
     const saltRounds = 10;
     const newPassword = await bcrypt.hash(password, saltRounds);
     const user = await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
-    const userConfirmPwd = {
-      name: user.f_name + ' ' + user.l_name, 
-      username: user.username, 
-      contact: code.data
-    };
-    this.sgService.confirmPassword(userConfirmPwd);
   }
 }
 

@@ -2,11 +2,11 @@ import { InjectSendGrid, SendGridService } from "@ntegral/nestjs-sendgrid";
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import * as MAIL_DEFAULTS from "./interfaces/mailerDefaults";
 
-enum SENDGRID_TEMPLATES {
+export enum SENDGRID_TEMPLATES {
     CONFIRM_EMAIL = "d-c5fd47a270b2408b97c4151785fc4bda", 
     PASSWORD_RESET_REQUEST = "d-998871a758e14c53a864d7ba1a4a7da1",
     PASSWORD_RESET_CONFIRMATION = "d-39eddc4474e24f62bca941c80496e9b2"
-}   // ids for email templates from send grid dashboard
+}
 
 const MAILER_DEFAULTS = { 
     from:{ email:MAIL_DEFAULTS.FROM.NO_REPLY},
@@ -52,11 +52,11 @@ export class SGService {
         }
       ],
       from: {
-        email: "paigezaleppa@gmail.com",
-        name:"Inso API"
+        email: "info@inso.ai",
+        name:"Inso"
       },
       reply_to: {
-        email:"paigezaleppa@gmail.com",
+        email:"info@inso.ai",
         name:"Inso API"
       },
       templateId: mailinfo.template,
