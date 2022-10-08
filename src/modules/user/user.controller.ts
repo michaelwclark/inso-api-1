@@ -34,7 +34,7 @@ export class UserController {
   @Redirect(process.env.VERIFIED_REDIRECT)
   async verifyEmailRoute(@Query('ota') ota: string) {
     const val = await this.verifyEmailToken(ota);
-    return { url: process.env.VERIFIED_REDIRECT + `val`};
+    return { url: process.env.VERIFIED_REDIRECT + val};
   }
 
 
