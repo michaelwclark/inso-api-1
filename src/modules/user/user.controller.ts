@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query, Redirect } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiTags, ApiBadRequestResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
@@ -6,9 +6,10 @@ import { ContactCreateDTO, UserCreateDTO } from '../../entities/user/create-user
 import { UserEditDTO } from '../../entities/user/edit-user';
 import { User, UserDocument } from '../../entities/user/user';
 import * as bcrypt from 'bcrypt';
-import { SGService } from '../../drivers/sendgrid';
+import { SENDGRID_TEMPLATES, SGService } from '../../drivers/sendgrid';
 import { validatePassword } from '../../entities/user/commonFunctions/validatePassword';
 import { decodeOta, generateCode } from '../../drivers/otaDriver';
+import * as MAIL_DEFAULTS from "../../drivers/interfaces/mailerDefaults";
 
 @Controller()
 export class UserController {
@@ -19,15 +20,21 @@ export class UserController {
 
   //** TEMPORARY GET REQUEST, for password reset route. Will delete soon. */
   @Get('password-reset')
+  @Redirect(process.env.PASSWORD_RESET_PAGE)
   async passwordTest(@Query('ota') ota: string){
-    console.log(ota); // test the ota is passed through
-    return 'Success!'
+    const code = await decodeOta(ota);
+    
+    const checkVerified = await this.userModel.findOne({'contact.email' : code.data});
+
+    await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
+    return { url: process.env.PASSWORD_RESET_PAGE + `?ota=` + ota};
   }
 
   @Get('email-verified')
-  async verifyEmailRoute(@Query('ota') ota: string){
-    this.verifyEmailToken(ota);
-    return 'Email Verified!'
+  @Redirect(process.env.VERIFIED_REDIRECT)
+  async verifyEmailRoute(@Query('ota') ota: string) {
+    const val = await this.verifyEmailToken(ota);
+    return { url: process.env.VERIFIED_REDIRECT + val};
   }
 
 
@@ -95,7 +102,8 @@ export class UserController {
       username: foundUser.username, 
       contact: email 
     }
-    this.sendPasswordResetRequest(userPasswordRequest);
+    const ota = await generateCode(userPasswordRequest.contact);
+    await this.sgService.resetPassword({...userPasswordRequest, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
     return 'Password reset request has been sent to email: ' + email;
   }
 
@@ -207,7 +215,7 @@ export class UserController {
   //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
   async sendEmailVerification(user: any){
     const ota = await generateCode(user.contact);
-    return  await this.sgService.verifyEmail({...user, link: 'http://localhost:3000/email-verified?ota=' + ota.code});
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.CONFIRM_EMAIL, action: MAIL_DEFAULTS.SUBJECTS.CONFIRM_EMAIL, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
   }
 
   async verifyEmailToken(ota: string){
@@ -222,11 +230,12 @@ export class UserController {
     }
 
     await this.userModel.findOneAndUpdate({'contact.email': code.data}, { $set: {'contact.$.verified': true}});
+    return true;
   }
 
   async sendPasswordResetRequest(user: any){
     const ota = await generateCode(user.contact);
-    return await this.sgService.resetPassword({...user, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
   }
 
   async verifyPasswordResetToken(ota: string, password: string){
@@ -234,12 +243,6 @@ export class UserController {
     const saltRounds = 10;
     const newPassword = await bcrypt.hash(password, saltRounds);
     const user = await this.userModel.findOneAndUpdate({'contact.email': code.data}, {$set: {'password': newPassword}});
-    const userConfirmPwd = {
-      name: user.f_name + ' ' + user.l_name, 
-      username: user.username, 
-      contact: code.data
-    };
-    this.sgService.confirmPassword(userConfirmPwd);
   }
 }
 

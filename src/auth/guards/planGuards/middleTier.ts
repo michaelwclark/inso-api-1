@@ -3,18 +3,18 @@ import { Observable } from "rxjs";
 import { AuthService } from "../../auth.service";
 
 @Injectable()
-export class RequesterIsUserGuard implements CanActivate {
+export class IsMiddleTierCustomer implements CanActivate {
 
     constructor(private authService: AuthService){}
 
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
         const request = context.switchToHttp().getRequest();
         
-        const userId = request.params.userId;
+        const discussionId = request.params.discussionId;
         const user = request.user.userId;
 
-        this.authService.verifyMongoIds([userId, user]);
+        this.authService.verifyMongoIds([discussionId, user]);
 
-        return userId === user;
+        return;
     }    
 }

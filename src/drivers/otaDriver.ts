@@ -42,7 +42,7 @@ export function decodeOta(ota: string): Promise<decodedOtaCode>{
             process.env.OTA_SECRET,
             (err: any, decoded: any) => {
                 if(err){
-                    throw new HttpException('There is an error with the OTA token', HttpStatus.UNAUTHORIZED);
+                    throw new HttpException('The OTA code is invalid or expired', HttpStatus.UNAUTHORIZED);
                 } else {
                     resolve(decoded as decodedOtaCode);
                 }
