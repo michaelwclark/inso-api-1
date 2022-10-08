@@ -31,12 +31,6 @@ export class UserController {
   }
 
 
-  @Get('users')
-  async searchUsers(@Query('text') text: string) {
-    // TODO search users by username
-  }
-
-
   @HttpCode(200)
   @Post('user')
   @ApiOperation({description: 'Request will create a new user'})

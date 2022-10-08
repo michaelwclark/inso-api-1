@@ -16,6 +16,18 @@ export class UpdateReactionDTO {
     @IsString()
     reaction: string;
 
+    @ApiProperty({
+        name: 'unified',
+        description: 'The unified emoji code for the reaction',
+        required: false,
+        type: String,
+        isArray: false,
+        example: '1f618'
+    })
+    @IsDefined()
+    @IsString()
+    unified: string;
+
     constructor(partial: Partial<UpdateReactionDTO>) {
         if(partial) {
             this.reaction = partial.reaction;
