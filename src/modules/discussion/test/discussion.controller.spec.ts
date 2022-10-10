@@ -514,7 +514,7 @@ describe('AppController', () => {
     describe('PATCH /users/:userId/discussions/:discussionId/mute' , () => {
       it('should return valid ParticipantID added', () => {
   
-          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+          return expect(appController.muteUserInDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
       });
     }); 
    
@@ -528,7 +528,7 @@ describe('AppController', () => {
           "muted": Boolean,
           "grade": null
           }; 
-          return expect(appController.muteDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
+          return expect(appController.muteUserInDiscussion('62b276fda78b2a00063b1de0', '62b276fda78b2a00063b1de0')).resolves.not.toThrow()
       }); 
     }); 
 
