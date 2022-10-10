@@ -1,17 +1,21 @@
-import { Body, ConsoleLogger, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { IsDiscussionParticipantGuard } from 'src/auth/guards/userGuards/isDiscussionParticipant.guard';
-import { IsPostCreatorGuard } from 'src/auth/guards/userGuards/isPostCreator.guard';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
-import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
-import { PostCreateDTO } from 'src/entities/post/create-post';
-import { PostUpdateDTO } from 'src/entities/post/edit-post';
-import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
-import { Setting, SettingDocument } from 'src/entities/setting/setting';
-import { User, UserDocument } from 'src/entities/user/user';
+import { ObjectUnsubscribedError } from 'rxjs';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from '../../auth/guards/userGuards/isDiscussionMember.guard';
+import { IsPostCreatorGuard } from '../../auth/guards/userGuards/isPostCreator.guard';
+import { Discussion, DiscussionDocument } from '../../entities/discussion/discussion';
+import { Inspiration, InspirationDocument } from '../../entities/inspiration/inspiration';
+import { PostCreateDTO } from '../../entities/post/create-post';
+import { PostUpdateDTO } from '../../entities/post/edit-post';
+import { DiscussionPost, DiscussionPostDocument } from '../../entities/post/post';
+import { Setting, SettingDocument } from '../../entities/setting/setting';
+import { User, UserDocument } from '../../entities/user/user';
+import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 
 
@@ -23,7 +27,9 @@ export class PostController {
     @InjectModel(Inspiration.name) private inspirationModel: Model<InspirationDocument>,
     @InjectModel(Setting.name) private settingsModel: Model<SettingDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private notificationService: NotificationService
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    private notificationService: NotificationService,
+    private milestoneService: MilestoneService
   ) {}
 
   @Post('discussion/:discussionId/post')
@@ -33,15 +39,13 @@ export class PostController {
   @ApiUnauthorizedResponse({ description: ''})
   @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
   @ApiTags('Post')
-  @UseGuards(JwtAuthGuard, IsDiscussionParticipantGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async createPost(
     @Param('discussionId') discussionId: string,
     @Body() post: PostCreateDTO,
     @Req() req: any
     ): Promise<string> {
     const discussion = await this.verifyDiscussion(discussionId);
-    // Check that the participant is a part of the array
-    //this.verifyParticipation(req.user.userId.toString(), discussion);
 
     if(discussion.archived !== null) {
       throw new HttpException(`${discussionId} is currently archived and is not accepting posts`, HttpStatus.BAD_REQUEST);
@@ -51,32 +55,95 @@ export class PostController {
       throw new HttpException(`${discussionId} is currently closed and is not accepting posts`, HttpStatus.BAD_REQUEST);
     }
 
+    let postForComment;
+    // Milestone for Comment received
+    let milestoneForComment;
+
     if(post.comment_for) {
-      const postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
+      postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
+      post.comment_for = new Types.ObjectId(post.comment_for);
+
+      // Determine if this is the first comment this user has received for milestones
+      const milestone = await this.milestoneService.getMilestoneForUser(postForComment.userId, "Comment Received on Post");
+      if(!milestone) {
+        milestoneForComment = {
+          userId: postForComment.userId,
+          type: "comment",
+          milestoneName: "Comment Received on Post",
+          info: {
+            discussionId: new Types.ObjectId(discussionId),
+            postId: null,
+            date: new Date()
+          }
+        }
+      }
+    } else {
+      post.comment_for = null;
     }
     const user = await this.userModel.findOne({_id: req.user.userId});
 
-    // Create a notification for each facilitator
-    for await(const facilitator of discussion.facilitators) {
-      await this.notificationService.createNotification(facilitator, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
-    }
-    
-    // Create a notification for each participant
-    for await(const participant of discussion.participants) {
-      await this.notificationService.createNotification(participant.user, { header: `<h1 class="notification-header">Recent post from <span class="username">@${user.username}</span> in <a class="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${post.post}`})
-    }
-
+    const checkPost = new PostCreateDTO(post);
     const newPost = new this.discussionPostModel({ 
       ...post,
       discussionId: new Types.ObjectId(discussionId),
       userId: new Types.ObjectId(req.user.userId),
       date: new Date(),
-      comment_for: new Types.ObjectId(post.comment_for)
+      comment_for: post.comment_for
     });
     const newPostId = await newPost.save();
+
+    const notificationText = post.post.post !== undefined ? post.post.post : "Go to discussion to see response";
+   
+    
+    // Create a notification for each participant if a facilitator posts
+    if(discussion.facilitators.includes(new Types.ObjectId(req.user.userId))) {
+      for await(const participant of discussion.participants) {
+        await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
+      }
+    }
+
+    // If the post is a comment_for something notify that participant that someone responded to them
+    if(newPost.comment_for) {
+      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
+    }
+
+    // See what milestones have been achieved
+    const posts = await this.discussionPostModel.find({userId: req.user.userId}).lean();
+    if(posts.length === 1) {
+      await this.milestoneService.createMilestoneForUser(
+        newPost.userId,
+        "posting",
+        "1st Post",
+        { 
+          discussionId: new Types.ObjectId(discussionId),
+          postId: new Types.ObjectId(newPostId.toString()),
+          date: new Date()
+        }
+      );
+    };
+
+    const postsWithInspirations = await this.discussionPostModel.find({userId: req.user.userId, post_inspiration: { $ne: null }}).lean();
+    if(postsWithInspirations.length === 1) {
+      await this.milestoneService.createMilestoneForUser(
+        newPost.userId,
+        "posting",
+        "Use a Post Inspiration",
+        { 
+          discussionId: new Types.ObjectId(discussionId),
+          postId: new Types.ObjectId(newPostId.toString()),
+          date: new Date()
+        }
+      );
+    }
+
+    if(milestoneForComment) {
+      milestoneForComment.info.postId = new Types.ObjectId(newPostId.toString());
+      await this.milestoneService.createMilestoneForUser(milestoneForComment.userId, milestoneForComment.type, milestoneForComment.milestoneName, milestoneForComment.info);
+    }
+
     return newPostId._id;
   }
 
@@ -102,11 +169,11 @@ export class PostController {
       await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
     }
 
-
     const postUpdate = await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { post: postUpdates.post, post_inspiration: postUpdates.post_inspiration });
     if(postUpdate === null) {
       throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
     }
+
     return postUpdate;
   }
 
@@ -153,10 +220,43 @@ export class PostController {
 
     const deleteMarker = await this.discussionPostModel.deleteOne({ _id: new Types.ObjectId(postId)});
     if(deleteMarker.deletedCount === 1) {
+      // TODO Remove any milestones achieved that are not longer valid because of delete operation. I.E. this was the 5th post and now they are back to 4
+      //await this.milestoneService.checkUserMilestoneProgress(.userId);
       return `${postId} deleted`;
     } else {
       throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  @Get('discussion/:discussionId/participant/:participantId/posts')
+  @ApiOperation({description: 'Get all top level and response posts for a user'})
+  @ApiOkResponse({ description: 'Posts for the given user'})
+  @ApiUnauthorizedResponse({ description: 'User is not logged in'})
+  @ApiForbiddenResponse({ description: 'User is not a facilitator of the discussion'})
+  @ApiNotFoundResponse({ description: 'User or discussion does not exist'})
+  @ApiTags('Post')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async getPostsForUser(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string): Promise<any> {
+    const discussion = await this.verifyDiscussion(discussionId);
+    if(!Types.ObjectId.isValid(participantId)) {
+      throw new HttpException(`${participantId} is not a valid participantId`, HttpStatus.BAD_REQUEST);
+    }
+
+    const posts = await this.discussionPostModel.find({ discussionId: discussion._id}).populate('userId', ['_id', 'f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
+    const newPosts = [];
+
+    for await(const post of posts) {
+      if(post.userId._id.toString() === participantId) {
+        if(post.comment_for === null) {
+          const newPost = await this.getPostsAndCommentsFromTop(post);
+          newPosts.push(newPost);
+        } else if(post.comment_for) {
+          const newPost = await this.getPostTree(post);
+          newPosts.push(newPost);
+        }
+      }
+    }
+    return newPosts;
   }
 
 
@@ -167,8 +267,8 @@ export class PostController {
       throw new HttpException(`${discussionId} is not a valid discussionId`, HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId)})
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
     if(!discussion) {
       throw new HttpException(`${discussionId} was not found`, HttpStatus.NOT_FOUND);
@@ -190,20 +290,48 @@ export class PostController {
     }
   }
 
-  async generateNotifications() {
-    // If new post '@username posted in discussion' for facilitators
-    // Build a notification service that will handle the inserting and checking if it exists and stuff
-    // If new comment '@username responded to your post'
+  /**
+   * Recursively retrieves a post down a tree
+   * @param post 
+   * @returns 
+   */
 
+  async getPostsAndCommentsFromTop(post: any) {
+    const comments = await this.discussionPostModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const freshComments = [];
+    if(comments.length) {
+      for await(const comment of comments) {
+        const post = await this.getPostsAndCommentsFromTop(comment);
+        freshComments.push(post);
+      }
+    }
+    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
+    delete newPost.userId;
+    return newPost;
   }
 
-  async checkAndGenerateMilestones() {
-    // If first post
 
-    // If 10th post
+    /**
+   * Recursively retrieves a post up a tree
+   * @param post 
+   * @returns 
+   */
+  async getPostTree(post: any) {
+    const comment = await this.discussionPostModel.findOne({ _id: post.comment_for }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean() as any;
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+  
+    comment.comments = [];
+    const initialPost = { ...post, user: post.userId, reactions: reactions};
+    delete initialPost.userId;
+    comment.comments.push(initialPost)
 
-    // If 100th post
-
-    // Generate notification if milestone is reached
+    if(comment.comment_for !== null) {
+      const post = await this.getPostTree(comment);
+      comment.comments.push(post);
+    }
+    let newPost = { ...comment, user: comment.userId, reactions: reactions};
+    delete newPost.userId;
+    return newPost;
   }
 }

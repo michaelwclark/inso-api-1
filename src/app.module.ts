@@ -13,14 +13,19 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SendGridModule } from "@ntegral/nestjs-sendgrid";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from './auth/auth.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppService } from './app.service';
 import { GoogleStrategy } from './auth/guards/google.strategy';
+import { UploadModule } from './modules/upload/upload.module';
+import { MilestoneModule } from './modules/milestone/milestone.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
     AuthModule,
+    AnalyticsModule,
     UserModule,
     ScoreModule,
     ReactionModule,
@@ -31,12 +36,15 @@ import { GoogleStrategy } from './auth/guards/google.strategy';
     DiscussionModule,
     CalendarModule,
     PostModule,
+    UploadModule,
+    MilestoneModule,
+    NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(
       process.env.MONGO_CONNECTION_STRING,
       {
         useUnifiedTopology: true,
-        useNewUrlParser: true
+        useNewUrlParser: true,
       }
     ),
     SendGridModule.forRoot({ 

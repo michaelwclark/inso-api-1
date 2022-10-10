@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
+import { Discussion, DiscussionDocument, DiscussionSchema } from 'src/entities/discussion/discussion';
 import { DiscussionEditDTO } from 'src/entities/discussion/edit-discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { Inspiration, InspirationDocument } from 'src/entities/inspiration/inspiration';
@@ -16,12 +16,15 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
 import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
-import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
-import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
+import { Grade, GradeDocument } from 'src/entities/grade/grade';
+import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
+import { MilestoneService } from '../milestone/milestone.service';
+const { removeStopwords } = require('stopword');
+var count = require('count-array-values');
 
 @Controller()
 export class DiscussionController {
@@ -33,8 +36,12 @@ export class DiscussionController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
-    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>
-  ) {}
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
+    private milestoneService: MilestoneService
+  ) {
+    DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
+  }
               
   @Post('discussion')
   @ApiOperation({description: 'Creates a discussion'})
@@ -51,7 +58,7 @@ export class DiscussionController {
     // Check that user exists in DB
     const user = await this.userModel.findOne({_id: discussion.poster});
     if(!user) {
-      throw new HttpException("User trying to create discussion does not exist", HttpStatus.BAD_REQUEST);
+      throw new HttpException("User trying to create discussion does not exist", HttpStatus.NOT_FOUND);
     }
 
     // Compare poster to user in request from JWT for authorization
@@ -83,10 +90,28 @@ export class DiscussionController {
       const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if(!found) {
-        const setting = new this.settingModel();
+        const inspirations = await this.post_inspirationModel.find().lean();
+        const inspirationIds = inspirations.map(inspo => {
+          return inspo._id;
+        })
+        const setting = new this.settingModel({post_inspirations: inspirationIds});
+        setting.userId = discussion.poster;
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
+        const discussionMilestone = this.milestoneService.getMilestoneForUser(user._id, "Discussion Created");
+        if(!discussionMilestone) {
+          await this.milestoneService.createMilestoneForUser(
+            user._id,
+            "discussion",
+            "Discussion Created",
+            { 
+              discussionId: new Types.ObjectId(createdDiscussion._id),
+              postId: null,
+              date: new Date()
+            }
+          );
+        }
         return await createdDiscussion.save();
       }
     }
@@ -106,7 +131,6 @@ export class DiscussionController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async updateDiscussionMetadata(
     @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string,
     @Body() discussion: DiscussionEditDTO
   ): Promise<any> {
     // Check that discussion exists
@@ -128,6 +152,10 @@ export class DiscussionController {
         return discussion.facilitators.indexOf(c) === index;
       });
     }
+    // Does not allow adding participants through this route
+    if(discussion.participants != undefined && JSON.stringify(discussion.participants) != JSON.stringify(found.participants)){
+      throw new HttpException('Cannot edit discussion participants using this route', HttpStatus.BAD_REQUEST);
+    }
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate({_id: discussionId}, discussion, { new: true });
   }
@@ -146,26 +174,37 @@ export class DiscussionController {
       throw new HttpException('Discussion Id is not valid', HttpStatus.BAD_REQUEST);
     }
     const discussion = await this.discussionModel.findOne({ _id: discussionId })
-      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username', 'profilePicture'])
       .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
 
+    const participants = [];
+    for await(let participant of discussion.participants) {
+      const part = await this.userModel.findOne({ _id: participant.user }).lean();
+      const grade = await this.gradeModel.findOne({ discussionId: discussion._id, userId: participant.user }).lean()
+      participants.push({ ...part, muted: participant.muted, grade: grade });
+    }
     if(!discussion) {
       throw new HttpException('Discussion does not exist', HttpStatus.NOT_FOUND);
     }
 
     // Get posts 
-    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username']).sort({ date: -1 }).lean();
+    const dbPosts = await this.postModel.find({ discussionId: new Types.ObjectId(discussion._id), draft: false, comment_for: null }).populate('userId', ['f_name', 'l_name', 'email', 'username','profilePicture']).sort({ date: -1 }).lean();
     const posts = [];
     for await(const post of dbPosts) {
       const postWithComments = await this.getPostsAndComments(post);
       posts.push(postWithComments);
     }
-    // TODO Tags for the discussion
+
+    // Add Tags for the discussion
+    let tagsArray = await this.getTags(posts, discussion.tags? discussion.tags : []);
+    
 
     const discussionRead = new DiscussionReadDTO({
       ...discussion,
-      posts: posts
+      participants: participants,
+      posts: posts,
+      tags: tagsArray
     });
 
     return discussionRead;
@@ -208,7 +247,9 @@ export class DiscussionController {
 
     //Duplicate the score
     const score = await this.scoreModel.findOne({ _id: settings.score });
-    delete score._id;
+    if(score){
+      delete score._id;
+    }
     const newScore = new this.scoreModel(score);
     const newScoreId = await newScore.save();
 
@@ -272,43 +313,60 @@ export class DiscussionController {
   @ApiQuery({
     name: 'sort',
     required: false, 
-    description: 'The order to return discussions in'
+    description: 'The sort value of the created date'
+  })
+  @ApiQuery({
+    name: 'closing',
+    required: false, 
+    description: 'The sort value of the closing date'
   })
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard)
   async getDiscussions(
     @Param('userId') userId: string,
-    @Query('participant') participant: boolean,
-    @Query('facilitator') facilitator: boolean,
-    @Query('text') text: string,
-    @Query('archived') archived: boolean,
-    @Query('sort') sort: string
+    @Query('participant') participant: string,
+    @Query('facilitator') facilitator: string,
+    @Request() req,
+    @Query('archived') archived: string,
+    @Query('sort') sort: string,
+    @Query('text') query: any
   ): Promise<any []> {
-
     if(!Types.ObjectId.isValid(userId)) {
       throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
     }
 
-    // TODO add search for inso code and text
+    const user = await this.userModel.findOne({_id: userId});
+    if(!user){
+      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if(req.user.userId != userId){
+      throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
+    }
+
+    // Add search for inso code and text
     const aggregation = [];
-    if(text !== undefined) {
+    if(query !== undefined) {
       // Lookup text queries and such
-      aggregation.push();
+      aggregation.push({
+        $match: {
+          $text: { $search: query }
+        }
+      });
     }
     if(participant === undefined && facilitator === undefined) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
-      aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }});
+      aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
     }
-    if(participant === true) {
-      aggregation.push({ $match: { 'participants._id': new Types.ObjectId(userId)}});
+    if(participant === 'true') {
+      aggregation.push({ $match: { 'participants.user': new Types.ObjectId(userId)}});
     }
-    if(facilitator === true) {
+    if(facilitator === 'true') {
       aggregation.push({ $match : { facilitators: new Types.ObjectId(userId) }})
     }
     if(archived !== undefined) {
-      if(archived === false) {
+      if(archived === 'false') {
         aggregation.push({ $match: { archived: null }});
-      } else if (archived === true) {
+      } else if (archived === 'true') {
         aggregation.push({ $match: { archived: { $ne: null }}});
       }
     }
@@ -317,7 +375,6 @@ export class DiscussionController {
     } else {
       aggregation.push({ $sort: { created: -1}});
     }
-
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
@@ -329,6 +386,7 @@ export class DiscussionController {
         returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
       }
     }
+    console.log(discussions)
     return returnDiscussions;
   } 
 
@@ -346,7 +404,7 @@ export class DiscussionController {
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string): Promise<any> {
 
-    //check discussionId is valid]
+    //check discussionId is valid
     if(!Types.ObjectId.isValid(discussionId)){
       throw new HttpException('Discussion Id is invalid', HttpStatus.BAD_REQUEST)
     }
@@ -409,7 +467,7 @@ export class DiscussionController {
     //check for user
     const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
     if(!findUser){
-      throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+      throw new HttpException('UserId not found', HttpStatus.NOT_FOUND)
     }
 
     //check for discusionId 
@@ -419,7 +477,8 @@ export class DiscussionController {
     }
 
     // Add the participants to the discussion
-    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": userId  });
+    const queryId = new Types.ObjectId(userId);
+    const foundParticipant = await this.discussionModel.findOne({ insoCode: insoCode, "participants.user": queryId  });
     if(foundParticipant) {
       throw new HttpException("User is already a participant", HttpStatus.CONFLICT);
     }
@@ -431,56 +490,77 @@ export class DiscussionController {
     grade: null
     } 
     await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
     
   }
 
-  @Patch('/discussion/:discussionId/participants/:participantId/mute')
-  @ApiOperation({description: 'facilitator/poster should have the ability to mute a participant in a discussion'})
-  @ApiOkResponse({ description: 'Participant muted'})
-  @ApiBadRequestResponse({ description: ''})
-  @ApiUnauthorizedResponse({ description: ''})
-  @ApiNotFoundResponse({ description: ''})
+   
+
+  @Patch('discussions/:discussionId/participants/:participantId/remove')
+  @ApiOperation({description: 'The ability to remove a participant from a discussion'})
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, RequesterIsUserGuard)
-  async posterMuteUser(
-    @Param('discussion') discussionId: string,
-    @Param('userId') userId: string): Promise<any>{
+  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async removeParticipant(@Param('discussionId') discussionId: string, @Param('participantId') participantId: string) {
+    const discussionParticipant = await this.discussionModel.findOne({ _id: discussionId, "participants.user": new Types.ObjectId(participantId) }).lean();
+    if(!discussionParticipant) {
+      throw new HttpException(`${participantId} is not a member of the discussion and cannot be removed`, HttpStatus.BAD_REQUEST);
+    }
+    // Remove that participant object from the discussion participants array
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId}, { $pull: { participants: { user: new Types.ObjectId(participantId)} }});
+    
+  }
 
-      //400 error user id (also facilitator?)
+  @Post('discussions/:discussionId/tags')
+  @ApiOperation({description: 'The ability to remove a participant from a discussion'})
+  @ApiBody({ type: DiscussionTagCreateDTO })
+  @ApiTags('Tags')
+  //@UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  async addTag(@Param('discussionId') discussionId: string, @Body('tag') tag: string) {
+    const discussion = await this.discussionModel.findOne({ _id: discussionId }).lean();
+    if(!discussion) {
+      throw new HttpException(`Discussion does not exist`, HttpStatus.NOT_FOUND);
+    }
+    // Check if the tag is already in the array
+    if(discussion.tags.includes(tag.toString())) {
+      throw new HttpException(`${discussionId} already has tag ${tag}`, HttpStatus.BAD_REQUEST);
+    }
+    // Add the tag to the tags array on the discussion
+    return await this.discussionModel.findOneAndUpdate({ _id: discussionId }, { $push: { "tags": tag.toString()}});
+  }
+
+  @Patch('users/:userId/discussions/:discussionId/mute')
+  @ApiOperation({description: 'The ability to mute a user in a discussion'})
+  @ApiOkResponse({ description: 'Discussion has been muted'})
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  async muteUserInDiscussion(
+    @Param('userId') userId: string,
+    @Param('discussionId') discussionId: string): Promise<any> {
+
+
+      //Invalid UserId and DiscussionId
       if(!Types.ObjectId.isValid(userId)) {
-        throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
-      }
-      //400 error discussion id
-      if(!Types.ObjectId.isValid(discussionId)) {
-        throw new HttpException('DiscussionId is not valid', HttpStatus.BAD_REQUEST)
-      }
-  
-      //404 error check for user 
-      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)})
-      if(!findUser){
-        throw new HttpException('UserId not found in the discussion', HttpStatus.NOT_FOUND)
+        throw new HttpException('UserId is invalid', HttpStatus.BAD_REQUEST);
       }
 
-      if(userId)
-      for await (const user of discussionId){
-        let foundUser = await this.discussionModel.findOne({_id: userId});
-        if(foundUser){
-          throw new HttpException("User is part of discussion", HttpStatus.NOT_FOUND)
-        }
-
+      if(!Types.ObjectId.isValid(discussionId)){
+        throw new HttpException('DiscussionId is invalid', HttpStatus.BAD_REQUEST);
       }
-  
-      //404 error - check for discusionId 
-      const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId });
-      if(!foundDiscussion) {
-        throw new HttpException("Discussion is not found", HttpStatus.NOT_FOUND);
-      }
-    
-    const foundParticipant = await this.userModel.findOneAndUpdate({_id: userId }, {$push: {mutedDiscussions: discussionId}});
-    
-    return foundParticipant;
 
-  
+      //UserId and DiscussionId not found
+      const findUser = await this.userModel.findOne({_id: new Types.ObjectId(userId)});
+      if (!findUser){
+        throw new HttpException('UserId was not found', HttpStatus.NOT_FOUND);
+      }
+
+      const findDiscussion = await this.discussionModel.findOne({_id: new Types.ObjectId(discussionId)});
+      if(!findDiscussion){
+        throw new HttpException('DiscussionId was not found', HttpStatus.NOT_FOUND);
+      }
+      // TODO FIX THIS UPDATE
+      // TODO ADD 409 if user is already muted
+      //await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.muted": true}); 
+      
     }
 
   @Delete('discussion/:discussionId')
@@ -493,13 +573,8 @@ export class DiscussionController {
   @ApiTags('Discussion')
   @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async deleteDiscussion(
-    @Param('discussionId') discussionId: string,
-    @Param('entity') entity: string
-    ): Promise<void> {
-    // Verify the entity parameter equals 'discussion', for IsCreator Guard to query database
-    if(entity !== 'discussion'){
-      throw new HttpException("Entity parameter for discussion patch route must be 'discussion'", HttpStatus.BAD_REQUEST);
-    }
+    @Param('discussionId') discussionId: string
+    ): Promise<string> {
     // Check if there are any posts before deleting
     let discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
@@ -507,14 +582,14 @@ export class DiscussionController {
       throw new HttpException("Cannot delete a discussion that has posts", HttpStatus.CONFLICT);
     }
     await this.discussionModel.deleteOne({ _id: discussion });
-    return;
+    return 'Discussion deleted';
   }
 
   //** PRIVATE FUNCTIONS */
 
   async getPostsAndComments(post: any) {
-    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username']).lean();
+    const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -525,5 +600,61 @@ export class DiscussionController {
     let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
     delete newPost.userId;
     return newPost;
+  }
+
+
+  async getTags(posts: any, tags: string[]) {
+    let tagsArray = [];
+    if(posts.length > 0){
+
+      let strings = [];
+      let postElement;
+      let postNoStopWords;
+      let temp;
+
+      for(var i = 0; i < posts.length; i++){
+        // Iterate the keys later
+        let vars = '';
+        // Get the values in the outline 
+        if(posts[i].post.outline) {
+          const outline = posts[i].post.outline;
+          for (var key in outline) {
+            vars = vars + ' ' + posts[i].post.outline[key];
+          }
+        }
+        const text = posts[i].post.post + vars;
+        // Remove any html tags
+        const cleanText = text.replace(/<\/?[^>]+(>|$)/g, "");
+        postElement = cleanText.split(' ');
+        // TODO: Change the tags here
+        postNoStopWords = removeStopwords(postElement);
+        temp = postNoStopWords.join(' ');
+        strings.push(temp)
+      }
+
+      var allPosts = strings.join(' ');
+      allPosts = allPosts.split('.').join(''); // remove periods from strings
+      allPosts = allPosts.split(',').join(''); // remove commas from strings
+      allPosts = allPosts.split('!').join(''); // remove explanation points from strings
+      allPosts = allPosts.split('?').join(''); // remove question marks from strings
+      allPosts = allPosts.split('#').join(''); // remove existing tag signifier from array
+
+      var newArray = allPosts.split(' ');
+      newArray = newArray.map( element => element = element.toLowerCase() );
+      newArray = newArray.filter(function(x) {
+        return x !== ''
+      });
+
+      tagsArray = count(newArray, 'tag');
+      
+      const stringTags = tagsArray.map(tag => { return tag.tag});
+      
+      stringTags.forEach((tag, i) => {
+        if(tags.includes(tag)) {
+          tagsArray = [...tagsArray.slice(i), ...tagsArray.slice(0, i)]
+        }
+      })
+    }
+    return tagsArray;
   }
 }

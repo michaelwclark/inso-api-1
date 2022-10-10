@@ -55,6 +55,9 @@ export class User {
     public password: string;
 
     @Prop(String)
+    public profilePicture: string;
+
+    @Prop(String)
     public level: string;
 
     @Prop(String)

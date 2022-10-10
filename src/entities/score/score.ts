@@ -11,7 +11,7 @@ export class Score {
     @Prop(Number)
     public total: number;
 
-    @Prop({ type: { max_points: Number, required: Number }})
+    @Prop({ type: { max_points: Number, required: Number }, _id: false})
     posts_made: {
         max_points: number;
         required: number;

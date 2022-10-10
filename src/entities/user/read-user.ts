@@ -114,6 +114,13 @@ export class UserReadDTO {
     role: string;
 
     @ApiProperty({
+        name: 'profilePicture',
+        description: 'The URL location of the profile picture',
+        required: true,
+    })
+    profilePicture: string;
+
+    @ApiProperty({
         name: 'statistics',
         description: 'The statistics for a given user',
         required: true,
@@ -133,6 +140,7 @@ export class UserReadDTO {
             this.level = partial.level;
             this.role = partial.role;
             this.statistics = partial.statistics;
+            this.profilePicture = partial.profilePicture;
         }
     }
 }

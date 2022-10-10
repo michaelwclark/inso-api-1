@@ -1,24 +1,26 @@
-import { HttpException, HttpStatus, Injectable, Post, UseGuards, Request, Get, Body, Inject, forwardRef } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserController } from 'src/modules/user/user.controller';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
-import { DiscussionController } from 'src/modules/discussion/discussion.controller';
 import { InjectModel } from '@nestjs/mongoose';
-import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
-import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
-import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
-import { Score, ScoreDocument } from 'src/entities/score/score';
-import { User, UserDocument } from 'src/entities/user/user';
-import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
-import { GoogleUserDTO } from 'src/entities/user/google-user';
-import { UserReadDTO } from 'src/entities/user/read-user';
-import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import { Discussion, DiscussionDocument } from '../entities/discussion/discussion';
+import { DiscussionPost, DiscussionPostDocument } from '../entities/post/post';
+import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
+import { Score, ScoreDocument } from '../entities/score/score';
+import { User, UserDocument } from '../entities/user/user';
+import { SGService } from '../drivers/sendgrid';
+import { validatePassword } from '../entities/user/commonFunctions/validatePassword';
+import { GoogleUserDTO } from '../entities/user/google-user';
+import { UserReadDTO } from '../entities/user/read-user';
+import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
+import { MilestoneService } from '../modules/milestone/milestone.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private jwtService: JwtService,
+        private sgService: SGService,
+        private milestoneService: MilestoneService,
         @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>, 
         @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
         @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
@@ -94,7 +96,8 @@ export class AuthService {
                 ]
             });
             const userSave = new this.userModel({ ...newUser, dateJoined: new Date() });
-            return userSave.save();
+            await userSave.save();
+            return;
         } else {
             const payload = { 'username': user.username, 'sub': user._id };
             return {
@@ -122,7 +125,7 @@ export class AuthService {
         validatePassword(newPassword);
 
         const saltRounds = 10;
-        const password = await bcrypt.hash(user.password, saltRounds);
+        const password = await bcrypt.hash(newPassword, saltRounds);
 
         return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
       }
@@ -147,7 +150,7 @@ export class AuthService {
         const posts_made = await this.postModel.find({ userId: new Types.ObjectId(userId)});
         stats.posts_made = posts_made.length;
 
-        const milestones = this.getMilestones();
+        const milestones = this.milestoneService.getMilestonesForUser(new Types.ObjectId(userId));
 
         // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
         const postIds = posts_made.map(post => {
@@ -182,6 +185,9 @@ export class AuthService {
 
     async isDiscussionParticipant(userId: string, discussionId: string) {
         const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId) });
+        if(!discussion) {
+            throw new HttpException(`Discussion could not be found`, HttpStatus.NOT_FOUND);
+        }
         const participantIds = discussion.participants.map(part => {
             return part.user.toString();
         });
@@ -210,6 +216,9 @@ export class AuthService {
     async isDiscussionMember(userId: string, discussionId: string): Promise<boolean> {
         const isFacilitator = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId), facilitators: new Types.ObjectId(userId)}) === null ? false : true;
         const discussion = await this.discussionModel.findOne({ _id: new Types.ObjectId(discussionId) });
+        if(!discussion) {
+            throw new HttpException(`Discussion does not exist`, HttpStatus.NOT_FOUND);
+        }
         const participantIds = discussion.participants.map(part => {
             return part.user.toString();
         });
@@ -244,9 +253,5 @@ export class AuthService {
                 throw new HttpException(`${id} is not a valid Mongo Id`, HttpStatus.BAD_REQUEST);
             }
         });
-    }
-
-    getMilestones() {
-        return [];
     }
 }

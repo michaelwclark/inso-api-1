@@ -10,9 +10,10 @@ import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from './discussion.controller';
 import { AuthModule } from 'src/auth/auth.module';
 import { UserModule } from '../user/user.module';
-import { IsCreatorGuard } from 'src/auth/guards/is-creator.guard';
 import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
+import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { MilestoneModule } from '../milestone/milestone.module';
 
 @Module({
     imports: [
@@ -23,11 +24,12 @@ import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
         MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema}]),
         MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
         MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
         MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
         MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }]),
+        MongooseModule.forFeature([{ name: Grade.name, schema: GradeSchema }]),
         AuthModule,
-        UserModule
+        UserModule,
+        MilestoneModule
     ],
     controllers: [DiscussionController],
     providers: [DiscussionController, JwtStrategy],
