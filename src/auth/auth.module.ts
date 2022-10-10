@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtStrategy } from './guards/jwt.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -23,7 +23,7 @@ import { MilestoneModule } from '../modules/milestone/milestone.module';
   imports: [
     UserModule,
     SGService,
-    MilestoneModule,
+    forwardRef(() => MilestoneModule),
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
