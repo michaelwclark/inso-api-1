@@ -30,7 +30,6 @@ export class UserController {
     return { url: process.env.PASSWORD_RESET_PAGE + `?ota=` + ota};
   }
 
-<<<<<<< HEAD
   @Get('email-verified')
   @Redirect(process.env.VERIFIED_REDIRECT)
   async verifyEmailRoute(@Query('ota') ota: string) {
