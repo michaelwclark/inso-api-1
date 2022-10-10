@@ -14,7 +14,7 @@ export class MilestoneService {
         "1st Post", // Done
         "Use a Post Inspiration", // Done
         "Comment Received on Post", // Done
-        "1st Upvote",
+        "1st Upvote", // Done
         "Perfect Score",
         "Discussion Created" // Done
     ];
