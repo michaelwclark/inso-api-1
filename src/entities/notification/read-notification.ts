@@ -85,12 +85,17 @@ export class NotificationReadDTO {
             this.notificationHeader = partial.header;
             this.notificationText = partial.text;
             this.type = partial.type;
-            this.notificationUser = {
+            this.notificationUser = partial.notificationUser ? {
                 f_name: partial.notificationUser.f_name,
                 l_name: partial.notificationUser.l_name,
                 username: partial.notificationUser.username,
-                email: partial.notificationUser.contact[0].email
-            }
+                email: partial.notificationUser.contact[0].email,
+            } : {
+                f_name: undefined,
+                l_name: undefined,
+                username: undefined,
+                email: undefined
+            };
         }
     }
 }

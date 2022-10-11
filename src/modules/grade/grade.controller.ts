@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ApiBadRequestResponse, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { ConnectParticipant } from 'aws-sdk';
 import { Model, Types } from 'mongoose';
-import { partition } from 'rxjs';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { Discussion, DiscussionDocument } from 'src/entities/discussion/discussion';
@@ -69,7 +68,9 @@ export class GradeController {
       comment: confirmedGrade.comments
     }
 
-    await this.notificationservice.createNotification(participant.user, 
+    await this.notificationservice.createNotification(
+      participant.user,
+      req.user.userId,
       { header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${participant.grade}</a></h1>`, text: `${this.notificationservice}`, type: 'grade'});
     if(participant.grade === null) {
       const newGrade = new this.gradeModel(gradeModel);

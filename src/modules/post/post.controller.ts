@@ -141,7 +141,8 @@ export class PostController {
     }
 
     if(milestoneForComment) {
-      milestoneForComment.info.postId = new Types.ObjectId(newPostId.toString());
+      console.log(newPostId._id)
+      milestoneForComment.info.postId = new Types.ObjectId(newPostId._id);
       await this.milestoneService.createMilestoneForUser(milestoneForComment.userId, milestoneForComment.type, milestoneForComment.milestoneName, milestoneForComment.info);
     }
 
