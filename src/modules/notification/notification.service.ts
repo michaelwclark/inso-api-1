@@ -17,8 +17,8 @@ export class NotificationService {
      * @param userId 
      * @param notification 
      */
-    async createNotification(userId: any, notification: { header: string, text: string, type: string }) {
-        const newNotification = new this.notificationModel({ ...notification, userId, date: new Date()});
+    async createNotification(userId: any, notificationUser: any, notification: { header: string, text: string, type: string }) {
+        const newNotification = new this.notificationModel({ ...notification, userId, notificationUser, date: new Date()});
         return newNotification.save();
     }
 
@@ -27,7 +27,10 @@ export class NotificationService {
     }
 
     async getNotifications(userId: Types.ObjectId) {
-        const notifications = await this.notificationModel.find({ userId: userId, read: false }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture']);
+        const notifications = await this.notificationModel.find({ userId: userId, read: false })
+            .sort({ date: -1})
+            .populate('userId', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture'])
+            .populate('notificationUser', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture']);
         return await notifications.map(notification => {
             return new NotificationReadDTO(notification);
         });

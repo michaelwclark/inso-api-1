@@ -42,7 +42,7 @@ export class MilestoneService {
             info: info
         });
         const savedMilestone = await milestone.save();
-        await this.notificationService.createNotification(userId, { header: `<h1 className="notification-header">You have achieved a badge!"</h1>`, text: `${milestoneName}`, type: 'badge'});
+        await this.notificationService.createNotification(userId, userId, { header: `<h1 className="notification-header">You have achieved a badge!"</h1>`, text: `${milestoneName}`, type: 'badge'});
         return savedMilestone;
     }
 
