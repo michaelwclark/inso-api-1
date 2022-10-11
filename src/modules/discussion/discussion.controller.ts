@@ -489,10 +489,12 @@ export class DiscussionController {
     muted: false,
     grade: null
     } 
-    const discussion = await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}});
+    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
     
-    return discussion._id;
   }
+
+   
 
   @Patch('discussions/:discussionId/participants/:participantId/remove')
   @ApiOperation({description: 'The ability to remove a participant from a discussion'})
@@ -561,7 +563,6 @@ export class DiscussionController {
       
     }
 
-
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
   @ApiParam({name: '', description: ''})
@@ -583,8 +584,6 @@ export class DiscussionController {
     await this.discussionModel.deleteOne({ _id: discussion });
     return 'Discussion deleted';
   }
-
-
 
   //** PRIVATE FUNCTIONS */
 
