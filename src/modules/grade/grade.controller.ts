@@ -71,7 +71,7 @@ export class GradeController {
     await this.notificationservice.createNotification(
       participant.user,
       req.user.userId,
-      { header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${participant.grade}</a></h1>`, text: `${this.notificationservice}`, type: 'grade'});
+      { header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussionId}">${participant.grade}</a></h1>`, text: `${this.notificationservice}`, type: 'grade'});
     if(participant.grade === null) {
       const newGrade = new this.gradeModel(gradeModel);
       const gradeId = await newGrade.save();

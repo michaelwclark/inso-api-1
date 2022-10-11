@@ -101,14 +101,14 @@ export class PostController {
     // Create a notification for each participant if a facilitator posts
     if(discussion.facilitators.includes(new Types.ObjectId(req.user.userId))) {
       for await(const participant of discussion.participants) {
-        await this.notificationService.createNotification(participant.user, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
+        await this.notificationService.createNotification(participant.user, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
       }
     }
     
 
     // If the post is a comment_for something notify that participant that someone responded to them
     if(newPost.comment_for && newPost.userId !== req.userId) {
-      await this.notificationService.createNotification(postForComment.userId, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
+      await this.notificationService.createNotification(postForComment.userId, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
     }
 
     // See what milestones have been achieved
@@ -141,7 +141,6 @@ export class PostController {
     }
 
     if(milestoneForComment) {
-      console.log(newPostId._id)
       milestoneForComment.info.postId = new Types.ObjectId(newPostId._id);
       await this.milestoneService.createMilestoneForUser(milestoneForComment.userId, milestoneForComment.type, milestoneForComment.milestoneName, milestoneForComment.info);
     }

@@ -589,7 +589,7 @@ export class DiscussionController {
 
   async getPostsAndComments(post: any) {
     const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
-    const reactionTypes = await this.reactionModel.find({ postId: post._id}).distinct("unified");
+    const reactionTypes = await this.reactionModel.find({ postId: post._id}).distinct("reaction");
  
     const reactionsList = [];
     for await(let reaction of reactionTypes) {
@@ -597,7 +597,7 @@ export class DiscussionController {
         reaction: reaction,
         reactions: []
       };
-      const reactions = await this.reactionModel.find({ postId: post._id, unified: reaction }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+      const reactions = await this.reactionModel.find({ postId: post._id, reaction: reaction }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
       uniqueReaction.reactions = reactions;
       reactionsList.push(uniqueReaction);
     }
