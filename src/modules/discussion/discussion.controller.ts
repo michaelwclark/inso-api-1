@@ -590,7 +590,18 @@ export class DiscussionController {
 
   async getPostsAndComments(post: any) {
     const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactionTypes = await this.reactionModel.find({ postId: post._id}).distinct("unified");
+ 
+    const reactionsList = [];
+    for await(let reaction of reactionTypes) {
+      let uniqueReaction = { 
+        reaction: reaction,
+        reactions: []
+      };
+      const reactions = await this.reactionModel.find({ postId: post._id, unified: reaction }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+      uniqueReaction.reactions = reactions;
+      reactionsList.push(uniqueReaction);
+    }
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -598,7 +609,7 @@ export class DiscussionController {
         freshComments.push(post);
       }
     }
-    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
+    let newPost = { ...post, user: post.userId, reactions: reactionsList, comments: freshComments };
     delete newPost.userId;
     return newPost;
   }
