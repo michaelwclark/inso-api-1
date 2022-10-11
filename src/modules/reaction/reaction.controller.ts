@@ -62,7 +62,7 @@ export class ReactionController {
     // Generate a notification
     const discussion = await this.discussionModel.findOne({_id: post.discussionId});
     if(reaction.reaction !== '+1') {
-      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.unified}`, type: 'reaction'});
+      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'reaction'});
       const upvoteMilestone = await this.milestoneService.getMilestoneForUser(post.userId, "1st Upvote");
       if(!upvoteMilestone) {
         await this.milestoneService.createMilestoneForUser(
@@ -77,7 +77,7 @@ export class ReactionController {
         )
       }
     } else {
-      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.unified}`, type: 'upvote'});
+      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'upvote'});
     }
       return await newReaction.save();
   }
