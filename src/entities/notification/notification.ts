@@ -24,6 +24,9 @@ export class Notification {
     @Prop({ default: false })
     read: boolean;
 
+    @Prop({ type: Types.ObjectId, ref: 'User'})
+    notificationUser: Types.ObjectId;
+
     constructor(partial: Partial<Notification>) {
         if(partial) {
             this.userId = partial.userId;

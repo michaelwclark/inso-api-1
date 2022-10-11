@@ -22,6 +22,7 @@ import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussion
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
+import { MilestoneService } from '../milestone/milestone.service';
 const { removeStopwords } = require('stopword');
 var count = require('count-array-values');
 
@@ -36,7 +37,8 @@ export class DiscussionController {
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
     @InjectModel(DiscussionPost.name) private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
-    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
+    @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
+    private milestoneService: MilestoneService
   ) {
     DiscussionSchema.index({ insoCode: 'text', name: 'text'}, { unique: false })
   }
@@ -97,6 +99,19 @@ export class DiscussionController {
         const settingId = await setting.save();
 
         const createdDiscussion = new this.discussionModel({...discussion, poster: new Types.ObjectId(discussion.poster), insoCode: code, settings: settingId._id});
+        const discussionMilestone = this.milestoneService.getMilestoneForUser(user._id, "Discussion Created");
+        if(!discussionMilestone) {
+          await this.milestoneService.createMilestoneForUser(
+            user._id,
+            "discussion",
+            "Discussion Created",
+            { 
+              discussionId: new Types.ObjectId(createdDiscussion._id),
+              postId: null,
+              date: new Date()
+            }
+          );
+        }
         return await createdDiscussion.save();
       }
     }
@@ -474,9 +489,12 @@ export class DiscussionController {
     muted: false,
     grade: null
     } 
-    const discussion = await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
-    return discussion._id;
+    await this.discussionModel.findOneAndUpdate({insoCode: insoCode}, {$push: {participants: newParticipant}})
+
+    
   }
+
+   
 
   @Patch('discussions/:discussionId/participants/:participantId/remove')
   @ApiOperation({description: 'The ability to remove a participant from a discussion'})
@@ -545,7 +563,6 @@ export class DiscussionController {
       
     }
 
-
   @Delete('discussion/:discussionId')
   @ApiOperation({description: 'Delete the discussion'})
   @ApiParam({name: '', description: ''})
@@ -568,13 +585,22 @@ export class DiscussionController {
     return 'Discussion deleted';
   }
 
-
-
   //** PRIVATE FUNCTIONS */
 
   async getPostsAndComments(post: any) {
     const comments = await this.postModel.find({ comment_for: post._id }).sort({ date: -1}).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
-    const reactions = await this.reactionModel.find({ postId: post._id }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+    const reactionTypes = await this.reactionModel.find({ postId: post._id}).distinct("unified");
+ 
+    const reactionsList = [];
+    for await(let reaction of reactionTypes) {
+      let uniqueReaction = { 
+        reaction: reaction,
+        reactions: []
+      };
+      const reactions = await this.reactionModel.find({ postId: post._id, unified: reaction }).populate('userId', ['f_name', 'l_name', 'email', 'username', 'profilePicture']).lean();
+      uniqueReaction.reactions = reactions;
+      reactionsList.push(uniqueReaction);
+    }
     const freshComments = [];
     if(comments.length) {
       for await(const comment of comments) {
@@ -582,7 +608,7 @@ export class DiscussionController {
         freshComments.push(post);
       }
     }
-    let newPost = { ...post, user: post.userId, reactions: reactions, comments: freshComments };
+    let newPost = { ...post, user: post.userId, reactions: reactionsList, comments: freshComments };
     delete newPost.userId;
     return newPost;
   }

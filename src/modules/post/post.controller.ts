@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch,
 import { InjectModel } from '@nestjs/mongoose';
 import { ApiOperation, ApiBody, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiForbiddenResponse } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
+import { ObjectUnsubscribedError } from 'rxjs';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
@@ -55,12 +56,30 @@ export class PostController {
     }
 
     let postForComment;
+    // Milestone for Comment received
+    let milestoneForComment;
+
     if(post.comment_for) {
       postForComment = await this.discussionPostModel.findOne({ _id: post.comment_for });
       if(!postForComment) {
         throw new HttpException(`${post.comment_for} is not a post and cannot be responded to`, HttpStatus.NOT_FOUND);
       }
       post.comment_for = new Types.ObjectId(post.comment_for);
+
+      // Determine if this is the first comment this user has received for milestones
+      const milestone = await this.milestoneService.getMilestoneForUser(postForComment.userId, "Comment Received on Post");
+      if(!milestone) {
+        milestoneForComment = {
+          userId: postForComment.userId,
+          type: "comment",
+          milestoneName: "Comment Received on Post",
+          info: {
+            discussionId: new Types.ObjectId(discussionId),
+            postId: null,
+            date: new Date()
+          }
+        }
+      }
     } else {
       post.comment_for = null;
     }
@@ -82,13 +101,49 @@ export class PostController {
     // Create a notification for each participant if a facilitator posts
     if(discussion.facilitators.includes(new Types.ObjectId(req.user.userId))) {
       for await(const participant of discussion.participants) {
-        await this.notificationService.createNotification(participant.user, { header: `<h1 className="notification-header">Recent post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
+        await this.notificationService.createNotification(participant.user, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'post'});
       }
     }
+    
 
     // If the post is a comment_for something notify that participant that someone responded to them
-    if(newPost.comment_for) {
-      await this.notificationService.createNotification(postForComment.userId, { header: `<h1 className="notification-header">Recent response to your post from <span className="username">@${user.username}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
+    if(newPost.comment_for && newPost.userId !== req.userId) {
+      await this.notificationService.createNotification(postForComment.userId, newPost.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}">${discussion.name}</a></h1>`, text: `${notificationText}`, type: 'replies'})
+    }
+
+    // See what milestones have been achieved
+    const posts = await this.discussionPostModel.find({userId: req.user.userId}).lean();
+    if(posts.length === 1) {
+      await this.milestoneService.createMilestoneForUser(
+        newPost.userId,
+        "posting",
+        "1st Post",
+        { 
+          discussionId: new Types.ObjectId(discussionId),
+          postId: new Types.ObjectId(newPostId.toString()),
+          date: new Date()
+        }
+      );
+    };
+
+    const postsWithInspirations = await this.discussionPostModel.find({userId: req.user.userId, post_inspiration: { $ne: null }}).lean();
+    if(postsWithInspirations.length === 1) {
+      await this.milestoneService.createMilestoneForUser(
+        newPost.userId,
+        "posting",
+        "Use a Post Inspiration",
+        { 
+          discussionId: new Types.ObjectId(discussionId),
+          postId: new Types.ObjectId(newPostId.toString()),
+          date: new Date()
+        }
+      );
+    }
+
+    if(milestoneForComment) {
+      console.log(newPostId._id)
+      milestoneForComment.info.postId = new Types.ObjectId(newPostId._id);
+      await this.milestoneService.createMilestoneForUser(milestoneForComment.userId, milestoneForComment.type, milestoneForComment.milestoneName, milestoneForComment.info);
     }
 
     return newPostId._id;
@@ -116,13 +171,11 @@ export class PostController {
       await this.verifyPostInspiration(postUpdates.post_inspiration, discussion.settings);
     }
 
-    const newPost = new PostUpdateDTO(postUpdates);
     const postUpdate = await this.discussionPostModel.findOneAndUpdate({ _id: new Types.ObjectId(postId)}, { post: postUpdates.post, post_inspiration: postUpdates.post_inspiration });
     if(postUpdate === null) {
       throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
     }
 
-    await this.milestoneService.checkUserMilestoneProgress(postUpdate.userId);
     return postUpdate;
   }
 

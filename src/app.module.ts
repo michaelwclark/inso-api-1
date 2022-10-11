@@ -20,6 +20,7 @@ import { AppService } from './app.service';
 import { GoogleStrategy } from './auth/guards/google.strategy';
 import { UploadModule } from './modules/upload/upload.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { MilestoneModule } from './modules/milestone/milestone.module';
     PostModule,
     UploadModule,
     MilestoneModule,
+    NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(
       process.env.MONGO_CONNECTION_STRING,

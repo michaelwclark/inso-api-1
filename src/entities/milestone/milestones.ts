@@ -1,42 +1,49 @@
 const milestones = [
     {
         milestone: "1st Post",
-        type: "system achievement",
+        type: "posting",
+        info: {
+            total: 1
+        }
+    },
+    {
+        milestone: "Joined a discussion",
+        type: "discussion",
         info: {
             total: 1
         }
     },
     {
         milestone: "Use Post Inspiration",
-        type: "system achievement",
+        type: "posting",
         info: {
             total: 1
         }
     },
     {
         milestone: "Comment Received on Post",
-        type: "system achievement",
+        type: "comment",
         info: {
             total: 1
         }
     },
     {
         milestone: "1st Upvote",
-        type: "system achievement",
+        type: "reaction",
         info: {
             total: 1
         }
     },
     {
         milestone: "Perfect Score",
-        type: "system achievement",
+        type: "score",
         info: {
             total: 1
         }
     },
     {
         milestone: "Discussion Created",
-        type: "system achievement",
+        type: "creation",
         info: {
             total: 1
         }

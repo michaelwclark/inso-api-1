@@ -11,6 +11,7 @@ import { CreateReactionDTO } from 'src/entities/reaction/create-reaction';
 import { UpdateReactionDTO } from 'src/entities/reaction/edit-reaction';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { User, UserDocument } from 'src/entities/user/user';
+import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 
 @Controller()
@@ -20,7 +21,8 @@ export class ReactionController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     @InjectModel(Discussion.name) private discussionModel: Model<DiscussionDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private milestoneService: MilestoneService
   ) {}
 
   @Post('post/:postId/reaction')
@@ -60,9 +62,22 @@ export class ReactionController {
     // Generate a notification
     const discussion = await this.discussionModel.findOne({_id: post.discussionId});
     if(reaction.reaction !== '+1') {
-      await this.notificationService.createNotification(post.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'reaction'});
+      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.unified}`, type: 'reaction'});
+      const upvoteMilestone = await this.milestoneService.getMilestoneForUser(post.userId, "1st Upvote");
+      if(!upvoteMilestone) {
+        await this.milestoneService.createMilestoneForUser(
+          post.userId,
+          "reaction",
+          "1st Upvote",
+          {
+            discussionId: post.discussionId,
+            postId: post._id,
+            date: new Date()
+          }
+        )
+      }
     } else {
-      await this.notificationService.createNotification(post.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.reaction}`, type: 'upvote'});
+      await this.notificationService.createNotification(post.userId, reaction.userId, { header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.FRONTEND_REDIRECT}/${discussion._id}">${discussion.name}</a></h1>`, text: `${reaction.unified}`, type: 'upvote'});
     }
       return await newReaction.save();
   }

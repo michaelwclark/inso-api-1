@@ -13,6 +13,7 @@ import { UserModule } from '../user/user.module';
 import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { MilestoneModule } from '../milestone/milestone.module';
 
 @Module({
     imports: [
@@ -27,7 +28,8 @@ import { Grade, GradeSchema } from 'src/entities/grade/grade';
         MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }]),
         MongooseModule.forFeature([{ name: Grade.name, schema: GradeSchema }]),
         AuthModule,
-        UserModule
+        UserModule,
+        MilestoneModule
     ],
     controllers: [DiscussionController],
     providers: [DiscussionController, JwtStrategy],

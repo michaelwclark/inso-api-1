@@ -56,9 +56,21 @@ export class NotificationReadDTO {
         name: 'type',
         description: 'Is either post, reply, upvote, reaction',
         required: true,
-        example: "Notification body"
+        example: "badge"
     })
     type: string;
+
+    @ApiProperty({
+        name: 'notificationUser',
+        description: 'The user that performed the action to generate the notification',
+        required: true,
+    })
+    notificationUser: {
+        "f_name": string,
+        "l_name": string,
+        "username": string,
+        "email": string
+    };
 
     constructor(partial: any) {
         if(partial) {
@@ -73,6 +85,17 @@ export class NotificationReadDTO {
             this.notificationHeader = partial.header;
             this.notificationText = partial.text;
             this.type = partial.type;
+            this.notificationUser = partial.notificationUser ? {
+                f_name: partial.notificationUser.f_name,
+                l_name: partial.notificationUser.l_name,
+                username: partial.notificationUser.username,
+                email: partial.notificationUser.contact[0].email,
+            } : {
+                f_name: undefined,
+                l_name: undefined,
+                username: undefined,
+                email: undefined
+            };
         }
     }
 }
