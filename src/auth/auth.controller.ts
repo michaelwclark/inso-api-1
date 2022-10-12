@@ -1,5 +1,5 @@
 import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Param, HttpException, HttpStatus } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiProperty, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
+import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiProperty, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { decodeOta } from "src/drivers/otaDriver";
 import { EmailPasswordResetDTO, PasswordResetDTO } from "../entities/user/password-reset";
 import { UserReadDTO } from "../entities/user/read-user";
@@ -86,6 +86,7 @@ export class AuthController {
   }
 
   @Patch('/users/reset-password/:ota')
+  @ApiOperation({description: 'Updates a password through OTA code passed in email'})
   @ApiBody({ type: EmailPasswordResetDTO })
   @ApiTags('User')
   async resetPasswordOta(

@@ -133,7 +133,7 @@ export class AuthService {
       async resetPasswordFromEmail(userId: string, newPassword: string) {
         this.verifyMongoIds([userId]);
         const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
-
+        
         validatePassword(newPassword);
 
         const saltRounds = 10;

@@ -236,7 +236,7 @@ export class UserController {
 
   async sendPasswordResetRequest(user: any){
     const ota = await generateCode(user.contact);
-    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.PASSWORD_RESET_REDIRECT + ota.code}});
   }
 
   async verifyPasswordResetToken(ota: string, password: string){
