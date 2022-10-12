@@ -1,6 +1,7 @@
 import { Controller, Get, Post, UseGuards, Request, Body, Req, Patch, Param, HttpException, HttpStatus } from "@nestjs/common";
 import { ApiBadRequestResponse, ApiBody, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiProperty, ApiTags, ApiUnauthorizedResponse } from "@nestjs/swagger";
-import { PasswordResetDTO } from "../entities/user/password-reset";
+import { decodeOta } from "src/drivers/otaDriver";
+import { EmailPasswordResetDTO, PasswordResetDTO } from "../entities/user/password-reset";
 import { UserReadDTO } from "../entities/user/read-user";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
@@ -85,11 +86,15 @@ export class AuthController {
   }
 
   @Patch('/users/reset-password/:ota')
+  @ApiBody({ type: EmailPasswordResetDTO })
   @ApiTags('User')
   async resetPasswordOta(
-    @Param('ota') otaCode: string
+    @Param('ota') otaCode: string,
+    @Body('password') password: string
   ) {
-    // Verify OTA code
+    const info = await decodeOta(otaCode);
+    await this.authService.resetPasswordFromEmail(info.data.userId, password);
+    return 'Password updated!';
   }
   
 }

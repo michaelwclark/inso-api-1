@@ -35,3 +35,23 @@ export class PasswordResetDTO{
     }
 
 }
+
+export class EmailPasswordResetDTO{
+    @ApiProperty({
+        name: 'password',
+        description: 'The new password for the user',
+        required: true,
+        type: String
+    })
+    @IsNotEmpty()
+    @IsString()
+    @Length(8)
+    @IsDefined()
+    public password: string;
+
+    constructor(partial: Partial<EmailPasswordResetDTO>) {
+        if(partial) {
+            this.password = partial.password;
+        }
+    }
+}

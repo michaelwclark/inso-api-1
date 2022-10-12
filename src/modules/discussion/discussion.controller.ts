@@ -386,9 +386,64 @@ export class DiscussionController {
         returnDiscussions.push(new BulkReadDiscussionDTO(discuss));
       }
     }
-    console.log(discussions)
     return returnDiscussions;
   } 
+
+  @Get('users/:userId/discussions/statistics')
+  @ApiOperation({description: 'Get statistics for all discussions a user is associated with or a specific discussion'})
+  @ApiQuery({
+    name: 'id',
+    required: false, 
+    description: 'the id of a particular discussion or discussions'
+  })
+  @UseGuards(JwtAuthGuard)
+  async getDiscussionStats(
+    @Param('userId') userId: string,
+    @Query('id') discussionId: (string | string[]),
+    @Request() req,
+  ) {
+    if(!Types.ObjectId.isValid(userId)) {
+      throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.userModel.findOne({_id: userId});
+    if(!user){
+      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+    }
+
+    if(req.user.userId != userId){
+      throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
+    }
+
+    console.log(typeof discussionId)
+    const aggregation = [];
+    // If there isn't a discussionId passed in get all discussion a user is a part of
+    if(!discussionId) {
+      aggregation.push({ $match: { $or: [ {'participants.user': new Types.ObjectId(userId)} , {facilitators: new Types.ObjectId(userId)}]}});
+    } else if(typeof discussionId === "object") {
+      aggregation.push({ $match: { _id: { $in: discussionId }}});
+    } else {
+      aggregation.push({ $match: { _id: discussionId }});
+    }
+
+
+    const discussions = await this.discussionModel.aggregate(
+      aggregation
+    );
+    console.log(discussions);
+
+    const stats = {
+      posts: 0,
+      averageWordCount: 0,
+      facilitatorPosts: 0,
+      longestThread: {
+        count: 0,
+        participants: []
+      }
+
+    }
+    // If there is a discussionId, get the discussion or discussions
+  }
 
   @Patch('discussion/:discussionId/settings')
   @ApiOperation({description: 'Update the discussion settings'})
@@ -493,8 +548,6 @@ export class DiscussionController {
 
     
   }
-
-   
 
   @Patch('discussions/:discussionId/participants/:participantId/remove')
   @ApiOperation({description: 'The ability to remove a participant from a discussion'})

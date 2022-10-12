@@ -98,11 +98,12 @@ export class UserController {
       throw new HttpException("No account associated with email: " + email, HttpStatus.NOT_FOUND); 
     }
     const userPasswordRequest = {
+      userId: foundUser._id,
       name: foundUser.f_name + ' ' + foundUser.l_name, 
       username: foundUser.username, 
       contact: email 
     }
-    const ota = await generateCode(userPasswordRequest.contact);
+    const ota = await generateCode(userPasswordRequest);
     await this.sgService.resetPassword({...userPasswordRequest, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
     return 'Password reset request has been sent to email: ' + email;
   }
