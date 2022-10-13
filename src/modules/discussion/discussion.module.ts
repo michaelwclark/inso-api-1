@@ -13,6 +13,7 @@ import { UserModule } from '../user/user.module';
 import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { DiscussionService } from './discussion.service';
 
 @Module({
     imports: [
@@ -30,8 +31,8 @@ import { Grade, GradeSchema } from 'src/entities/grade/grade';
         UserModule
     ],
     controllers: [DiscussionController],
-    providers: [DiscussionController, JwtStrategy],
-    exports: [DiscussionController]
+    providers: [DiscussionController, JwtStrategy, DiscussionService],
+    exports: [DiscussionController, DiscussionService]
 })
 export class DiscussionModule {}
 

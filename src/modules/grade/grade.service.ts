@@ -10,6 +10,7 @@ import { DiscussionController } from "../discussion/discussion.controller";
 import { Setting, SettingDocument } from "src/entities/setting/setting";
 import { Grade, GradeDocument } from "src/entities/grade/grade";
 import * as schedule from 'node-schedule';
+import { DiscussionService } from "../discussion/discussion.service";
 
 @Injectable()
 export class GradeService {
@@ -18,7 +19,39 @@ export class GradeService {
         @InjectModel(DiscussionPost.name) private discussionPostModel: Model<DiscussionPostDocument>,
         @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
-    ) {}
+    ) {
+
+      // this.discussionModel.find().then( vals => {
+      //   console.log(vals);
+      // });                    FOR TESTING
+
+      const discussions = this.returnAllDiscussions().then;
+      
+      var newDiscussionsArray = [];
+
+      var now = new Date();
+
+      for(var i = 0; i < discussions.length; i++){
+        discussions[i] = new DiscussionReadDTO(discussions[i]);
+        if(discussions[i].settings.calendar.close > now){
+          newDiscussionsArray.push(discussions[i]);
+        }
+      }
+      
+      newDiscussionsArray.forEach(element => {
+        //var readDiscussion = new DiscussionReadDTO(element);
+        var data = {
+          discussionId: element._id,
+          closeDate: element.settings.calendar.close
+        }
+        this.addEventForAutoGrading(data);
+      })
+
+      //Use the node scheduler to add each close as an event in the queue 
+      //this.addEventForAutoGrading();
+  
+
+    }
 
     async addEventForAutoGrading(details: any) { // needs discussion id and close date
 
@@ -38,6 +71,14 @@ export class GradeService {
         }
       });
       
+    }
+
+    async returnAllDiscussions(){
+      const discussions = await this.discussionModel.find({})
+          .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+          .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+          .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
+      return discussions;
     }
 
     async gradeDiscussion(discussionId: string) {
