@@ -10,21 +10,18 @@ describe('AppController', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [PostModule]
-    })
-      .compile();
-    
-      app = moduleRef.createNestApplication();
-      await app.init();
+      imports: [PostModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
   });
 
   describe('POST discussion/:discussionId/post', () => {
     it('should return a 200 for a valid post', () => {
-      return request(app.getHttpServer())
-        .post('/discussion/123/post')
-        .expect({
-          data: {}
-        });
+      return request(app.getHttpServer()).post('/discussion/123/post').expect({
+        data: {},
+      });
     });
   });
 

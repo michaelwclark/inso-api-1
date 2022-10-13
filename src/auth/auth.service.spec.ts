@@ -15,22 +15,25 @@ describe('AuthService', () => {
   let userModel: Model<any>;
 
   beforeAll(async () => {
-
     mongod = await MongoMemoryServer.create();
     const uri = mongod.getUri();
     mongoConnection = (await connect(uri)).connection;
-    userModel = mongoConnection.model(User.name, UserSchema)
+    userModel = mongoConnection.model(User.name, UserSchema);
 
-    const tempUser = new userModel(
-      {
-        "_id": new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
-         "username" : "mockuser1234"
-      });
+    const tempUser = new userModel({
+      _id: new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
+      username: 'mockuser1234',
+    });
     await userModel.insertMany([tempUser]);
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthService], // flipped from providers
-      providers: [UserController, JwtService, JwtStrategy, {provide: getModelToken(User.name), useValue: userModel}],
+      providers: [
+        UserController,
+        JwtService,
+        JwtStrategy,
+        { provide: getModelToken(User.name), useValue: userModel },
+      ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);

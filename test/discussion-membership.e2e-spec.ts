@@ -10,130 +10,127 @@ describe('AppController', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [PostModule]
-    })
-      .compile();
-    
-      app = moduleRef.createNestApplication();
-      await app.init();
+      imports: [PostModule],
+    }).compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
   });
 
-
-  describe('PATCH users/:userId/discussions/:insoCode/join', () => {  
+  describe('PATCH users/:userId/discussions/:insoCode/join', () => {
     it('should return a 200 for user added to a discussion', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 400 for an invalid insoCode', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 400 for an invalid userId', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 401 for an unauthorized user', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 404 the user not found', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 404 the discussion not found', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 409 for a user that is already a participant', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:insoCode/join')
         .expect({
-          data: {}
+          data: {},
         });
     });
   });
 
-
-  describe('PATCH users/:userId/discussions/:discussionId/mute', () => { 
+  describe('PATCH users/:userId/discussions/:discussionId/mute', () => {
     it('should return a 200 for a user successfully muted', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 400 for an invalid userId', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 400 for an invalid discussionId', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 401 for an unauthorized user', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 403 for a user that is not a facilitator', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 404 for the user not found', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 404 for the discussion not found', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 404 for the discussion not found', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
     it('should return a 409 for the user already being muted', () => {
       return request(app.getHttpServer())
         .patch('/users/:userId/discussions/:discussionId/mute')
         .expect({
-          data: {}
+          data: {},
         });
     });
   });
