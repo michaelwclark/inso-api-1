@@ -21,9 +21,8 @@ export class GradeService {
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {
 
-      // this.discussionModel.find().then( vals => {
-      //   console.log(vals);
-      // });                    FOR TESTING
+      // The following code is to reload all discussions for autograding,
+      // everything in the constructor is run as soon as the app starts
 
       const discussions = this.returnAllDiscussions().then;
       
@@ -46,10 +45,6 @@ export class GradeService {
         }
         this.addEventForAutoGrading(data);
       })
-
-      //Use the node scheduler to add each close as an event in the queue 
-      //this.addEventForAutoGrading();
-  
 
     }
 
