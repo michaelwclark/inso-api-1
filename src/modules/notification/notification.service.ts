@@ -19,7 +19,6 @@ export class NotificationService {
      */
     async createNotification(userId: any, notificationUser: any, notification: { header: string, text: string, type: string }) {
         const newNotification = new this.notificationModel({ ...notification, userId, notificationUser, date: new Date()});
-        console.log('no',newNotification);
         return newNotification.save();
     }
 
@@ -33,7 +32,6 @@ export class NotificationService {
             .populate('userId', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture'])
             .populate('notificationUser', ['f_name', 'l_name', 'contact.email', 'username', 'profilePicture']);
         return await notifications.map(notification => {
-            console.log(notification);
             return new NotificationReadDTO(notification);
         });
     }

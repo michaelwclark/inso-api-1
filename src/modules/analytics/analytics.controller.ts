@@ -77,12 +77,10 @@ export class AnalyticsController {
     }
     const tags = await this.getTags(posts, discussion.tags);
     // Build the array of people that used those specific tags
-    console.log(discussion.participants);
     // Build the 2D array 
     const participantArray = discussion.participants.map(participant => {
       return participant.f_name + " " + participant.l_name;
     });
-    console.log(participantArray);
     const value = new ChordChartData();
     return new ChordChartData({ keys: ['Josh', 'Paige', 'Nick'], data: [ [0, 3, 1], [3, 0, 2], [1, 2, 0] ]});
   }
@@ -196,8 +194,6 @@ export class AnalyticsController {
         // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
         temp = postNoStopWords.join(' ');
-        console.log(temp);
-        console.log(posts[i].user);
         strings.push(temp)
       }
 

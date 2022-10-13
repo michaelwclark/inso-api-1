@@ -415,7 +415,6 @@ export class DiscussionController {
       throw new HttpException('User id does not match user in authentication token', HttpStatus.BAD_REQUEST)
     }
 
-    console.log(typeof discussionId)
     const aggregation = [];
     // If there isn't a discussionId passed in get all discussion a user is a part of
     if(!discussionId) {
@@ -430,7 +429,6 @@ export class DiscussionController {
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
-    console.log(discussions);
 
     const stats = {
       posts: 0,
