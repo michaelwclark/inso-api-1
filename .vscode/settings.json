@@ -1,0 +1,6 @@
+{
+  "editor.formatOnSave": true,
+  "prettier.embeddedLanguageFormatting": "auto",
+  "eslint.codeActionsOnSave.mode": "all",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+}

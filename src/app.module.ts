@@ -21,7 +21,7 @@ import { GoogleStrategy } from './auth/guards/google.strategy';
 import { UploadModule } from './modules/upload/upload.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
 import { NotificationModule } from './modules/notification/notification.module';
-
+import environment from 'src/environment';
 @Module({
   imports: [
     AuthModule,
@@ -40,12 +40,12 @@ import { NotificationModule } from './modules/notification/notification.module';
     MilestoneModule,
     NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.MONGO_CONNECTION_STRING, {
+    MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
       useUnifiedTopology: true,
       useNewUrlParser: true,
     }),
     SendGridModule.forRoot({
-      apiKey: process.env.SENDGRID_KEY,
+      apiKey: environment.SENDGRID_KEY,
     }),
     ThrottlerModule.forRoot({
       ttl: 60,

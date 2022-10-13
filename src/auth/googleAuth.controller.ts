@@ -12,7 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-
+import environment from 'src/environment';
 @Controller('google')
 export class GoogleAuthController {
   constructor(private authService: AuthService) {}
@@ -31,10 +31,10 @@ export class GoogleAuthController {
   @ApiOperation({
     description: 'Redirect from Google. Not used for anything else',
   })
-  @Redirect(process.env.SSO_REDIRECT)
+  @Redirect(environment.SSO_REDIRECT)
   @ApiTags('User')
   async googleAuthRedirect(@Req() req, @Res() res) {
     const jwt = await this.authService.googleLogin(req);
-    return { url: process.env.SSO_REDIRECT + `?t=` + jwt.access_token };
+    return { url: environment.SSO_REDIRECT + `?t=` + jwt.access_token };
   }
 }

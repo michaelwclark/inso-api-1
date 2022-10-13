@@ -33,12 +33,13 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/entities/user/user';
 import * as AWS from 'aws-sdk';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import environment from 'src/environment';
 
 @Controller()
 export class UploadController {
   s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_S3_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_S3_KEY_SECRET,
+    accessKeyId: environment.AWS_S3_ACCESS_KEY,
+    secretAccessKey: environment.AWS_S3_KEY_SECRET,
   });
 
   constructor(
@@ -115,7 +116,7 @@ export class UploadController {
     checkFileExtension(type, file.originalname);
 
     // Setup the upload path
-    let filePath = process.env.BUCKET_NAME + '/' + type + '/';
+    let filePath = environment.BUCKET_NAME + '/' + type + '/';
 
     // Depending on the type see if the id is an actual discussion, post, or user
     // Profile
@@ -167,7 +168,7 @@ export class UploadController {
 
     // Upload that file to S3
     const params = {
-      Bucket: process.env.BUCKET_NAME,
+      Bucket: environment.BUCKET_NAME,
       Key: filePath,
       Body: file.buffer,
       ACL: 'public-read',

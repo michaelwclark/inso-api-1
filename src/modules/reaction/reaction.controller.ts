@@ -36,6 +36,7 @@ import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { User, UserDocument } from 'src/entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
+import environment from 'src/environment';
 
 @Controller()
 export class ReactionController {
@@ -105,7 +106,7 @@ export class ReactionController {
         post.userId,
         reaction.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
           text: `${reaction.reaction}`,
           type: 'reaction',
         },
@@ -131,7 +132,7 @@ export class ReactionController {
         post.userId,
         reaction.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
           text: `${reaction.reaction}`,
           type: 'upvote',
         },

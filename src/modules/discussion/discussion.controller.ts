@@ -55,8 +55,9 @@ import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 import { MilestoneService } from '../milestone/milestone.service';
+
 const { removeStopwords } = require('stopword');
-let count = require('count-array-values');
+const count = require('count-array-values');
 
 @Controller()
 export class DiscussionController {
@@ -131,7 +132,7 @@ export class DiscussionController {
 
     // Verify that all facilitators exist
     for await (const user of discussion.facilitators) {
-      const found = await this.userModel.exists({_id: user});
+      const found = await this.userModel.exists({ _id: user });
       if (!found) {
         throw new HttpException(
           'A user does not exist in the facilitators array',
@@ -206,7 +207,7 @@ export class DiscussionController {
     // If there are new facilitators verify they exist and push them into the existing array
     if (discussion.facilitators) {
       for await (const user of discussion.facilitators) {
-        const found = await this.userModel.findOne({_id: user});
+        const found = await this.userModel.findOne({ _id: user });
         if (!found) {
           throw new HttpException(
             'A user does not exist in the facilitators array',
@@ -322,7 +323,9 @@ export class DiscussionController {
     }
 
     // Add Tags for the discussion
-    const tagsArray = await this.getTags(posts, discussion.tags? discussion.tags : []);
+    const tagsArray = await this.getTags(
+      posts,
+      discussion.tags ? discussion.tags : [],
     );
 
     const discussionRead = new DiscussionReadDTO({
@@ -675,7 +678,9 @@ export class DiscussionController {
     if (setting.post_inspirations) {
       const objectIds = [];
       for await (const post_inspiration of setting.post_inspirations) {
-        const found = await this.post_inspirationModel.findOne({_id: [new Types.ObjectId(post_inspiration)]});
+        const found = await this.post_inspirationModel.findOne({
+          _id: [new Types.ObjectId(post_inspiration)],
+        });
         if (!found) {
           throw new HttpException(
             'Post inspiration Id does not exist',
@@ -907,9 +912,9 @@ export class DiscussionController {
 
     const reactionsList = [];
     for await (const reaction of reactionTypes) {
-      const uniqueReaction = { 
+      const uniqueReaction = {
         reaction: reaction,
-        reactions: []
+        reactions: [],
       };
       const reactions = await this.reactionModel
         .find({ postId: post._id, reaction: reaction })
@@ -931,7 +936,12 @@ export class DiscussionController {
         freshComments.push(post);
       }
     }
-    const newPost = { ...post, user: post.userId, reactions: reactionsList, comments: freshComments };
+    const newPost = {
+      ...post,
+      user: post.userId,
+      reactions: reactionsList,
+      comments: freshComments,
+    };
     delete newPost.userId;
     return newPost;
   }
@@ -944,13 +954,13 @@ export class DiscussionController {
       let postNoStopWords;
       let temp;
 
-      for (var i = 0; i < posts.length; i++) {
+      for (let i = 0; i < posts.length; i++) {
         // Iterate the keys later
         let vars = '';
         // Get the values in the outline
         if (posts[i].post.outline) {
           const outline = posts[i].post.outline;
-          for (let key in outline) {
+          for (const key in outline) {
             vars = vars + ' ' + posts[i].post.outline[key];
           }
         }

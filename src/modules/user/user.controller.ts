@@ -31,6 +31,7 @@ import { SENDGRID_TEMPLATES, SGService } from '../../drivers/sendgrid';
 import { validatePassword } from '../../entities/user/commonFunctions/validatePassword';
 import { decodeOta, generateCode } from '../../drivers/otaDriver';
 import * as MAIL_DEFAULTS from '../../drivers/interfaces/mailerDefaults';
+import environment from 'src/environment';
 
 @Controller()
 export class UserController {
@@ -41,7 +42,7 @@ export class UserController {
 
   //** TEMPORARY GET REQUEST, for password reset route. Will delete soon. */
   @Get('password-reset')
-  @Redirect(process.env.PASSWORD_RESET_PAGE)
+  @Redirect(environment.PASSWORD_RESET_PAGE)
   async passwordTest(@Query('ota') ota: string) {
     const code = await decodeOta(ota);
 
@@ -53,14 +54,14 @@ export class UserController {
       { 'contact.email': code.data },
       { $set: { 'contact.$.verified': true } },
     );
-    return { url: process.env.PASSWORD_RESET_PAGE + `?ota=` + ota };
+    return { url: environment.PASSWORD_RESET_PAGE + `?ota=` + ota };
   }
 
   @Get('email-verified')
-  @Redirect(process.env.VERIFIED_REDIRECT)
+  @Redirect(environment.VERIFIED_REDIRECT)
   async verifyEmailRoute(@Query('ota') ota: string) {
     const val = await this.verifyEmailToken(ota);
-    return { url: process.env.VERIFIED_REDIRECT + val };
+    return { url: environment.VERIFIED_REDIRECT + val };
   }
 
   @HttpCode(200)
@@ -312,7 +313,7 @@ export class UserController {
       ...user,
       template: SENDGRID_TEMPLATES.CONFIRM_EMAIL,
       action: MAIL_DEFAULTS.SUBJECTS.CONFIRM_EMAIL,
-      data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code },
+      data: { link: environment.EMAIL_VERIFICATION_REDIRECT + ota.code },
     });
   }
 
@@ -345,7 +346,7 @@ export class UserController {
       ...user,
       template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST,
       action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD,
-      data: { link: process.env.PASSWORD_RESET_REDIRECT + ota.code },
+      data: { link: environment.PASSWORD_RESET_REDIRECT + ota.code },
     });
   }
 

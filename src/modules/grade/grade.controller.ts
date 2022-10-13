@@ -34,7 +34,7 @@ import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
 import { NotificationService } from '../notification/notification.service';
-
+import environment from 'src/environment';
 @Controller()
 export class GradeController {
   constructor(
@@ -115,7 +115,7 @@ export class GradeController {
       participant.user,
       req.user.userId,
       {
-        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussionId}">${participant.grade}</a></h1>`,
+        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussionId}">${participant.grade}</a></h1>`,
         text: `${this.notificationservice}`,
         type: 'grade',
       },

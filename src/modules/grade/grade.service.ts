@@ -17,15 +17,16 @@ import { GradeDTO } from 'src/entities/grade/create-grade';
 import { DiscussionController } from '../discussion/discussion.controller';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
+import environment from 'src/environment';
 
 @Injectable()
 export class GradeService {
   eventBridge = new AWS.EventBridge({
     credentials: {
-      accessKeyId: process.env.AWS_EVENTBRIDGE_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_EVENTBRIDGE_SECRET,
+      accessKeyId: environment.AWS_EVENTBRIDGE_ACCESS_KEY_ID,
+      secretAccessKey: environment.AWS_EVENTBRIDGE_SECRET,
     },
-    region: process.env.AWS_REGION,
+    region: environment.AWS_REGION,
   });
 
   constructor(

@@ -47,6 +47,7 @@ import { Setting, SettingDocument } from '../../entities/setting/setting';
 import { User, UserDocument } from '../../entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
+import environment from 'src/environment';
 
 @Controller()
 export class PostController {
@@ -158,7 +159,7 @@ export class PostController {
           participant.user,
           newPost.userId,
           {
-            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
             text: `${notificationText}`,
             type: 'post',
           },
@@ -172,7 +173,7 @@ export class PostController {
         postForComment.userId,
         newPost.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${process.env.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
           text: `${notificationText}`,
           type: 'replies',
         },

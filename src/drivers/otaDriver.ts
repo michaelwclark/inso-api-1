@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
+import environment from 'src/environment';
 
 export interface otaCode {
   code: string;
@@ -19,7 +20,7 @@ export function generateCode(payload: any) {
       {
         data: payload,
       },
-      process.env.OTA_SECRET,
+      environment.OTA_SECRET,
       {
         expiresIn: '1h',
       },
@@ -28,8 +29,8 @@ export function generateCode(payload: any) {
           reject(err);
         }
         const code = token.replace(
-          process.env.OTA_CODE_REPLACER,
-          process.env.TOKEN_REPLACEMENT,
+          environment.OTA_CODE_REPLACER,
+          environment.TOKEN_REPLACEMENT,
         );
         resolve({ code });
       },
@@ -39,11 +40,11 @@ export function generateCode(payload: any) {
 
 export function decodeOta(ota: string): Promise<decodedOtaCode> {
   const code = ota.replace(
-    process.env.OTA_CODE_REPLACER,
-    process.env.TOKEN_REPLACEMENT,
+    environment.OTA_CODE_REPLACER,
+    environment.TOKEN_REPLACEMENT,
   );
   return new Promise((resolve, reject) => {
-    jwt.verify(code, process.env.OTA_SECRET, (err: any, decoded: any) => {
+    jwt.verify(code, environment.OTA_SECRET, (err: any, decoded: any) => {
       if (err) {
         throw new HttpException(
           'The OTA code is invalid or expired',
