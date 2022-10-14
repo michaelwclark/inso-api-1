@@ -130,6 +130,18 @@ export class AuthService {
         return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
       }
 
+      async resetPasswordFromEmail(userId: string, newPassword: string) {
+        this.verifyMongoIds([userId]);
+        const user = await this.userModel.findOne({ _id: new Types.ObjectId(userId)});
+        
+        validatePassword(newPassword);
+
+        const saltRounds = 10;
+        const password = await bcrypt.hash(newPassword, saltRounds);
+
+        return await this.userModel.findOneAndUpdate({ _id: user._id}, { password: password });
+      }
+
       /**
        * 
        * @param userId 

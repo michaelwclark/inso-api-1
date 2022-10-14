@@ -98,11 +98,12 @@ export class UserController {
       throw new HttpException("No account associated with email: " + email, HttpStatus.NOT_FOUND); 
     }
     const userPasswordRequest = {
+      userId: foundUser._id,
       name: foundUser.f_name + ' ' + foundUser.l_name, 
       username: foundUser.username, 
       contact: email 
     }
-    const ota = await generateCode(userPasswordRequest.contact);
+    const ota = await generateCode(userPasswordRequest);
     await this.sgService.resetPassword({...userPasswordRequest, link: 'http://localhost:3000/password-reset?ota=' + ota.code});
     return 'Password reset request has been sent to email: ' + email;
   }
@@ -235,7 +236,7 @@ export class UserController {
 
   async sendPasswordResetRequest(user: any){
     const ota = await generateCode(user.contact);
-    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.EMAIL_VERIFICATION_REDIRECT + ota.code}});
+    return await this.sgService.sendEmail({...user, template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST, action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD, data: { link: process.env.PASSWORD_RESET_REDIRECT + ota.code}});
   }
 
   async verifyPasswordResetToken(ota: string, password: string){
