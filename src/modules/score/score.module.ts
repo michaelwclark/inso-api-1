@@ -5,14 +5,13 @@ import { Score, ScoreSchema } from 'src/entities/score/score';
 import { ScoreController } from './score.controller';
 import { AuthModule } from 'src/auth/auth.module';
 
-
 @Module({
-    imports: [
-        AuthModule,
-        MongooseModule.forFeature([{name: Score.name, schema: ScoreSchema}]),
-        MongooseModule.forFeature([{name: User.name, schema: UserSchema}])
-    ],
-    controllers: [ScoreController],
-    providers: [],
+  imports: [
+    AuthModule,
+    MongooseModule.forFeature([{ name: Score.name, schema: ScoreSchema }]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+  ],
+  controllers: [ScoreController],
+  providers: [],
 })
 export class ScoreModule {}

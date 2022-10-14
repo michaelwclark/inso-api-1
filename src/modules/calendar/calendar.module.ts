@@ -5,14 +5,15 @@ import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { CalendarController } from './calendar.controller';
 import { AuthModule } from 'src/auth/auth.module';
 
-
 @Module({
-    imports: [
-        AuthModule,
-        MongooseModule.forFeature([{name: Calendar.name, schema: CalendarSchema}]),
-        MongooseModule.forFeature([{name: User.name, schema: UserSchema}])
-    ],
-    controllers: [CalendarController],
-    providers: [],
+  imports: [
+    AuthModule,
+    MongooseModule.forFeature([
+      { name: Calendar.name, schema: CalendarSchema },
+    ]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+  ],
+  controllers: [CalendarController],
+  providers: [],
 })
 export class CalendarModule {}

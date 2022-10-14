@@ -4,12 +4,10 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(
-    private appService: AppService
-  ) {}
+  constructor(private appService: AppService) {}
 
   @Get()
   getHello(): string {
-    return 'Welcome to the Inso API! UPDATED'
+    return 'Welcome to the Inso API! UPDATED';
   }
 }

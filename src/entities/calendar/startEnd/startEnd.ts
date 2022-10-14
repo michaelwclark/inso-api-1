@@ -1,12 +1,12 @@
-import { Prop } from "@nestjs/mongoose";
+import { Prop } from '@nestjs/mongoose';
 
 export class StartEnd {
-    @Prop(Date)
-    open: Date;
-    @Prop(Date)
-    close: Date;
+  @Prop(Date)
+  open: Date;
+  @Prop(Date)
+  close: Date;
 
-    constructor(partial: Partial<StartEnd>) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: Partial<StartEnd>) {
+    Object.assign(this, partial);
+  }
 }
