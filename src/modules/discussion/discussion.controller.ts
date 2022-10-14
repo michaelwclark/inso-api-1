@@ -370,11 +370,20 @@ export class DiscussionController {
         aggregation.push({ $match: { archived: { $ne: null }}});
       }
     }
+    aggregation.push({
+      $lookup: {
+          from: "settings",
+          localField: "settings",
+          foreignField: "_id",
+          as: "settings"
+      }
+    });
     if(sort !== undefined) {
       aggregation.push({ $sort: { created: parseInt(sort)}});
     } else {
       aggregation.push({ $sort: { created: -1}});
     }
+
     const discussions = await this.discussionModel.aggregate(
       aggregation
     );
