@@ -17,6 +17,10 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    // This will work better with ESLint and IDEs
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "strict": true
     // "types": ["Multer"]
   }
 }

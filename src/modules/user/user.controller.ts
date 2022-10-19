@@ -46,10 +46,6 @@ export class UserController {
   async passwordTest(@Query('ota') ota: string) {
     const code = await decodeOta(ota);
 
-    const checkVerified = await this.userModel.findOne({
-      'contact.email': code.data,
-    });
-
     await this.userModel.findOneAndUpdate(
       { 'contact.email': code.data },
       { $set: { 'contact.$.verified': true } },
@@ -286,7 +282,7 @@ export class UserController {
       } // checks that only one contact is set as primary
     }
 
-    const res = await foundUser.updateOne(user);
+    await foundUser.updateOne(user);
 
     return 'User Updated';
   }
@@ -354,7 +350,7 @@ export class UserController {
     const code = await decodeOta(ota);
     const saltRounds = 10;
     const newPassword = await bcrypt.hash(password, saltRounds);
-    const user = await this.userModel.findOneAndUpdate(
+    await this.userModel.findOneAndUpdate(
       { 'contact.email': code.data },
       { $set: { password: newPassword } },
     );
