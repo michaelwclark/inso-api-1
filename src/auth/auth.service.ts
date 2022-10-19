@@ -21,12 +21,12 @@ export class AuthService {
 
     @InjectModel('Discussion')
     private discussionModel: Model<DiscussionDocument>,
-    @InjectModel(DiscussionPost.name)
+    @InjectModel('DiscussionPost')
     private postModel: Model<DiscussionPostDocument>,
-    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
-    @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
+    @InjectModel('Score') private scoreModel: Model<ScoreDocument>,
+    @InjectModel('Calendar') private calendarModel: Model<CalendarDocument>,
+    @InjectModel('User') private userModel: Model<UserDocument>,
+    @InjectModel('Reaction') private reactionModel: Model<ReactionDocument>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {

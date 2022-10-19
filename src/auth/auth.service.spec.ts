@@ -33,6 +33,20 @@ describe('AuthService', () => {
   let service: AuthService;
   let module: TestingModule;
 
+  // mockJwtSign();
+  // (() => ({
+  //   options: {},
+  //   logger: {},
+  //   mergeJwtOptions: {},
+  //   getSecretKey: {},
+
+  //   sign: jest.fn(),
+  //   signAsync: jest.fn(),
+  //   verify: jest.fn(),
+  //   verifyAsync: jest.fn(),
+  //   decode: jest.fn(),
+  // }));
+
   beforeAll(async () => {
     database = await testingDatabase();
   });
@@ -776,3 +790,24 @@ describe('AuthService', () => {
     });
   });
 });
+
+// describe('AuthService', () => {
+//   test('it should instantiate', async () => {
+//     const module: TestingModule = await Test.createTestingModule({
+//       providers: [
+//         AuthService,
+//         { provide: getModelToken('User'), useValue: {} },
+//         { provide: getModelToken('Discussion'), useValue: {} },
+//         { provide: getModelToken('DiscussionPost'), useValue: {} },
+//         { provide: getModelToken('Score'), useValue: {} },
+//         { provide: getModelToken('Calendar'), useValue: {} },
+//         { provide: getModelToken('Reaction'), useValue: {} },
+//       ],
+//     }).compile();
+
+//     const service = module.get<AuthService>(AuthService);
+//     expect(service).toBeDefined();
+//     expect(bcrypt).toBeDefined();
+//     // bcrypt.hash = jest.fn().mockResolvedValue('hashedPassword');
+//   });
+// });
