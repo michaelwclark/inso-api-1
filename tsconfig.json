@@ -10,6 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "rootDirs": ["./src", "./node_modules"],
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
@@ -20,7 +21,9 @@
     // This will work better with ESLint and IDEs
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "strict": true
+    "strict": false,
+    "allowJs": true
     // "types": ["Multer"]
-  }
+  },
+  "exclude": ["node_modules"]
 }

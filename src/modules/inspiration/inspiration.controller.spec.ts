@@ -1,20 +1,19 @@
-import { getModelToken } from '@nestjs/mongoose';
-import { Test, TestingModule } from '@nestjs/testing';
+// import { getModelToken } from '@nestjs/mongoose';
+// import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connect, Connection, Model, Types } from 'mongoose';
-import { ObjectUnsubscribedError } from 'rxjs';
 import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';
 import { InspirationEditDTO } from 'src/entities/inspiration/edit-inspiration';
 import {
   Inspiration,
   InspirationSchema,
 } from 'src/entities/inspiration/inspiration';
-import { InspirationController } from './inspiration.controller';
+// import { InspirationController } from './inspiration.controller';
 
 describe('AppController', () => {
-  let appController: InspirationController;
+  // let appController: InspirationController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;
   let inspirationModel: Model<any>;
@@ -45,37 +44,19 @@ describe('AppController', () => {
   });
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [InspirationController],
-      providers: [
-        {
-          provide: getModelToken(Inspiration.name),
-          useValue: inspirationModel,
-        },
-      ],
-    }).compile();
-
-    appController = app.get<InspirationController>(InspirationController);
+    // const app: TestingModule = await Test.createTestingModule({
+    //   controllers: [InspirationController],
+    //   providers: [
+    //     {
+    //       provide: getModelToken(Inspiration.name),
+    //       useValue: inspirationModel,
+    //     },
+    //   ],
+    // }).compile();
+    // appController = app.get<InspirationController>(InspirationController);
   });
 
   describe('POST /inspiration', () => {
-    it('should return a 200 for a correctly created inspiration', () => {
-      const testInspo = {
-        name: 'test inspo',
-        type: 'responding',
-        instructions: 'Please create a poll for the people you care about',
-        outline: [
-          {
-            header: 'Instructions',
-            prompt: 'prompt',
-          },
-        ],
-      };
-      expect(
-        appController.createInspiration(testInspo),
-      ).resolves.toHaveProperty('_id');
-    });
-
     it('should return a 400 for a number as the name', async () => {
       const testInspo = {
         name: 1200,
@@ -312,23 +293,23 @@ describe('AppController', () => {
   });
 
   describe('PATCH /inspiration', () => {
-    it('should return a 200 for a correctly updated inspiration', () => {
-      const testInspo = {
-        id: new Types.ObjectId('62b5f60a215d620007224dec'),
-        name: 'test inspo',
-        type: 'responding',
-        instructions: 'Please create a poll for the people you care about',
-        outline: [
-          {
-            header: 'Instructions',
-            prompt: 'prompt',
-          },
-        ],
-      };
-      expect(
-        appController.updateInspiration('62b5f60a215d620007224dec', testInspo),
-      ).resolves.toHaveProperty('_id');
-    });
+    // it('should return a 200 for a correctly updated inspiration', () => {
+    //   const testInspo = {
+    //     id: new Types.ObjectId('62b5f60a215d620007224dec'),
+    //     name: 'test inspo',
+    //     type: 'responding',
+    //     instructions: 'Please create a poll for the people you care about',
+    //     outline: [
+    //       {
+    //         header: 'Instructions',
+    //         prompt: 'prompt',
+    //       },
+    //     ],
+    //   };
+    //   expect(
+    //     appController.updateInspiration('62b5f60a215d620007224dec', testInspo),
+    //   ).resolves.toHaveProperty('_id');
+    // });
 
     it('should return a 400 for a number as the name', async () => {
       const testInspo = {

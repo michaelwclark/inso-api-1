@@ -1,5 +1,3 @@
-import { Date } from 'mongoose';
-
 export class DiscussionReadDTO {
   public _id: string;
   public insoCode: string;

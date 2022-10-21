@@ -225,13 +225,14 @@ export class UserController {
       } // removing all contacts from the delete array, that are present in the database
 
       let hasNewPrimary = false;
+      let primaryIndex = 0;
       for (
         let _i = 0;
         _i < contactsToKeep.length && hasNewPrimary == false;
         _i++
       ) {
         if (contactsToKeep[_i].primary == true) {
-          var primaryIndex = _i;
+          primaryIndex = _i;
           hasNewPrimary = true;
         }
       } // checks if there is a new primary contact to overwrite the old, and stores the index value
@@ -373,6 +374,7 @@ function validateUsername(userName: string) {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const Filter = require('bad-words'),
     filter = new Filter();
   filter.addWords('shithead', 'fuckingking');
@@ -387,12 +389,11 @@ function validateUsername(userName: string) {
 
 /** uses regex to ensure a string is a valid email address */
 function isEmail(search: string) {
-  let searchFind: boolean;
   const regexp = new RegExp(
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
   );
 
-  searchFind = regexp.test(search);
+  const searchFind: boolean = regexp.test(search);
   return searchFind;
 }
 

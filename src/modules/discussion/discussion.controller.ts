@@ -56,9 +56,8 @@ import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 import { MilestoneService } from '../milestone/milestone.service';
 import { DiscussionType } from 'src/entities/discussionType/discussion-type';
-
-const { removeStopwords } = require('stopword');
-const count = require('count-array-values');
+import { removeStopwords } from 'stopword';
+import count from 'count-array-values';
 
 @Controller()
 export class DiscussionController {
@@ -75,7 +74,8 @@ export class DiscussionController {
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
-    @InjectModel(DiscussionType.name) private discussionTypeModel: Model<DiscussionType>,
+    @InjectModel(DiscussionType.name)
+    private discussionTypeModel: Model<DiscussionType>,
     private milestoneService: MilestoneService,
   ) {
     DiscussionSchema.index(
@@ -148,7 +148,9 @@ export class DiscussionController {
       const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if (!found) {
-        const inspirations = await this.post_inspirationModel.find({ "subcats": discussion.type }).lean();
+        const inspirations = await this.post_inspirationModel
+          .find({ subcats: discussion.type })
+          .lean();
         const inspirationIds = inspirations.map((inspo) => {
           return inspo._id;
         });
@@ -226,7 +228,7 @@ export class DiscussionController {
     if (
       discussion.participants != undefined &&
       JSON.stringify(discussion.participants) !=
-      JSON.stringify(found.participants)
+        JSON.stringify(found.participants)
     ) {
       throw new HttpException(
         'Cannot edit discussion participants using this route',
@@ -550,11 +552,11 @@ export class DiscussionController {
     }
     aggregation.push({
       $lookup: {
-        from: "settings",
-        localField: "settings",
-        foreignField: "_id",
-        as: "settings"
-      }
+        from: 'settings',
+        localField: 'settings',
+        foreignField: '_id',
+        as: 'settings',
+      },
     });
     if (sort !== undefined) {
       aggregation.push({ $sort: { created: parseInt(sort) } });
@@ -622,17 +624,19 @@ export class DiscussionController {
       aggregation.push({ $match: { _id: discussionId } });
     }
 
-    const discussions = await this.discussionModel.aggregate(aggregation);
+    // const discussions = await this.discussionModel.aggregate(aggregation);
 
-    const stats = {
-      posts: 0,
-      averageWordCount: 0,
-      facilitatorPosts: 0,
-      longestThread: {
-        count: 0,
-        participants: [],
-      },
-    };
+    // const stats = {
+    //   posts: 0,
+    //   averageWordCount: 0,
+    //   facilitatorPosts: 0,
+    //   longestThread: {
+    //     count: 0,
+    //     participants: [],
+    //   },
+    // };
+
+    // return stats
     // If there is a discussionId, get the discussion or discussions
   }
 

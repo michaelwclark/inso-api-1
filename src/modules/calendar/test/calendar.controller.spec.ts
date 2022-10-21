@@ -1,10 +1,11 @@
-import { HttpException, HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Connection, Model, connect, Types } from 'mongoose';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
 import { CalendarController } from '../calendar.controller';
+
 import {
   validCalendar,
   openDateInPast,
@@ -39,6 +40,7 @@ import { CalendarCreateDTO } from 'src/entities/calendar/create-calendar';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { User, UserSchema } from 'src/entities/user/user';
+import { AuthService } from 'src/auth/auth.service';
 
 describe('AppController', () => {
   let appController: CalendarController;
@@ -46,8 +48,6 @@ describe('AppController', () => {
   let mongoConnection: Connection;
   let calendarModel: Model<any>;
   let userModel: Model<any>;
-
-  let app: INestApplication;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -65,6 +65,7 @@ describe('AppController', () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [CalendarController],
       providers: [
+        { provide: AuthService, useValue: {} },
         { provide: getModelToken(Calendar.name), useValue: calendarModel },
         { provide: getModelToken(User.name), useValue: userModel },
       ],

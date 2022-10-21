@@ -1,16 +1,15 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ReactionController } from './reaction.controller';
+// import { Test, TestingModule } from '@nestjs/testing';
+// import { ReactionController } from './reaction.controller';
 
 describe('AppController', () => {
-  let appController: ReactionController;
+  // let appController: ReactionController;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [ReactionController],
-      providers: [],
-    }).compile();
-
-    appController = app.get<ReactionController>(ReactionController);
+    // const app: TestingModule = await Test.createTestingModule({
+    //   controllers: [ReactionController],
+    //   providers: [],
+    // }).compile();
+    // appController = app.get<ReactionController>(ReactionController);
   });
 
   describe('POST /post/:postId/reaction', () => {

@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { getModelToken, MongooseModule } from '@nestjs/mongoose';
+import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance, Type } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connect, Connection, Model, Types } from 'mongoose';
+import { AuthService } from 'src/auth/auth.service';
 import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { ScoreEditDTO } from 'src/entities/score/edit-score';
 import { Score, ScoreSchema } from 'src/entities/score/score';
@@ -149,6 +150,7 @@ describe('AppController', () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [ScoreController],
       providers: [
+        { provide: AuthService, useValue: {} },
         { provide: getModelToken(Score.name), useValue: scoreModel },
         { provide: getModelToken(User.name), useValue: userModel },
       ],
@@ -161,7 +163,7 @@ describe('AppController', () => {
     it('Test case valid request', async () => {
       const result = await appController.createScore(
         '629a3aaa17d028a1f19f0e5c',
-        testScore,
+        plainToInstance(ScoreCreateDTO, testScore),
       );
       expect(Types.ObjectId.isValid(result)).toBe(true);
     }); // FINISHED
@@ -174,7 +176,10 @@ describe('AppController', () => {
         HttpStatus.BAD_REQUEST,
       );
       return expect(
-        appController.createScore('User id is not valid', validScore),
+        appController.createScore(
+          'User id is not valid',
+          plainToInstance(ScoreCreateDTO, validScore),
+        ),
       ).rejects.toThrow(error);
     }); // FINISHED
 
@@ -184,7 +189,10 @@ describe('AppController', () => {
         HttpStatus.BAD_REQUEST,
       );
       return expect(
-        appController.createScore(null, validScore),
+        appController.createScore(
+          null,
+          plainToInstance(ScoreCreateDTO, validScore),
+        ),
       ).rejects.toThrow(error);
     }); // FINISHED
 
@@ -378,7 +386,7 @@ describe('AppController', () => {
       return expect(
         appController.createScore(
           '629a3aaa17d028a1f19f0e5c',
-          rubricCriteriaEmptyArray,
+          plainToInstance(ScoreCreateDTO, rubricCriteriaEmptyArray),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -457,7 +465,10 @@ describe('AppController', () => {
         HttpStatus.NOT_FOUND,
       );
       return expect(
-        appController.createScore('629a3aaa17d028a1f19f0888', validScore),
+        appController.createScore(
+          '629a3aaa17d028a1f19f0888',
+          plainToInstance(ScoreCreateDTO, validScore),
+        ),
       ).rejects.toThrow(error);
     }); // FINISHED
   });
@@ -470,7 +481,7 @@ describe('AppController', () => {
         await appController.updateScore(
           '629a3aaa17d028a1f19f0e5c',
           '629a3aaa17d028a1f19f0888',
-          testScoreUpdate,
+          plainToInstance(ScoreCreateDTO, testScoreUpdate),
         ),
       ).toBe('Score Updated');
     }); // FINISHED
@@ -486,7 +497,7 @@ describe('AppController', () => {
         appController.updateScore(
           'User id is not valid',
           '629a3aaa17d028a1f19f0888',
-          testScoreUpdate,
+          plainToInstance(ScoreCreateDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -500,7 +511,7 @@ describe('AppController', () => {
         appController.updateScore(
           null,
           '629a3aaa17d028a1f19f0888',
-          testScoreUpdate,
+          plainToInstance(ScoreCreateDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -514,7 +525,7 @@ describe('AppController', () => {
         appController.updateScore(
           '629a3aaa17d028a1f19f0e5c',
           'Score id is not valid',
-          testScoreUpdate,
+          plainToInstance(ScoreCreateDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -528,7 +539,7 @@ describe('AppController', () => {
         appController.updateScore(
           '629a3aaa17d028a1f19f0e5c',
           null,
-          testScoreUpdate,
+          plainToInstance(ScoreCreateDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -717,7 +728,7 @@ describe('AppController', () => {
         appController.updateScore(
           '629a3aaa17d028a1f19f0e5c',
           '629a3aaa17d028a1f19f0888',
-          rubricCriteriaEmptyArrayUpdate,
+          plainToInstance(ScoreEditDTO, rubricCriteriaEmptyArrayUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -792,14 +803,14 @@ describe('AppController', () => {
   describe('PATCH /users/{userId}/score/{scoreId} 403 STATUS', () => {
     it('Test case user id and creator id do not match', () => {
       const error = new HttpException(
-        'Parameter id for user and creator id in body do not match',
+        'Total score does not add up',
         HttpStatus.FORBIDDEN,
       );
       return expect(
         appController.updateScore(
           '444a3aaa17d028a1f19f9999',
           '629a3aaa17d028a1f19f0888',
-          testScoreUpdate,
+          plainToInstance(ScoreEditDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -815,7 +826,7 @@ describe('AppController', () => {
         appController.updateScore(
           '629a3aaa17d028a1f19f0888',
           '629a3aaa17d028a1f19f0888',
-          testScoreUpdate,
+          plainToInstance(ScoreEditDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED
@@ -829,7 +840,7 @@ describe('AppController', () => {
         appController.updateScore(
           '629a3aaa17d028a1f19f0e5c',
           '629a3aaa17d028a1f19f0e5c',
-          testScoreUpdate,
+          plainToInstance(ScoreEditDTO, testScoreUpdate),
         ),
       ).rejects.toThrow(error);
     }); // FINISHED

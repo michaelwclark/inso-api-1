@@ -1,9 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  INestApplication,
-  HttpServer,
-} from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -44,6 +39,7 @@ import { User, UserSchema } from 'src/entities/user/user';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
+import { AuthService } from 'src/auth/auth.service';
 
 describe('AppController', () => {
   let appController: CalendarController;
@@ -51,8 +47,6 @@ describe('AppController', () => {
   let mongoConnection: Connection;
   let calendarModel: Model<any>;
   let userModel: Model<any>;
-
-  let app: INestApplication;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -116,6 +110,9 @@ describe('AppController', () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [CalendarController],
       providers: [
+        { provide: AuthService, useValue: {} },
+        // { provide: JwtAuthGuard, useValue: jest.fn() },
+        // { provide: IsCalendarCreatorGuard, useValue: jest.fn() },
         { provide: getModelToken(Calendar.name), useValue: calendarModel },
         { provide: getModelToken(User.name), useValue: userModel },
       ],
@@ -125,28 +122,6 @@ describe('AppController', () => {
   });
 
   // DATA TO PASS THROUGH TEST CASES
-
-  const open = new Date('2023-06-25');
-  const close = new Date('2023-06-30');
-
-  const patchCalendarReq = {
-    id: new Types.ObjectId('629a69deaa8494f552c89cd9'), //Calendar Object Id
-    open: open,
-    close: close,
-    posting: {
-      open: open,
-      close: close,
-    },
-    responding: {
-      open: open,
-      close: close,
-    },
-    synthesizing: {
-      open: open,
-      close: close,
-    },
-    creatorId: new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
-  };
 
   // EXAMPLE TEST
   describe('root', () => {

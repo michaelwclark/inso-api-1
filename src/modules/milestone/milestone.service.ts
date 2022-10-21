@@ -1,17 +1,11 @@
-import {
-  forwardRef,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
   Milestone,
   MilestoneDocument,
 } from '../../entities/milestone/milestone';
-import { User, UserDocument } from '../../entities/user/user';
+// import { User, UserDocument } from '../../entities/user/user';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
@@ -28,7 +22,7 @@ export class MilestoneService {
   constructor(
     @InjectModel(Milestone.name)
     private milestoneModel: Model<MilestoneDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    // @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(forwardRef(() => NotificationService))
     private notificationService: NotificationService,
   ) {}

@@ -1,7 +1,7 @@
-import { HttpException, HttpStatus, Post } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance, Type } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connect, Connection, Model, Types } from 'mongoose';
@@ -22,6 +22,9 @@ import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
 import { AuthModule } from 'src/auth/auth.module';
+import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
+import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { MilestoneService } from 'src/modules/milestone/milestone.service';
 
 describe('AppController', () => {
   let appController: DiscussionController;
@@ -34,6 +37,8 @@ describe('AppController', () => {
   let inspirationModel: Model<any>;
   let calendarModel: Model<any>;
   let postModel: Model<any>;
+  let reactionModel: Model<any>;
+  let gradeModel: Model<any>;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -52,6 +57,9 @@ describe('AppController', () => {
       DiscussionPost.name,
       DiscussionPostSchema,
     );
+
+    reactionModel = mongoConnection.model(Reaction.name, ReactionSchema);
+    gradeModel = mongoConnection.model(Grade.name, GradeSchema);
 
     await userModel.insertMany([
       {
@@ -163,22 +171,31 @@ describe('AppController', () => {
       },
     ]);
   });
-
+  const mockMilestoneService = {
+    getMilestoneForUser: jest.fn(),
+    createMilestoneForUser: jest.fn(),
+  };
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [DiscussionController],
       imports: [AuthModule],
       providers: [
         { provide: getModelToken(Discussion.name), useValue: discussionModel },
-        { provide: getModelToken(User.name), useValue: userModel },
         { provide: getModelToken(Setting.name), useValue: settingModel },
         { provide: getModelToken(Score.name), useValue: scoreModel },
         {
           provide: getModelToken(Inspiration.name),
           useValue: inspirationModel,
         },
+        { provide: getModelToken(User.name), useValue: userModel },
         { provide: getModelToken(Calendar.name), useValue: calendarModel },
         { provide: getModelToken(DiscussionPost.name), useValue: postModel },
+        { provide: getModelToken(Reaction.name), useValue: reactionModel },
+        { provide: getModelToken(Grade.name), useValue: gradeModel },
+        {
+          provide: MilestoneService,
+          useValue: mockMilestoneService,
+        },
       ],
     }).compile();
 
@@ -205,14 +222,13 @@ describe('AppController', () => {
   //200 status valid for setting here
   describe('PATCH /discussion/:discussionId/settings 200 Status', () => {
     it('should return valid Discussion Id', () => {
-      const validDiscussionId = {
+      const validDiscussionId = plainToInstance(SettingsCreateDTO, {
         id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         starter_prompt: 'This is a prompt',
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      };
+      });
       return expect(
         appController.updateDiscussionSettings(
           validDiscussionId,
@@ -234,12 +250,6 @@ describe('AppController', () => {
   //400 status for participant
   describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
     it('should return valid Discussion Id', () => {
-      const validParticipantId = {
-        user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        joined: new Date(),
-        muted: Boolean,
-        grade: null,
-      };
       return expect(
         appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1'),
       ).resolves.not.toThrow();
@@ -248,12 +258,6 @@ describe('AppController', () => {
   //404 status
   describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
     it('should return valid Discussion Id', () => {
-      const validParticipant = {
-        user: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        joined: new Date(),
-        muted: Boolean(),
-        grade: null,
-      };
       const error = new HttpException(
         'UserId not found in the discussion',
         HttpStatus.NOT_FOUND,
@@ -511,14 +515,14 @@ describe('AppController', () => {
   //404 error status
   describe('PATCH /discussion/:discussionId/setting 404 status', () => {
     it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
-      const non_existentDiscussionId = {
+      const non_existentDiscussionId = plainToInstance(SettingsCreateDTO, {
         id: new Types.ObjectId('62b276fda78b2a00063b1de4'),
         starter_prompt: 'This is a prompt',
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
         userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      };
+      });
       const error = new HttpException(
         'Discussion Id does not exist',
         HttpStatus.NOT_FOUND,
@@ -532,14 +536,14 @@ describe('AppController', () => {
     });
 
     it('should throw a 404 error for a post inspiration not found', () => {
-      const validDiscussion = {
+      const validDiscussion = plainToInstance(SettingsCreateDTO, {
         id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         starter_prompt: 'This is a prompt',
         post_inspiration: [undefined],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
         userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      };
+      });
       const error = new HttpException(
         'Post inspiration Id does not exist',
         HttpStatus.NOT_FOUND,
@@ -553,14 +557,14 @@ describe('AppController', () => {
     });
 
     it('should throw a 404 error for a score id not found for setting', () => {
-      const validDiscussion = {
+      const validDiscussion = plainToInstance(SettingsCreateDTO, {
         id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
         starter_prompt: 'This is a prompt',
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: undefined,
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
         userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      };
+      });
       const error = new HttpException(
         'Score Id does not exist',
         HttpStatus.NOT_FOUND,
@@ -588,7 +592,7 @@ describe('AppController', () => {
       );
       return expect(
         appController.updateDiscussionSettings(
-          validDiscussion,
+          plainToInstance(SettingsCreateDTO, validDiscussion),
           '62b276fda78b2a00063b1de0',
         ),
       ).rejects.toThrow(error);
@@ -610,12 +614,6 @@ describe('AppController', () => {
   //400 status for participant
   describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
     it('should return valid Discussion Id', () => {
-      const validParticipantId = {
-        user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        joined: new Date(),
-        muted: Boolean,
-        grade: null,
-      };
       return expect(
         appController.muteUserInDiscussion(
           '62b276fda78b2a00063b1de0',
@@ -630,12 +628,6 @@ describe('AppController', () => {
   //403 error- mute discussion
   describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
     it('throw a 403 error for user not a participant or a facilitator', () => {
-      const validParticipantId = {
-        user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        joined: new Date(),
-        muted: Boolean,
-        grade: null,
-      };
       const error = new HttpException(
         'User is not a participant or a facilitator of the discussion',
         HttpStatus.FORBIDDEN,
@@ -652,12 +644,6 @@ describe('AppController', () => {
   //404 error- mute discussion
   describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
     it('throw a 404 error for user or discussion not found', () => {
-      const validParticipantId = {
-        user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        joined: new Date(),
-        muted: Boolean,
-        grade: null,
-      };
       const error = new HttpException(
         'User or discussion trying to mute does not exist',
         HttpStatus.NOT_FOUND,

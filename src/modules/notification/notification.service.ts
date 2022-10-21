@@ -6,14 +6,13 @@ import {
   NotificationDocument,
 } from '../../entities/notification/notification';
 import { NotificationReadDTO } from '../../entities/notification/read-notification';
-import { User, UserDocument } from '../../entities/user/user';
+// import { User, UserDocument } from '../../entities/user/user';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectModel(Notification.name)
-    private notificationModel: Model<NotificationDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private notificationModel: Model<NotificationDocument>, // @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
   /**
    * This function will create a notification for a user
