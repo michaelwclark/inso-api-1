@@ -62,14 +62,13 @@ export class AuthService {
   }
 
   /** GOOGLE LOGIN */
-  async googleLogin(req) {
+  async googleLogin(req: any) {
     if (!req.user) {
       throw new HttpException(
         'User does not exist to Google!',
         HttpStatus.NOT_FOUND,
       );
     }
-
     // Check out db for the user and see if the email is attached
     const user = await this.userModel.findOne({
       'contact.email': req.user.email,
@@ -78,20 +77,11 @@ export class AuthService {
       let username = req.user.firstName + req.user.lastName;
       let sameUsername = await this.userModel.findOne({ username: username });
       let counter = 1;
+      const baseUsername = username;
       username = username + counter.toString();
-      while (sameUsername) {
-        if (counter < 10) {
-          username = username.substring(0, username.length - 1);
-        }
-        if (counter < 100 && counter >= 10) {
-          username = username.substring(0, username.length - 2);
-        }
-        // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
-        if (counter < 1000 && counter >= 100) {
-          username = username.substring(0, username.length - 3);
-        }
-        username = username + counter.toString();
+      while (sameUsername && counter < 5000) {
         sameUsername = await this.userModel.findOne({ username: username });
+        username = baseUsername + counter.toString();
         counter++;
       }
       // Create a user based on the req.user
