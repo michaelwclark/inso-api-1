@@ -123,6 +123,7 @@ export class AuthController {
   @ApiOperation({
     description: 'Updates a password through OTA code passed in email',
   })
+  @ApiUnauthorizedResponse({ description: 'The password is not correct' })
   @ApiBody({ type: EmailPasswordResetDTO })
   @ApiTags('User')
   async resetPasswordOta(
