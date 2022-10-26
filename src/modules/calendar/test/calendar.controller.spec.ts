@@ -42,7 +42,7 @@ import { validate } from 'class-validator';
 import { User, UserSchema } from 'src/entities/user/user';
 import { AuthService } from 'src/auth/auth.service';
 
-describe('AppController', () => {
+describe('CalendarController', () => {
   let appController: CalendarController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;

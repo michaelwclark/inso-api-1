@@ -10,7 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "rootDirs": ["./src", "./node_modules"],
+    "rootDirs": ["./src", "./node_modules", "./test"],
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,

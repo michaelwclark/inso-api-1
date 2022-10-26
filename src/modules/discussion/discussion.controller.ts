@@ -26,7 +26,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Model, Types } from 'mongoose';
+import { Model, Types, HydratedDocument } from 'mongoose';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import {
   Discussion,
@@ -70,6 +70,7 @@ export class DiscussionController {
     private post_inspirationModel: Model<InspirationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
@@ -103,7 +104,7 @@ export class DiscussionController {
   async createDiscussion(
     @Body() discussion: DiscussionCreateDTO,
     @Request() req,
-  ): Promise<Discussion> {
+  ): Promise<HydratedDocument<Discussion>> {
     // Check that user exists in DB
     const user = await this.userModel.findOne({ _id: discussion.poster });
     if (!user) {
@@ -142,49 +143,55 @@ export class DiscussionController {
         );
       }
     }
-    // Check that the code is not active in the database
-    let found = new this.discussionModel();
-    while (found !== null) {
-      const code = makeInsoId(5);
-      found = await this.discussionModel.findOne({ insoCode: code });
-      if (!found) {
-        const inspirations = await this.post_inspirationModel
-          .find({ subcats: discussion.type })
-          .lean();
-        const inspirationIds = inspirations.map((inspo) => {
-          return inspo._id;
-        });
-        const setting = new this.settingModel({
-          post_inspirations: inspirationIds,
-        });
-        setting.userId = discussion.poster;
-        const settingId = await setting.save();
 
-        const createdDiscussion = new this.discussionModel({
-          ...discussion,
-          poster: new Types.ObjectId(discussion.poster),
-          insoCode: code,
-          settings: settingId._id,
-        });
-        const discussionMilestone = this.milestoneService.getMilestoneForUser(
-          user._id,
-          'Discussion Created',
-        );
-        if (!discussionMilestone) {
-          await this.milestoneService.createMilestoneForUser(
-            user._id,
-            'discussion',
-            'Discussion Created',
-            {
-              discussionId: new Types.ObjectId(createdDiscussion._id),
-              postId: null,
-              date: new Date(),
-            },
-          );
-        }
-        return await createdDiscussion.save();
+    // Check that the code is not active in the database
+    let code = makeInsoId(5);
+    while (true) {
+      const isCodeUsed = await this.discussionModel.exists({ insoCode: code });
+      if (!isCodeUsed) {
+        break;
       }
+      code = makeInsoId(5);
     }
+
+    // Get ALL inspirations for the discussion settings
+    const inspirations = await this.post_inspirationModel.find().lean();
+    const inspirationIds = inspirations.map((inspo) => {
+      return inspo._id;
+    });
+
+    // Create Settings for Discussion
+    const setting = await this.settingModel.create({
+      post_inspirations: inspirationIds,
+      userId: discussion.poster,
+    });
+
+    // Create Discussion
+    const createdDiscussion = new this.discussionModel({
+      ...discussion,
+      poster: new Types.ObjectId(discussion.poster),
+      insoCode: code,
+      settings: setting._id,
+    });
+
+    // Get or Create Milestone for User
+    const discussionMilestone = this.milestoneService.getMilestoneForUser(
+      user._id,
+      'Discussion Created',
+    );
+    if (!discussionMilestone) {
+      await this.milestoneService.createMilestoneForUser(
+        user._id,
+        'discussion',
+        'Discussion Created',
+        {
+          discussionId: new Types.ObjectId(createdDiscussion._id),
+          postId: null,
+          date: new Date(),
+        },
+      );
+    }
+    return await createdDiscussion.save();
   }
 
   @Patch('discussion/:discussionId/metadata')
@@ -201,7 +208,7 @@ export class DiscussionController {
   async updateDiscussionMetadata(
     @Param('discussionId') discussionId: string,
     @Body() discussion: DiscussionEditDTO,
-  ): Promise<any> {
+  ): Promise<HydratedDocument<Discussion>> {
     // Check that discussion exists
     const found = await this.discussionModel.findOne({ _id: discussionId });
     if (!found) {
@@ -653,7 +660,7 @@ export class DiscussionController {
   async updateDiscussionSettings(
     @Body() setting: SettingsCreateDTO,
     @Param('discussionId') discussionId: string,
-  ): Promise<any> {
+  ): Promise<HydratedDocument<Setting>> {
     //check discussionId is valid
     if (!Types.ObjectId.isValid(discussionId)) {
       throw new HttpException(
@@ -735,7 +742,7 @@ export class DiscussionController {
   async joinDiscussion(
     @Param('userId') userId: string,
     @Param('insoCode') insoCode: string,
-  ): Promise<any> {
+  ): Promise<HydratedDocument<Discussion>> {
     if (insoCode.length !== 5) {
       throw new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST);
     }
@@ -776,9 +783,10 @@ export class DiscussionController {
       muted: false,
       grade: null,
     };
-    await this.discussionModel.findOneAndUpdate(
+    return await this.discussionModel.findOneAndUpdate(
       { insoCode: insoCode },
       { $push: { participants: newParticipant } },
+      { new: true },
     );
   }
 

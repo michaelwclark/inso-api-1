@@ -41,7 +41,7 @@ import { validate } from 'class-validator';
 import { CalendarEditDTO } from 'src/entities/calendar/edit-calendar';
 import { AuthService } from 'src/auth/auth.service';
 
-describe('AppController', () => {
+describe('CalendarController', () => {
   let appController: CalendarController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;

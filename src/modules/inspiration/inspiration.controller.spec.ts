@@ -12,7 +12,7 @@ import {
 } from 'src/entities/inspiration/inspiration';
 // import { InspirationController } from './inspiration.controller';
 
-describe('AppController', () => {
+describe('InspirationController', () => {
   // let appController: InspirationController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;

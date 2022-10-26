@@ -122,7 +122,7 @@ const testScoreUpdate = {
   creatorId: new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
 };
 
-describe('AppController', () => {
+describe('ScoreController', () => {
   let appController: ScoreController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;

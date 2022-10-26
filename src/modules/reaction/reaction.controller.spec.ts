@@ -1,7 +1,7 @@
 // import { Test, TestingModule } from '@nestjs/testing';
 // import { ReactionController } from './reaction.controller';
 
-describe('AppController', () => {
+describe('ReactionController', () => {
   // let appController: ReactionController;
 
   beforeEach(async () => {

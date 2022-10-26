@@ -52,7 +52,7 @@ import {
   validUser,
 } from './userMocks';
 
-describe('AppController', () => {
+describe('UserController', () => {
   let appController: UserController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;

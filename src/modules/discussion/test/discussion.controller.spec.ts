@@ -4,8 +4,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { HydratedDocument } from 'mongoose';
 import { connect, Connection, Model, Types } from 'mongoose';
+import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
+import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
+import { makeFakeCalendarPayload } from 'src/entities/calendar/calendar-fakes';
+import {
+  makeFakeSettingPayload,
+  makeFakeSettingsCreateDTO,
+} from 'src/entities/setting/setting-fakes';
 import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import {
   Discussion,
@@ -21,12 +30,19 @@ import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
-import { AuthModule } from 'src/auth/auth.module';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
 import { MilestoneService } from 'src/modules/milestone/milestone.service';
+import { makeFakeUserPayload } from 'src/entities/user/user-fakes';
+import { makeFakeInspirationPayload } from 'src/entities/inspiration/inspiration-fakes';
+import { makeFakeScorePayload } from 'src/entities/score/score-fakes';
+import {
+  makeFakeDiscussionCreateDTO,
+  makeFakeDiscussionPayload,
+} from 'src/entities/discussion/discussion-fakes';
+import faker from 'test/faker';
 
-describe('AppController', () => {
+describe('DiscussionController', () => {
   let appController: DiscussionController;
   let mongod: MongoMemoryServer;
   let mongoConnection: Connection;
@@ -39,19 +55,27 @@ describe('AppController', () => {
   let postModel: Model<any>;
   let reactionModel: Model<any>;
   let gradeModel: Model<any>;
+  let user: HydratedDocument<User>;
+  let calendar: HydratedDocument<Calendar>;
+  let inspiration: HydratedDocument<Inspiration>;
+  let score: HydratedDocument<Score>;
+  let setting: HydratedDocument<Setting>;
+  let discussionA: HydratedDocument<Discussion>;
+  let discussionB: HydratedDocument<Discussion>;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
     const uri = mongod.getUri();
     mongoConnection = (await connect(uri)).connection;
     discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-    userModel = mongoConnection.model(User.name, UserSchema);
     settingModel = mongoConnection.model(Setting.name, SettingSchema);
     scoreModel = mongoConnection.model(Score.name, ScoreSchema);
+
     inspirationModel = mongoConnection.model(
       Inspiration.name,
       InspirationSchema,
     );
+    userModel = mongoConnection.model(User.name, UserSchema);
     calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
     postModel = mongoConnection.model(
       DiscussionPost.name,
@@ -60,125 +84,51 @@ describe('AppController', () => {
 
     reactionModel = mongoConnection.model(Reaction.name, ReactionSchema);
     gradeModel = mongoConnection.model(Grade.name, GradeSchema);
-
-    await userModel.insertMany([
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        f_name: 'Paige',
-        l_name: 'Zaleppa',
-      },
-    ]);
-
-    await calendarModel.insertMany([
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        open: new Date(),
-        close: new Date(),
-      },
-    ]);
-
-    await settingModel.insertMany([
-      {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      },
-    ]);
-
-    await discussionModel.insertMany([
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        insoCode: 'inso2',
-        name: 'string',
-        created: new Date(),
-        archived: null,
-        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        facilitators: [new Types.ObjectId()],
-        poster: new Types.ObjectId(),
-        set: [new Types.ObjectId()],
-        participants: [
-          {
-            user: new Types.ObjectId(),
-            joined: Date(),
-            muted: Boolean,
-            grade: new Types.ObjectId(),
-          },
-        ],
-      },
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        insoCode: 'inso1',
-        name: 'string',
-        created: new Date(),
-        archived: null,
-        settings: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        facilitators: [new Types.ObjectId()],
-        poster: new Types.ObjectId(),
-        set: [new Types.ObjectId()],
-        participants: [
-          {
-            user: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-            joined: Date(),
-            muted: Boolean,
-            grade: null,
-          },
-        ],
-      },
-    ]);
-
-    await inspirationModel.insertMany([
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de2'),
-        name: 'inspo',
-        type: 'responding',
-        instructions: 'string',
-        outline: [
-          {
-            header: 'string',
-            prompt: 'string',
-          },
-        ],
-      },
-    ]);
-
-    await scoreModel.insertMany([
-      {
-        _id: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        type: 'string',
-        instructions: {
-          posting: 'number',
-          responding: 'number',
-          synthesizing: 'number',
-        },
-        interactions: {
-          max: 'number',
-        },
-        impact: {
-          max: 'number',
-        },
-        rubric: {
-          max: 'number',
-          criteria: [
-            {
-              description: 'string',
-              max: 'number',
-            },
-          ],
-        },
-      },
-    ]);
   });
+
   const mockMilestoneService = {
     getMilestoneForUser: jest.fn(),
     createMilestoneForUser: jest.fn(),
   };
+
   beforeEach(async () => {
+    user = await userModel.create(makeFakeUserPayload());
+    calendar = await calendarModel.create(makeFakeCalendarPayload());
+    inspiration = await inspirationModel.create(makeFakeInspirationPayload());
+    score = await scoreModel.create(makeFakeScorePayload());
+
+    setting = await settingModel.create(
+      makeFakeSettingPayload({
+        userId: user._id,
+        calendar: calendar._id,
+        post_inspirations: [inspiration._id],
+        score: score._id,
+      }),
+    );
+    discussionA = await discussionModel.create(
+      makeFakeDiscussionPayload({
+        archived: null,
+        settings: setting._id,
+        participants: [
+          {
+            user: user._id,
+            joined: faker.date.past(),
+            muted: faker.datatype.boolean(),
+            grade: faker.database.fakeMongoId(),
+          },
+        ],
+      }),
+    );
+
+    discussionB = await discussionModel.create(
+      makeFakeDiscussionPayload({
+        archived: null,
+        settings: setting._id,
+      }),
+    );
+
     const app: TestingModule = await Test.createTestingModule({
       controllers: [DiscussionController],
-      imports: [AuthModule],
       providers: [
         { provide: getModelToken(Discussion.name), useValue: discussionModel },
         { provide: getModelToken(Setting.name), useValue: settingModel },
@@ -197,42 +147,255 @@ describe('AppController', () => {
           useValue: mockMilestoneService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(IsDiscussionCreatorGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(IsDiscussionMemberGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(IsDiscussionFacilitatorGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .compile();
 
     appController = app.get<DiscussionController>(DiscussionController);
   });
 
-  describe('POST /discussion 200 Response', () => {
-    it('should return a valid calendar', () => {
-      const validDiscussion = {
-        name: 'Power',
-        poster: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        facilitators: [],
-      };
+  afterEach(async () => {
+    await discussionModel.deleteMany({});
+    await settingModel.deleteMany({});
+    await scoreModel.deleteMany({});
+    await inspirationModel.deleteMany({});
+    await userModel.deleteMany({});
+    await calendarModel.deleteMany({});
+    await postModel.deleteMany({});
+    await reactionModel.deleteMany({});
+    await gradeModel.deleteMany({});
+  });
 
-      const reqUser = {
-        userId: '62b276fda78b2a00063b1de0',
+  describe('createDiscussion (POST /discussion)', () => {
+    it('should throw an error if the user is not found', async () => {
+      return;
+    });
+
+    it('should throw an error if request user does not match create user', async () => {
+      return;
+    });
+
+    it('should throw an error if any facilitator users do not exist', async () => {
+      return;
+    });
+
+    it('should create discussion with unique new insoID', async () => {
+      return;
+    });
+
+    it('should create a discussion and discussion setting with inspirations', async () => {
+      return;
+    });
+
+    it('should create milestone for Discussion Created if it does not exist for user', async () => {
+      return;
+    });
+
+    it('should not create milestone for Discussion Created if it does exist for user', async () => {
+      return;
+    });
+
+    it('should create and return a valid discussion', () => {
+      const discussionDTO = makeFakeDiscussionCreateDTO({
+        poster: user._id,
+        facilitators: [user._id],
+      });
+
+      const mockRequest = {
+        user: {
+          userId: user._id,
+          username: user.username,
+        },
       };
 
       return expect(
-        appController.createDiscussion(validDiscussion, reqUser),
-      ).resolves.toMatchObject(validDiscussion);
+        appController.createDiscussion(discussionDTO, mockRequest),
+      ).resolves.toMatchObject(discussionDTO);
+    });
+
+    describe('POST /discussion 400 Errors', () => {
+      it('should throw a 400 for invalid discussion name', async () => {
+        const invalidDiscussion = {
+          name: 1234,
+          poster: new Types.ObjectId(),
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('name must be a string');
+      });
+
+      it('should throw a 400 for invalid userId for poster', async () => {
+        const invalidDiscussion = {
+          name: 'Invalid testing discussion',
+          poster: '123456',
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
+      });
+
+      it('should throw a 400 for an empty object', async () => {
+        const invalidDiscussion = {};
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('name should not be empty');
+        expect(JSON.stringify(errors)).toContain('poster should not be empty');
+      });
+
+      it('should throw a 400 for missing name', async () => {
+        const invalidDiscussion = {
+          poster: user._id,
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('name should not be empty');
+      });
+
+      it('should throw a 400 for missing poster', async () => {
+        const invalidDiscussion = {
+          name: "I don't have a poster",
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('poster should not be empty');
+      });
+
+      it('should throw a 400 for an undefined poster', async () => {
+        const invalidDiscussion = {
+          name: "I don't have a poster",
+          poster: undefined,
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('poster should not be empty');
+      });
+
+      it('should throw a 400 for an undefined name', async () => {
+        const invalidDiscussion = {
+          name: undefined,
+          poster: user._id,
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('name should not be empty');
+      });
+
+      it('should throw a 400 for an null name', async () => {
+        const invalidDiscussion = {
+          name: null,
+          poster: user._id,
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('name should not be empty');
+      });
+
+      it('should throw a 400 for an null name', async () => {
+        const invalidDiscussion = {
+          name: 'I have a null poster bruh',
+          poster: null,
+        };
+
+        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
+        const errors = await validate(invalid);
+        expect(errors.length).not.toBe(0);
+        expect(JSON.stringify(errors)).toContain('poster should not be empty');
+      });
+    });
+
+    describe('POST /discussion 404 Errors', () => {
+      it('throw a 404 error for poster not found', () => {
+        const validDiscussion = {
+          name: 'Power',
+          poster: new Types.ObjectId(),
+          facilitators: [],
+        };
+
+        const reqUser = {
+          userId: user._id,
+        };
+        const error = new HttpException(
+          'User trying to create discussion does not exist',
+          HttpStatus.NOT_FOUND,
+        );
+        return expect(
+          appController.createDiscussion(validDiscussion, reqUser),
+        ).rejects.toThrow(error);
+      });
+
+      it('throw a 404 error for a facilitator not found', () => {
+        const validDiscussion = {
+          name: 'Power',
+          poster: user._id,
+          facilitators: [new Types.ObjectId()],
+        };
+        const reqUser = {
+          userId: user._id,
+        };
+        const error = new HttpException(
+          'A user does not exist in the facilitators array',
+          HttpStatus.NOT_FOUND,
+        );
+        return expect(
+          appController.createDiscussion(validDiscussion, reqUser),
+        ).rejects.toThrow(error);
+      });
     });
   });
+
+  describe('updateDiscussionMetadata (PATCH discussion/:discussionId/metadata)', () => {
+    it('should throw an error if the discussion is not found', async () => {
+      return;
+    });
+
+    it('should throw an error if any facilitator users do not exist', async () => {
+      return;
+    });
+
+    it('should throw an error if participants on payload', async () => {
+      return;
+    });
+  });
+
   //200 status valid for setting here
   describe('PATCH /discussion/:discussionId/settings 200 Status', () => {
     it('should return valid Discussion Id', () => {
-      const validDiscussionId = plainToInstance(SettingsCreateDTO, {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
+      const settingsCreateDTO = makeFakeSettingsCreateDTO({
+        score: score._id,
+        calendar: calendar._id,
+        post_inspirations: [inspiration._id],
       });
       return expect(
         appController.updateDiscussionSettings(
-          validDiscussionId,
-          '62b276fda78b2a00063b1de0',
+          settingsCreateDTO,
+          discussionA._id.toString(),
         ),
       ).resolves.not.toThrow();
     });
@@ -240,184 +403,70 @@ describe('AppController', () => {
 
   //200 status for participant
   describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
-    it('should return valid ParticipantID added', () => {
-      return expect(
-        appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1'),
-      ).resolves.not.toThrow();
-    });
-  });
-
-  //400 status for participant
-  describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
-    it('should return valid Discussion Id', () => {
-      return expect(
-        appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso1'),
-      ).resolves.not.toThrow();
-    });
-  });
-  //404 status
-  describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
-    it('should return valid Discussion Id', () => {
-      const error = new HttpException(
-        'UserId not found in the discussion',
-        HttpStatus.NOT_FOUND,
+    it('should throw error if inso code is invalid', async () => {
+      await expect(
+        appController.joinDiscussion(
+          user._id.toString(),
+          faker.datatype.string(6),
+        ),
+      ).rejects.toThrowError(
+        new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST),
       );
-      return expect(
-        appController.joinDiscussion('62b276fda78b2a00063b1de0', 'inso2'),
-      ).resolves.not.toThrow(error);
-    });
-  });
-
-  describe('POST /discussion 401 Response', () => {
-    // TODO AFTER AUTHENTICATION IS WRITTEN
-  });
-
-  describe('POST /discussion 400 Response', () => {
-    it('should throw a 400 for invalid discussion name', async () => {
-      const invalidDiscussion = {
-        name: 1234,
-        poster: new Types.ObjectId(),
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('name must be a string');
     });
 
-    it('should throw a 400 for invalid userId for poster', async () => {
-      const invalidDiscussion = {
-        name: 'Invalid testing discussion',
-        poster: '123456',
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
-    });
-
-    it('should throw a 400 for an empty object', async () => {
-      const invalidDiscussion = {};
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('name should not be empty');
-      expect(JSON.stringify(errors)).toContain('poster should not be empty');
-    });
-
-    it('should throw a 400 for missing name', async () => {
-      const invalidDiscussion = {
-        poster: '62b276fda78b2a00063b1de0',
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('name should not be empty');
-    });
-
-    it('should throw a 400 for missing poster', async () => {
-      const invalidDiscussion = {
-        name: "I don't have a poster",
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('poster should not be empty');
-    });
-
-    it('should throw a 400 for an undefined poster', async () => {
-      const invalidDiscussion = {
-        name: "I don't have a poster",
-        poster: undefined,
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('poster should not be empty');
-    });
-
-    it('should throw a 400 for an undefined name', async () => {
-      const invalidDiscussion = {
-        name: undefined,
-        poster: '62b276fda78b2a00063b1de0',
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('name should not be empty');
-    });
-
-    it('should throw a 400 for an null name', async () => {
-      const invalidDiscussion = {
-        name: null,
-        poster: '62b276fda78b2a00063b1de0',
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('name should not be empty');
-    });
-
-    it('should throw a 400 for an null name', async () => {
-      const invalidDiscussion = {
-        name: 'I have a null poster bruh',
-        poster: null,
-      };
-
-      const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('poster should not be empty');
-    });
-  });
-
-  describe('POST /discussion 403 Response', () => {
-    // TODO AFTER AUTHORIZATION IS WRITTEN
-  });
-
-  describe('POST /discussion 404 Response', () => {
-    it('throw a 404 error for poster not found', () => {
-      const validDiscussion = {
-        name: 'Power',
-        poster: new Types.ObjectId(),
-        facilitators: [],
-      };
-
-      const reqUser = {
-        userId: '62b276fda78b2a00063b1de0',
-      };
-      const error = new HttpException(
-        'User trying to create discussion does not exist',
-        HttpStatus.NOT_FOUND,
+    it('should throw error if userId is not valid ObjectId', async () => {
+      await expect(
+        appController.joinDiscussion(
+          faker.datatype.string(6),
+          discussionA.insoCode,
+        ),
+      ).rejects.toThrowError(
+        new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST),
       );
-      return expect(
-        appController.createDiscussion(validDiscussion, reqUser),
-      ).rejects.toThrow(error);
     });
 
-    it('throw a 404 error for a facilitator not found', () => {
-      const validDiscussion = {
-        name: 'Power',
-        poster: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-        facilitators: [new Types.ObjectId()],
-      };
-      const reqUser = {
-        userId: '62b276fda78b2a00063b1de0',
-      };
-      const error = new HttpException(
-        'A user does not exist in the facilitators array',
-        HttpStatus.NOT_FOUND,
+    it('should throw error if user is not found', async () => {
+      await expect(
+        appController.joinDiscussion(
+          faker.database.mongodbObjectId(),
+          discussionA.insoCode,
+        ),
+      ).rejects.toThrowError(
+        new HttpException('UserId not found', HttpStatus.NOT_FOUND),
       );
-      return expect(
-        appController.createDiscussion(validDiscussion, reqUser),
-      ).rejects.toThrow(error);
+    });
+
+    it('should throw error if discussion is not found', async () => {
+      await expect(
+        appController.joinDiscussion(
+          user._id.toString(),
+          faker.datatype.string(5),
+        ),
+      ).rejects.toThrowError(
+        new HttpException('Discussion is not found', HttpStatus.NOT_FOUND),
+      );
+    });
+
+    it('should throw error if user is already a participant', async () => {
+      await expect(
+        appController.joinDiscussion(user._id.toString(), discussionA.insoCode),
+      ).rejects.toThrowError(
+        new HttpException('User is already a participant', HttpStatus.CONFLICT),
+      );
+    });
+
+    it('should add user to discussion as participant', async () => {
+      const results = await appController.joinDiscussion(
+        user._id.toString(),
+        discussionB.insoCode,
+      );
+
+      expect(results.participants).toContainEqual({
+        user: user._id,
+        joined: expect.any(Date),
+        muted: false,
+        grade: null,
+      });
     });
   });
 
@@ -431,7 +480,7 @@ describe('AppController', () => {
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       };
 
       const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
@@ -450,7 +499,7 @@ describe('AppController', () => {
         post_inspiration: [null],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       };
 
       const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
@@ -469,7 +518,7 @@ describe('AppController', () => {
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: null,
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       };
 
       const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
@@ -485,7 +534,7 @@ describe('AppController', () => {
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: null,
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       };
 
       const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
@@ -515,22 +564,16 @@ describe('AppController', () => {
   //404 error status
   describe('PATCH /discussion/:discussionId/setting 404 status', () => {
     it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
-      const non_existentDiscussionId = plainToInstance(SettingsCreateDTO, {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
-      });
+      const settingsCreateDTO = makeFakeSettingsCreateDTO();
+      const nonExistantDiscussionId = faker.database.mongodbObjectId();
       const error = new HttpException(
         'Discussion Id does not exist',
         HttpStatus.NOT_FOUND,
       );
       return expect(
         appController.updateDiscussionSettings(
-          non_existentDiscussionId,
-          '62b276fda78b2a00063b1de4',
+          settingsCreateDTO,
+          nonExistantDiscussionId,
         ),
       ).rejects.toThrow(error);
     });
@@ -542,7 +585,7 @@ describe('AppController', () => {
         post_inspiration: [undefined],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       });
       const error = new HttpException(
         'Post inspiration Id does not exist',
@@ -551,7 +594,7 @@ describe('AppController', () => {
       return expect(
         appController.updateDiscussionSettings(
           validDiscussion,
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
         ),
       ).rejects.toThrow(error);
     });
@@ -563,7 +606,7 @@ describe('AppController', () => {
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: undefined,
         calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       });
       const error = new HttpException(
         'Score Id does not exist',
@@ -572,7 +615,7 @@ describe('AppController', () => {
       return expect(
         appController.updateDiscussionSettings(
           validDiscussion,
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
         ),
       ).rejects.toThrow(error);
     });
@@ -584,7 +627,7 @@ describe('AppController', () => {
         post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
         score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
         calendar: null,
-        userId: new Types.ObjectId('62b276fda78b2a00063b1de0'),
+        userId: user._id,
       };
       const error = new HttpException(
         'Calendar Id does not exist',
@@ -593,7 +636,7 @@ describe('AppController', () => {
       return expect(
         appController.updateDiscussionSettings(
           plainToInstance(SettingsCreateDTO, validDiscussion),
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
         ),
       ).rejects.toThrow(error);
     });
@@ -604,8 +647,8 @@ describe('AppController', () => {
     it('should return valid ParticipantID added', () => {
       return expect(
         appController.muteUserInDiscussion(
-          '62b276fda78b2a00063b1de0',
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
+          user._id.toString(),
         ),
       ).resolves.not.toThrow();
     });
@@ -616,8 +659,8 @@ describe('AppController', () => {
     it('should return valid Discussion Id', () => {
       return expect(
         appController.muteUserInDiscussion(
-          '62b276fda78b2a00063b1de0',
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
+          user._id.toString(),
         ),
       ).resolves.not.toThrow();
     });
@@ -635,7 +678,7 @@ describe('AppController', () => {
       return expect(
         appController.muteUserInDiscussion(
           '62b276fda78b2a00063b1de1',
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
         ),
       ).rejects.toThrow(error);
     });
@@ -650,8 +693,8 @@ describe('AppController', () => {
       );
       return expect(
         appController.muteUserInDiscussion(
-          '62b276fda78b2a00063b1de0',
-          '62b276fda78b2a00063b1de0',
+          user._id.toString(),
+          user._id.toString(),
         ),
       ).rejects.toThrow(error);
     });

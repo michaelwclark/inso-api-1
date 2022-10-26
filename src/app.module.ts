@@ -40,10 +40,20 @@ import environment from 'src/environment';
     MilestoneModule,
     NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
-      useUnifiedTopology: true,
-      useNewUrlParser: true,
+    MongooseModule.forRootAsync({
+      useFactory: () => ({
+        uri: environment.MONGO_CONNECTION_STRING,
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useFindAndModify: false,
+        useCreateIndex: true,
+      }),
     }),
+
+    // MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
+    //   useUnifiedTopology: true,
+    //   useNewUrlParser: true,
+    // }),
     SendGridModule.forRoot({
       apiKey: environment.SENDGRID_KEY,
     }),

@@ -1,7 +1,7 @@
 // import { Test, TestingModule } from '@nestjs/testing';
 // import { GradeController } from './grade.controller';
 
-describe('AppController', () => {
+describe('GradeController', () => {
   // let appController: GradeController;
 
   beforeEach(async () => {

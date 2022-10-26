@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { PostModule } from '../src/modules/post/post.module';
 
-describe('AppController', () => {
+describe('Discussion E2E', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
