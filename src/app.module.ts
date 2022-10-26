@@ -47,6 +47,11 @@ import environment from 'src/environment';
         useCreateIndex: true,
       }),
     }),
+
+    // MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
+    //   useUnifiedTopology: true,
+    //   useNewUrlParser: true,
+    // }),
     SendGridModule.forRoot({
       apiKey: environment.SENDGRID_KEY,
     }),
