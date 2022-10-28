@@ -24,27 +24,59 @@ export class GradeService {
       // The following code is to reload all discussions for autograding,
       // everything in the constructor is run as soon as the app starts
 
-      const discussions = this.returnAllDiscussions().then;
-      
-      var newDiscussionsArray = [];
+      console.log('This will print from the grade service constructor.');
 
-      var now = new Date();
+      const discussions = this.returnAllDiscussions().then( discussions => {
 
-      for(var i = 0; i < discussions.length; i++){
-        discussions[i] = new DiscussionReadDTO(discussions[i]);
-        if(discussions[i].settings.calendar.close > now){
-          newDiscussionsArray.push(discussions[i]);
+        var newDiscussionsArray = [];
+
+        var now = new Date();
+        console.log(now); // Make sure it saves current date, which it does but the time is a little off by a few hours
+
+        for(var i = 0; i < discussions.length; i++){
+          var temp = new DiscussionReadDTO(discussions[i]);
+          console.log('Discussion ' + i + ': ' + temp);
+          if(temp.hasOwnProperty('settings')){
+            var settings = temp.settings;
+            if(settings.hasOwnProperty('calendar') && settings.calendar !== null){
+              var calendar = settings.calendar;
+              console.log('calendar: ' + calendar);
+              if(calendar.hasOwnProperty('close')){
+                var closeDate = new Date(calendar.close)
+                if(closeDate > now){
+                  newDiscussionsArray.push(discussions[i]);
+                  console.log(closeDate);
+                }
+              }
+            }
+          } // This block of nested if statements is to be replaced by the following code: 
+
+          // if(temp.settings.calendar.close && temp.settings.calendar.close !== null && temp.settings.calendar.close !== undefined){
+          //   var closeDate = new Date(temp.settings.calendar.close);
+          //   if(closeDate > now){
+          //     newDiscussionsArray.push(discussions[i]);
+          //     console.log(closeDate);
+          //   }
+          // }
         }
-      }
+
+        console.log('discussions array length: ' + newDiscussionsArray.length);
+        console.log(newDiscussionsArray[0]); // show that active discussions are pushed to the array, WORKS FINE
+        
+        newDiscussionsArray.forEach(element => {
+          var readDiscussion = new DiscussionReadDTO(element);
+          var data = {
+            id: readDiscussion._id,
+            closeDate: readDiscussion.settings.calendar.close
+          }
+          this.addEventForAutoGrading(data);
+          console.log('event added!'); // only prints if active discussions exist, WORKS FINE
+        })
+
+      });
       
-      newDiscussionsArray.forEach(element => {
-        //var readDiscussion = new DiscussionReadDTO(element);
-        var data = {
-          discussionId: element._id,
-          closeDate: element.settings.calendar.close
-        }
-        this.addEventForAutoGrading(data);
-      })
+      
+      
 
     }
 
@@ -53,7 +85,11 @@ export class GradeService {
       const discussionId = details.id;
       const closeDate = details.closeDate;
 
-      
+      console.log('DETAILS: ');
+      console.log(discussionId);
+      console.log(closeDate);
+      // show that correct information is sent and received by addEvent function, WORKS FINE
+
       const discussion = await this.discussionModel.findOne({ _id: discussionId })
         .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
         .populate('poster', ['f_name', 'l_name', 'email', 'username'])
@@ -63,9 +99,10 @@ export class GradeService {
       const gradingEvent = schedule.scheduleJob(closeDate, async function(){
         for await(const participant of discussion.participants) {
           await this.gradeParticipant(new Types.ObjectId(readDiscussion._id), new Types.ObjectId(readDiscussion.poster._id), new Types.ObjectId(participant.user), readDiscussion.settings.scores);
-        }
+        } // ERROR - function this.gradeParticipant is not a function ?
       });
       
+      gradingEvent;
     }
 
     async returnAllDiscussions(){
@@ -255,5 +292,7 @@ export class GradeService {
         } else {
           await this.gradeModel.findOneAndUpdate({ discussionId: discussionId, userId: participantId}, {grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, facilitator: facilitator, comment: confirmedGrade.comments})
         }
+
+        console.log('Student has been given grade for discussion!');
     }
 }
