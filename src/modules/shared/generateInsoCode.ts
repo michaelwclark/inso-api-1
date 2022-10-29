@@ -7,3 +7,16 @@ export function makeInsoId(length) {
   }
   return result;
 }
+
+export async function getUniqueInsoCode(model, length = 5) {
+  let insoCode = makeInsoId(length);
+
+  while (true) {
+    const exists = await model.count({ insoCode });
+    if (!exists) {
+      break;
+    }
+    insoCode = makeInsoId(length);
+  }
+  return insoCode;
+}

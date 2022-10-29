@@ -1,8 +1,5 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { HydratedDocument } from 'mongoose';
 import { connect, Connection, Model, Types } from 'mongoose';
@@ -15,7 +12,6 @@ import {
   makeFakeSettingPayload,
   makeFakeSettingsCreateDTO,
 } from 'src/entities/setting/setting-fakes';
-import { DiscussionCreateDTO } from 'src/entities/discussion/create-discussion';
 import {
   Discussion,
   DiscussionSchema,
@@ -25,7 +21,6 @@ import {
   InspirationSchema,
 } from 'src/entities/inspiration/inspiration';
 import { Score, ScoreSchema } from 'src/entities/score/score';
-import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingSchema } from 'src/entities/setting/setting';
 import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
 import { User, UserSchema } from 'src/entities/user/user';
@@ -38,9 +33,14 @@ import { makeFakeInspirationPayload } from 'src/entities/inspiration/inspiration
 import { makeFakeScorePayload } from 'src/entities/score/score-fakes';
 import {
   makeFakeDiscussionCreateDTO,
+  makeFakeDiscussionEditDTO,
   makeFakeDiscussionPayload,
 } from 'src/entities/discussion/discussion-fakes';
 import faker from 'test/faker';
+import { getUniqueInsoCode } from 'src/modules/shared/generateInsoCode';
+import DISCUSSION_ERRORS from '../discussion-errors';
+
+jest.mock('src/modules/shared/generateInsoCode');
 
 describe('DiscussionController', () => {
   let appController: DiscussionController;
@@ -62,6 +62,7 @@ describe('DiscussionController', () => {
   let setting: HydratedDocument<Setting>;
   let discussionA: HydratedDocument<Discussion>;
   let discussionB: HydratedDocument<Discussion>;
+  let mockRequest: any;
 
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
@@ -96,7 +97,12 @@ describe('DiscussionController', () => {
     calendar = await calendarModel.create(makeFakeCalendarPayload());
     inspiration = await inspirationModel.create(makeFakeInspirationPayload());
     score = await scoreModel.create(makeFakeScorePayload());
-
+    mockRequest = {
+      user: {
+        userId: user._id,
+        username: user.username,
+      },
+    };
     setting = await settingModel.create(
       makeFakeSettingPayload({
         userId: user._id,
@@ -109,6 +115,7 @@ describe('DiscussionController', () => {
       makeFakeDiscussionPayload({
         archived: null,
         settings: setting._id,
+        poster: user._id,
         participants: [
           {
             user: user._id,
@@ -122,6 +129,7 @@ describe('DiscussionController', () => {
 
     discussionB = await discussionModel.create(
       makeFakeDiscussionPayload({
+        poster: user._id,
         archived: null,
         settings: setting._id,
       }),
@@ -166,6 +174,7 @@ describe('DiscussionController', () => {
   });
 
   afterEach(async () => {
+    jest.clearAllMocks();
     await discussionModel.deleteMany({});
     await settingModel.deleteMany({});
     await scoreModel.deleteMany({});
@@ -178,525 +187,681 @@ describe('DiscussionController', () => {
   });
 
   describe('createDiscussion (POST /discussion)', () => {
-    it('should throw an error if the user is not found', async () => {
-      return;
-    });
-
-    it('should throw an error if request user does not match create user', async () => {
-      return;
-    });
-
-    it('should throw an error if any facilitator users do not exist', async () => {
-      return;
-    });
-
-    it('should create discussion with unique new insoID', async () => {
-      return;
-    });
-
-    it('should create a discussion and discussion setting with inspirations', async () => {
-      return;
-    });
-
-    it('should create milestone for Discussion Created if it does not exist for user', async () => {
-      return;
-    });
-
-    it('should not create milestone for Discussion Created if it does exist for user', async () => {
-      return;
-    });
-
-    it('should create and return a valid discussion', () => {
-      const discussionDTO = makeFakeDiscussionCreateDTO({
-        poster: user._id,
-        facilitators: [user._id],
-      });
-
-      const mockRequest = {
-        user: {
-          userId: user._id,
-          username: user.username,
-        },
-      };
-
-      return expect(
-        appController.createDiscussion(discussionDTO, mockRequest),
-      ).resolves.toMatchObject(discussionDTO);
-    });
-
-    describe('POST /discussion 400 Errors', () => {
-      it('should throw a 400 for invalid discussion name', async () => {
-        const invalidDiscussion = {
-          name: 1234,
-          poster: new Types.ObjectId(),
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name must be a string');
-      });
-
-      it('should throw a 400 for invalid userId for poster', async () => {
-        const invalidDiscussion = {
-          name: 'Invalid testing discussion',
-          poster: '123456',
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('poster must be a mongodb id');
-      });
-
-      it('should throw a 400 for an empty object', async () => {
-        const invalidDiscussion = {};
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name should not be empty');
-        expect(JSON.stringify(errors)).toContain('poster should not be empty');
-      });
-
-      it('should throw a 400 for missing name', async () => {
-        const invalidDiscussion = {
+    describe('200 OK', () => {
+      it('should create discussion with unique new insoID', async () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
           poster: user._id,
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name should not be empty');
-      });
-
-      it('should throw a 400 for missing poster', async () => {
-        const invalidDiscussion = {
-          name: "I don't have a poster",
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('poster should not be empty');
-      });
-
-      it('should throw a 400 for an undefined poster', async () => {
-        const invalidDiscussion = {
-          name: "I don't have a poster",
-          poster: undefined,
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('poster should not be empty');
-      });
-
-      it('should throw a 400 for an undefined name', async () => {
-        const invalidDiscussion = {
-          name: undefined,
-          poster: user._id,
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name should not be empty');
-      });
-
-      it('should throw a 400 for an null name', async () => {
-        const invalidDiscussion = {
-          name: null,
-          poster: user._id,
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('name should not be empty');
-      });
-
-      it('should throw a 400 for an null name', async () => {
-        const invalidDiscussion = {
-          name: 'I have a null poster bruh',
-          poster: null,
-        };
-
-        const invalid = plainToInstance(DiscussionCreateDTO, invalidDiscussion);
-        const errors = await validate(invalid);
-        expect(errors.length).not.toBe(0);
-        expect(JSON.stringify(errors)).toContain('poster should not be empty');
-      });
-    });
-
-    describe('POST /discussion 404 Errors', () => {
-      it('throw a 404 error for poster not found', () => {
-        const validDiscussion = {
-          name: 'Power',
-          poster: new Types.ObjectId(),
-          facilitators: [],
-        };
-
-        const reqUser = {
-          userId: user._id,
-        };
-        const error = new HttpException(
-          'User trying to create discussion does not exist',
-          HttpStatus.NOT_FOUND,
+          facilitators: [user._id],
+        });
+        const result = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
         );
-        return expect(
-          appController.createDiscussion(validDiscussion, reqUser),
-        ).rejects.toThrow(error);
+        expect(result).toMatchObject(discussionDTO);
+        expect(getUniqueInsoCode).toHaveBeenCalled();
       });
 
-      it('throw a 404 error for a facilitator not found', () => {
+      it('should create a discussion and discussion setting with all existing inspirations', async () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: user._id,
+          facilitators: [user._id],
+        });
+        const result = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
+        );
+        const newSettings = await settingModel.findById(result.settings);
+        expect(newSettings.post_inspirations).toHaveLength(1);
+        expect(newSettings.post_inspirations[0]).toEqual(inspiration._id);
+
+        const newInspiration = await inspirationModel.create(
+          makeFakeInspirationPayload(),
+        );
+        const result2 = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
+        );
+        const newSettings2 = await settingModel.findById(result2.settings);
+        expect(newSettings2.post_inspirations).toHaveLength(2);
+        expect(newSettings2.post_inspirations[0]).toEqual(inspiration._id);
+        expect(newSettings2.post_inspirations[1]).toEqual(newInspiration._id);
+      });
+
+      it('should create milestone for Discussion Created if it does not exist for user', async () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: user._id,
+          facilitators: [user._id],
+        });
+        const result = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
+        );
+        expect(result).toMatchObject(discussionDTO);
+        expect(mockMilestoneService.getMilestoneForUser).toHaveBeenCalledWith(
+          user._id,
+          'Discussion Created',
+        );
+        expect(
+          mockMilestoneService.createMilestoneForUser,
+        ).toHaveBeenCalledWith(user._id, 'discussion', 'Discussion Created', {
+          discussionId: result._id,
+          postId: null,
+          date: expect.any(Date),
+        });
+      });
+
+      it('should not create milestone for Discussion Created if it does exist for user', async () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: user._id,
+          facilitators: [user._id],
+        });
+        mockMilestoneService.getMilestoneForUser.mockResolvedValueOnce(
+          "I'm a milestone",
+        );
+        const result = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
+        );
+        expect(result).toMatchObject(discussionDTO);
+        expect(mockMilestoneService.getMilestoneForUser).toHaveBeenCalledWith(
+          user._id,
+          'Discussion Created',
+        );
+        expect(
+          mockMilestoneService.createMilestoneForUser,
+        ).toHaveBeenCalledTimes(0);
+      });
+
+      it('should create and return a valid discussion', async () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: user._id,
+          facilitators: [user._id],
+        });
+
+        const result = await appController.createDiscussion(
+          discussionDTO,
+          mockRequest,
+        );
+        expect(result).toMatchObject(discussionDTO);
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('poster not found', () => {
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: faker.database.fakeMongoId(),
+          facilitators: [user._id],
+        });
+
+        return expect(
+          appController.createDiscussion(discussionDTO, mockRequest),
+        ).rejects.toThrow(DISCUSSION_ERRORS.USER_NOT_FOUND);
+      });
+
+      it('facilitator not found', () => {
         const validDiscussion = {
           name: 'Power',
           poster: user._id,
           facilitators: [new Types.ObjectId()],
         };
-        const reqUser = {
-          userId: user._id,
-        };
-        const error = new HttpException(
-          'A user does not exist in the facilitators array',
-          HttpStatus.NOT_FOUND,
-        );
+
         return expect(
-          appController.createDiscussion(validDiscussion, reqUser),
-        ).rejects.toThrow(error);
+          appController.createDiscussion(validDiscussion, mockRequest),
+        ).rejects.toThrow(DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('request user not matching poster', async () => {
+        const user2 = await userModel.create(makeFakeUserPayload());
+        const discussionDTO = makeFakeDiscussionCreateDTO({
+          poster: user2,
+          facilitators: [user._id],
+        });
+
+        return expect(
+          appController.createDiscussion(discussionDTO, mockRequest),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_POSTER_MISMATCH);
       });
     });
   });
 
   describe('updateDiscussionMetadata (PATCH discussion/:discussionId/metadata)', () => {
-    it('should throw an error if the discussion is not found', async () => {
-      return;
+    describe('200 OK', () => {
+      it('should update discussion metadata and return updated discussion', async () => {
+        const discussionEditDTO = makeFakeDiscussionEditDTO({
+          facilitators: [user._id],
+          participants: undefined,
+        });
+        const result = await appController.updateDiscussionMetadata(
+          discussionA._id.toString(),
+          discussionEditDTO,
+        );
+        expect(result.facilitators).toMatchObject(
+          discussionEditDTO.facilitators,
+        );
+        expect(result.participants).toMatchObject(discussionA.participants);
+      });
     });
 
-    it('should throw an error if any facilitator users do not exist', async () => {
-      return;
+    describe('404 Errors', () => {
+      it('discussion not found', async () => {
+        const discussionEditDTO = makeFakeDiscussionEditDTO({
+          facilitators: [user._id],
+          participants: undefined,
+        });
+        return expect(
+          appController.updateDiscussionMetadata(
+            faker.database.mongodbObjectId(),
+            discussionEditDTO,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+
+      it('facilitator user not found', async () => {
+        const discussionEditDTO = makeFakeDiscussionEditDTO({
+          facilitators: [faker.database.fakeMongoId()],
+          participants: undefined,
+        });
+        return expect(
+          appController.updateDiscussionMetadata(
+            discussionA._id.toString(),
+            discussionEditDTO,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND);
+      });
     });
 
-    it('should throw an error if participants on payload', async () => {
-      return;
+    describe('400 Errors', () => {
+      it('adding participant', async () => {
+        const discussionEditDTO = makeFakeDiscussionEditDTO({
+          facilitators: [user._id],
+          participants: [user._id],
+        });
+        return expect(
+          appController.updateDiscussionMetadata(
+            discussionA._id.toString(),
+            discussionEditDTO,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS);
+      });
     });
   });
 
-  //200 status valid for setting here
-  describe('PATCH /discussion/:discussionId/settings 200 Status', () => {
-    it('should return valid Discussion Id', () => {
-      const settingsCreateDTO = makeFakeSettingsCreateDTO({
-        score: score._id,
-        calendar: calendar._id,
-        post_inspirations: [inspiration._id],
+  describe('getDiscussion (GET discussion/:discussionId)', () => {
+    describe('200 OK', () => {
+      // TODO: Better testing and breaking out of this monstosity and the ReadDTO
+      it('should return discussion', async () => {
+        const result = await appController.getDiscussion(
+          discussionA._id.toString(),
+        );
+
+        expect(result).toMatchObject({
+          archived: discussionA.archived,
+          created: discussionA.created,
+          insoCode: discussionA.insoCode,
+          keywords: discussionA.keywords,
+          name: discussionA.name,
+          participants: [
+            {
+              f_name: user.f_name,
+              l_name: user.l_name,
+              username: user.username,
+            },
+          ],
+          poster: {
+            f_name: user.f_name,
+            l_name: user.l_name,
+            username: user.username,
+          },
+          posts: [],
+          settings: {
+            calendar: {
+              close: calendar.close.toString(),
+              open: calendar.open.toString(),
+            },
+            // post_inspiration: setting.post_inspirations,
+            scores: {
+              active_days: {
+                max_points: score.active_days.max_points,
+                required: score.active_days.required,
+              },
+              comments_received: {
+                max_points: score.comments_received.max_points,
+                required: score.comments_received.required,
+              },
+              criteria: [
+                {
+                  criteria: score.criteria[0].criteria,
+                  max_points: score.criteria[0].max_points,
+                },
+              ],
+              post_inspirations: {
+                max_points: score.post_inspirations.max_points,
+                selected: score.post_inspirations.selected,
+              },
+
+              posts_made: {
+                max_points: score.posts_made.max_points,
+                required: score.posts_made.required,
+              },
+            },
+            starter_prompt: setting.starter_prompt,
+          },
+        });
       });
-      return expect(
-        appController.updateDiscussionSettings(
-          settingsCreateDTO,
+    });
+
+    describe('404 Errors', () => {
+      it('discussion not found', async () => {
+        return expect(
+          appController.getDiscussion(faker.database.mongodbObjectId()),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('discussion id invalid', async () => {
+        return expect(appController.getDiscussion('invalid')).rejects.toThrow(
+          DISCUSSION_ERRORS.DISCUSSION_ID_INVALID,
+        );
+      });
+    });
+  });
+
+  describe('archiveDiscussion (POST discussion/:discussionId/archive)', () => {
+    describe('200 OK', () => {
+      it('should archive discussion', async () => {
+        const result = await appController.archiveDiscussion(
+          discussionA._id.toString(),
+        );
+        expect(result).toMatchObject({ archived: expect.any(Date) });
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('discussion id invalid', async () => {
+        return expect(
+          appController.archiveDiscussion('invalid'),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
+      });
+    });
+  });
+
+  describe('duplicateDiscussion (POST discussion/:discussionId/duplicate)', () => {
+    describe('200 OK', () => {
+      it('should duplicate discussion', async () => {
+        const result = await appController.duplicateDiscussion(
+          discussionA._id.toString(),
+        );
+        expect(result).toMatchObject({
+          name: discussionA.name,
+          facilitators: discussionA.facilitators,
+          settings: discussionA.settings,
+          poster: discussionA.poster,
+        });
+        expect(getUniqueInsoCode).toBeCalledTimes(1);
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('discussion not found', async () => {
+        return expect(
+          appController.duplicateDiscussion(faker.database.mongodbObjectId()),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('discussion id invalid', async () => {
+        return expect(
+          appController.duplicateDiscussion('invalid'),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
+      });
+    });
+  });
+
+  describe('getDiscussions (GET users/:userId/discussions)', () => {
+    describe('200 OK', () => {
+      it('should return discussions', async () => {
+        return;
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('user not found', async () => {
+        return expect(
+          appController.getDiscussions(
+            faker.database.mongodbObjectId(),
+            'false',
+            'false',
+            mockRequest,
+            undefined,
+            undefined,
+            undefined,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.USER_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('user id invalid', async () => {
+        return expect(
+          appController.getDiscussions(
+            'invalid',
+            'false',
+            'false',
+            mockRequest,
+            undefined,
+            undefined,
+            undefined,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.USER_ID_INVALID);
+      });
+
+      it('user auth mismatch', async () => {
+        const user2 = await userModel.create(makeFakeUserPayload());
+        return expect(
+          appController.getDiscussions(
+            user2._id.toString(),
+            'false',
+            'false',
+            mockRequest,
+            undefined,
+            undefined,
+            undefined,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.USER_ID_AUTHENTICATION_MISMATCH);
+      });
+    });
+  });
+
+  describe('getDiscussionStats (GET users/:userId/discussions/statistics)', () => {
+    describe('200 OK', () => {
+      it('should return discussion statistics', async () => {
+        return;
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('user not found', async () => {
+        return;
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('user id invalid', async () => {
+        return;
+      });
+    });
+  });
+
+  describe('updateDiscussionSettings (PATCH discussion/:discussionId/settings)', () => {
+    describe('200 OK', () => {
+      it('should update discussion settings and return updated discussion', async () => {
+        const settingsCreateDTO = makeFakeSettingsCreateDTO({
+          score: score._id,
+          calendar: calendar._id,
+          post_inspirations: [inspiration._id],
+        });
+        return expect(
+          appController.updateDiscussionSettings(
+            settingsCreateDTO,
+            discussionA._id.toString(),
+          ),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('discussion not found', async () => {
+        const settingsCreateDTO = makeFakeSettingsCreateDTO();
+        const nonExistantDiscussionId = faker.database.mongodbObjectId();
+
+        return expect(
+          appController.updateDiscussionSettings(
+            settingsCreateDTO,
+            nonExistantDiscussionId,
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+
+      it('post inspiration not found', async () => {
+        const settingsCreateDTO = makeFakeSettingsCreateDTO({
+          ...setting.toObject(),
+          post_inspirations: [faker.database.fakeMongoId()],
+        });
+
+        return expect(
+          appController.updateDiscussionSettings(
+            settingsCreateDTO,
+            discussionA._id.toString(),
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.POST_INSPIRATION_NOT_FOUND);
+      });
+
+      it('calander not found', async () => {
+        const settingsCreateDTO = makeFakeSettingsCreateDTO({
+          ...setting.toObject(),
+          calendar: faker.database.fakeMongoId(),
+        });
+
+        return expect(
+          appController.updateDiscussionSettings(
+            settingsCreateDTO,
+            discussionA._id.toString(),
+          ),
+        ).rejects.toThrow(DISCUSSION_ERRORS.CALENDAR_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('adding participant', async () => {
+        return;
+      });
+    });
+  });
+
+  describe('joinDiscussion (PATCH /users/:userId/discussions/:insoCode/join)', () => {
+    describe('200 OK', () => {
+      it('should join discussion', async () => {
+        const results = await appController.joinDiscussion(
+          user._id.toString(),
+          discussionB.insoCode,
+        );
+
+        expect(results.participants).toContainEqual({
+          user: user._id,
+          joined: expect.any(Date),
+          muted: false,
+          grade: null,
+        });
+      });
+    });
+
+    describe('409 Errors', () => {
+      it('user already in discussion', async () => {
+        await expect(
+          appController.joinDiscussion(
+            user._id.toString(),
+            discussionA.insoCode,
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ALREADY_IN_DISCUSSION);
+      });
+    });
+    describe('404 Errors', () => {
+      it('discussion not found', async () => {
+        await expect(
+          appController.joinDiscussion(
+            user._id.toString(),
+            faker.datatype.string(5),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+
+      it('user not found', async () => {
+        await expect(
+          appController.joinDiscussion(
+            faker.database.mongodbObjectId(),
+            discussionA.insoCode,
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('insoCode is invalid', async () => {
+        await expect(
+          appController.joinDiscussion(
+            user._id.toString(),
+            faker.datatype.string(6),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.INSO_CODE_INVALID);
+      });
+
+      it('user id invalid', async () => {
+        await expect(
+          appController.joinDiscussion(
+            faker.datatype.string(6),
+            discussionA.insoCode,
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ID_INVALID);
+      });
+    });
+  });
+
+  describe('removeParticipant (PATCH discussions/:discussionId/participants/:participantId/remove)', () => {
+    describe('200 OK', () => {
+      it('should remove participant', async () => {
+        const results = await appController.removeParticipant(
+          discussionA._id.toString(),
+          user._id.toString(),
+        );
+
+        expect(results.participants).not.toContainEqual({
+          user: user._id,
+          joined: expect.any(Date),
+          muted: false,
+          grade: null,
+        });
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('participant not memeber', async () => {
+        await expect(
+          appController.removeParticipant(
+            discussionA._id.toString(),
+            faker.database.mongodbObjectId(),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.PARTICIPANT_NOT_IN_DISUCSSION);
+      });
+    });
+  });
+
+  describe('addTag (POST discussions/:discussionId/tags)', () => {
+    describe('200 OK', () => {
+      it('should add tag', async () => {
+        const tag = faker.datatype.string();
+        const results = await appController.addTag(
+          discussionA._id.toString(),
+          tag,
+        );
+
+        expect(results.tags).toContainEqual(tag);
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('discussion does not exist', async () => {
+        await expect(
+          appController.addTag(
+            faker.database.mongodbObjectId(),
+            faker.datatype.string(),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+    });
+
+    describe('400 Errors', () => {
+      it('tag already exists', async () => {
+        await expect(
+          appController.addTag(discussionA._id.toString(), discussionA.tags[0]),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.DUPLICATE_TAG);
+      });
+    });
+  });
+
+  describe('muteUserInDiscussion (PATCH users/:userId/discussions/:discussionId/mute)', () => {
+    describe('200 OK', () => {
+      it('should mute user', async () => {
+        return expect(
+          appController.muteUserInDiscussion(
+            user._id.toString(),
+            discussionA._id.toString(),
+          ),
+        ).resolves.not.toThrow();
+      });
+    });
+
+    describe('404 Errors', () => {
+      it('discussion does not exist', async () => {
+        await expect(
+          appController.muteUserInDiscussion(
+            user._id.toString(),
+            faker.database.mongodbObjectId(),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
+      });
+      it('user not in discussion', async () => {
+        await expect(
+          appController.muteUserInDiscussion(
+            faker.database.mongodbObjectId(),
+            discussionA._id.toString(),
+          ),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
+      });
+    });
+  });
+
+  describe('400 Errors', () => {
+    it('user id invalid', async () => {
+      await expect(
+        appController.muteUserInDiscussion(
+          faker.datatype.string(6),
           discussionA._id.toString(),
         ),
-      ).resolves.not.toThrow();
+      ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ID_INVALID);
     });
-  });
 
-  //200 status for participant
-  describe('PATCH /users/:userId/discussions/:discussionId/join', () => {
-    it('should throw error if inso code is invalid', async () => {
+    it('discussion id invalid', async () => {
       await expect(
-        appController.joinDiscussion(
+        appController.muteUserInDiscussion(
           user._id.toString(),
           faker.datatype.string(6),
         ),
-      ).rejects.toThrowError(
-        new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST),
-      );
+      ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
     });
+  });
 
-    it('should throw error if userId is not valid ObjectId', async () => {
-      await expect(
-        appController.joinDiscussion(
-          faker.datatype.string(6),
-          discussionA.insoCode,
-        ),
-      ).rejects.toThrowError(
-        new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST),
-      );
-    });
-
-    it('should throw error if user is not found', async () => {
-      await expect(
-        appController.joinDiscussion(
-          faker.database.mongodbObjectId(),
-          discussionA.insoCode,
-        ),
-      ).rejects.toThrowError(
-        new HttpException('UserId not found', HttpStatus.NOT_FOUND),
-      );
-    });
-
-    it('should throw error if discussion is not found', async () => {
-      await expect(
-        appController.joinDiscussion(
-          user._id.toString(),
-          faker.datatype.string(5),
-        ),
-      ).rejects.toThrowError(
-        new HttpException('Discussion is not found', HttpStatus.NOT_FOUND),
-      );
-    });
-
-    it('should throw error if user is already a participant', async () => {
-      await expect(
-        appController.joinDiscussion(user._id.toString(), discussionA.insoCode),
-      ).rejects.toThrowError(
-        new HttpException('User is already a participant', HttpStatus.CONFLICT),
-      );
-    });
-
-    it('should add user to discussion as participant', async () => {
-      const results = await appController.joinDiscussion(
-        user._id.toString(),
-        discussionB.insoCode,
-      );
-
-      expect(results.participants).toContainEqual({
-        user: user._id,
-        joined: expect.any(Date),
-        muted: false,
-        grade: null,
+  describe('deleteDiscussion (DELETE discussion/:discussionId)', () => {
+    describe('200 OK', () => {
+      it('should delete discussion', async () => {
+        return expect(
+          appController.deleteDiscussion(discussionA._id.toString()),
+        ).resolves.not.toThrow();
       });
     });
-  });
 
-  //400 ERROR STATUS
-  describe('PATCH discussion/:discussionId/settings 400 Status', () => {
-    //valid discussion id, starter prompt not less than 2
-    it('should return a 400 for prompt is less than 2 characters', async () => {
-      const validDiscussionId = {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        prompt: 'T',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: user._id,
-      };
-
-      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(2);
-      expect(JSON.stringify(errors)).toContain(
-        'prompt must be longer than or equal to 2 characters',
-      );
-    });
-
-    //valid discussion id, post inspiration id not valid
-    it('should throw a 400 for post inspiration not valid', async () => {
-      const validDiscussionId = {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [null],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: user._id,
-      };
-
-      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
-      const errors = await validate(invalid);
-
-      expect(JSON.stringify(errors)).toContain(
-        'each value in post_inspiration must be a mongodb id',
-      );
-    });
-
-    //valid discussion id, score id is not valid
-    it('should throw a 400 for Score Id not valid', async () => {
-      const validDiscussionId = {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: null,
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: user._id,
-      };
-
-      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
-      const errors = await validate(invalid);
-      expect(JSON.stringify(errors)).toContain('score must be a mongodb id');
-    });
-
-    //valid discussion id, calendar id is not valid
-    it('should throw a 400 for an undefined calendar', async () => {
-      const validDiscussionId = {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: null,
-        userId: user._id,
-      };
-
-      const invalid = plainToInstance(SettingsCreateDTO, validDiscussionId);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('calendar must be a mongodb id');
-    });
-
-    //valid discussion id, empty object
-    it('should throw a 400 for an empty object', async () => {
-      const invalidDiscussion = {};
-
-      const invalid = plainToInstance(SettingsCreateDTO, invalidDiscussion);
-      const errors = await validate(invalid);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('calendar should not be empty');
-      expect(JSON.stringify(errors)).toContain('prompt should not be empty');
-      expect(JSON.stringify(errors)).toContain(
-        'post_inspiration should not be empty',
-      );
-      expect(JSON.stringify(errors)).toContain('score should not be empty');
-      expect(JSON.stringify(errors)).toContain('calendar should not be empty');
-    });
-  });
-
-  // add 404 status errors for settings checks agains mongoo db
-  //404 error status
-  describe('PATCH /discussion/:discussionId/setting 404 status', () => {
-    it('should throw a 404 for non-existent Discussion Id not found for Setting', () => {
-      const settingsCreateDTO = makeFakeSettingsCreateDTO();
-      const nonExistantDiscussionId = faker.database.mongodbObjectId();
-      const error = new HttpException(
-        'Discussion Id does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateDiscussionSettings(
-          settingsCreateDTO,
-          nonExistantDiscussionId,
-        ),
-      ).rejects.toThrow(error);
-    });
-
-    it('should throw a 404 error for a post inspiration not found', () => {
-      const validDiscussion = plainToInstance(SettingsCreateDTO, {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [undefined],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: user._id,
+    describe('409 Errors', () => {
+      it('discussion has posts', async () => {
+        await postModel.create({
+          discussionId: discussionA._id,
+        });
+        await expect(
+          appController.deleteDiscussion(discussionA._id.toString()),
+        ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_HAS_POSTS);
       });
-      const error = new HttpException(
-        'Post inspiration Id does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateDiscussionSettings(
-          validDiscussion,
-          user._id.toString(),
-        ),
-      ).rejects.toThrow(error);
-    });
-
-    it('should throw a 404 error for a score id not found for setting', () => {
-      const validDiscussion = plainToInstance(SettingsCreateDTO, {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: undefined,
-        calendar: new Types.ObjectId('62b276fda78b2a00063b1de4'),
-        userId: user._id,
-      });
-      const error = new HttpException(
-        'Score Id does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateDiscussionSettings(
-          validDiscussion,
-          user._id.toString(),
-        ),
-      ).rejects.toThrow(error);
-    });
-
-    it('should throw a 404 error for a calendar id not found for setting', () => {
-      const validDiscussion = {
-        id: new Types.ObjectId('62b276fda78b2a00063b1de1'),
-        starter_prompt: 'This is a prompt',
-        post_inspiration: [new Types.ObjectId('62b276fda78b2a00063b1de2')],
-        score: new Types.ObjectId('62b276fda78b2a00063b1de3'),
-        calendar: null,
-        userId: user._id,
-      };
-      const error = new HttpException(
-        'Calendar Id does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateDiscussionSettings(
-          plainToInstance(SettingsCreateDTO, validDiscussion),
-          user._id.toString(),
-        ),
-      ).rejects.toThrow(error);
-    });
-  });
-
-  //mute discussion 200 ok response
-  describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
-    it('should return valid ParticipantID added', () => {
-      return expect(
-        appController.muteUserInDiscussion(
-          user._id.toString(),
-          user._id.toString(),
-        ),
-      ).resolves.not.toThrow();
-    });
-  });
-
-  //400 status for participant
-  describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
-    it('should return valid Discussion Id', () => {
-      return expect(
-        appController.muteUserInDiscussion(
-          user._id.toString(),
-          user._id.toString(),
-        ),
-      ).resolves.not.toThrow();
-    });
-  });
-
-  //401 error - user not logged in to be done
-
-  //403 error- mute discussion
-  describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
-    it('throw a 403 error for user not a participant or a facilitator', () => {
-      const error = new HttpException(
-        'User is not a participant or a facilitator of the discussion',
-        HttpStatus.FORBIDDEN,
-      );
-      return expect(
-        appController.muteUserInDiscussion(
-          '62b276fda78b2a00063b1de1',
-          user._id.toString(),
-        ),
-      ).rejects.toThrow(error);
-    });
-  });
-
-  //404 error- mute discussion
-  describe('PATCH /users/:userId/discussions/:discussionId/mute', () => {
-    it('throw a 404 error for user or discussion not found', () => {
-      const error = new HttpException(
-        'User or discussion trying to mute does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.muteUserInDiscussion(
-          user._id.toString(),
-          user._id.toString(),
-        ),
-      ).rejects.toThrow(error);
     });
   });
 

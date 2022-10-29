@@ -4,14 +4,14 @@ import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { DiscussionDocument } from '../entities/discussion/discussion';
-import { DiscussionPostDocument } from '../entities/post/post';
-import { CalendarDocument } from '../entities/calendar/calendar';
-import { ScoreDocument } from '../entities/score/score';
-import { UserDocument } from '../entities/user/user';
+import { DiscussionPostDocument, DiscussionPost } from '../entities/post/post';
+import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
+import { Score, ScoreDocument } from '../entities/score/score';
+import { User, UserDocument } from '../entities/user/user';
 import { validatePassword } from '../entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { UserReadDTO } from '../entities/user/read-user';
-import { ReactionDocument } from '../entities/reaction/reaction';
+import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
 
 @Injectable()
 export class AuthService {
@@ -20,12 +20,12 @@ export class AuthService {
 
     @InjectModel('Discussion')
     private discussionModel: Model<DiscussionDocument>,
-    @InjectModel('DiscussionPost')
+    @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
-    @InjectModel('Score') private scoreModel: Model<ScoreDocument>,
-    @InjectModel('Calendar') private calendarModel: Model<CalendarDocument>,
-    @InjectModel('User') private userModel: Model<UserDocument>,
-    @InjectModel('Reaction') private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+    @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {

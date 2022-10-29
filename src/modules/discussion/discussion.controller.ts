@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -42,7 +40,7 @@ import {
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { SettingsCreateDTO } from 'src/entities/setting/create-setting';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
-import { makeInsoId } from '../shared/generateInsoCode';
+import { getUniqueInsoCode } from '../shared/generateInsoCode';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { User, UserDocument } from 'src/entities/user/user';
@@ -58,6 +56,7 @@ import { MilestoneService } from '../milestone/milestone.service';
 import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 import { removeStopwords } from 'stopword';
 import count from 'count-array-values';
+import DISCUSSION_ERRORS from './discussion-errors';
 
 @Controller()
 export class DiscussionController {
@@ -108,19 +107,13 @@ export class DiscussionController {
     // Check that user exists in DB
     const user = await this.userModel.findOne({ _id: discussion.poster });
     if (!user) {
-      throw new HttpException(
-        'User trying to create discussion does not exist',
-        HttpStatus.NOT_FOUND,
-      );
+      throw DISCUSSION_ERRORS.USER_NOT_FOUND;
     }
 
     // Compare poster to user in request from JWT for authorization
     const auth = await this.userModel.findOne({ username: req.user.username });
     if (auth._id.toString() !== discussion.poster.toString()) {
-      throw new HttpException(
-        'Discussion poster does not match authentication token user',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_POSTER_MISMATCH;
     }
 
     // Add the poster to the facilitators
@@ -137,22 +130,12 @@ export class DiscussionController {
     for await (const user of discussion.facilitators) {
       const found = await this.userModel.exists({ _id: user });
       if (!found) {
-        throw new HttpException(
-          'A user does not exist in the facilitators array',
-          HttpStatus.NOT_FOUND,
-        );
+        throw DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND;
       }
     }
 
     // Check that the code is not active in the database
-    let code = makeInsoId(5);
-    while (true) {
-      const isCodeUsed = await this.discussionModel.exists({ insoCode: code });
-      if (!isCodeUsed) {
-        break;
-      }
-      code = makeInsoId(5);
-    }
+    const code = await getUniqueInsoCode(this.discussionModel, 5);
 
     // Get ALL inspirations for the discussion settings
     const inspirations = await this.post_inspirationModel.find().lean();
@@ -212,7 +195,7 @@ export class DiscussionController {
     // Check that discussion exists
     const found = await this.discussionModel.findOne({ _id: discussionId });
     if (!found) {
-      throw new HttpException('Discussion not found', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
 
     // If there are new facilitators verify they exist and push them into the existing array
@@ -220,10 +203,7 @@ export class DiscussionController {
       for await (const user of discussion.facilitators) {
         const found = await this.userModel.findOne({ _id: user });
         if (!found) {
-          throw new HttpException(
-            'A user does not exist in the facilitators array',
-            HttpStatus.NOT_FOUND,
-          );
+          throw DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND;
         }
       }
       // Filter out any duplicate Ids
@@ -237,10 +217,7 @@ export class DiscussionController {
       JSON.stringify(discussion.participants) !=
         JSON.stringify(found.participants)
     ) {
-      throw new HttpException(
-        'Cannot edit discussion participants using this route',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS;
     }
     // Update the discussion and return the new value
     return await this.discussionModel.findOneAndUpdate(
@@ -261,12 +238,9 @@ export class DiscussionController {
   @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussion(
     @Param('discussionId') discussionId: string,
-  ): Promise<any> {
+  ): Promise<DiscussionReadDTO> {
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        'Discussion Id is not valid',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_ID_INVALID;
     }
     const discussion = await this.discussionModel
       .findOne({ _id: discussionId })
@@ -294,6 +268,10 @@ export class DiscussionController {
       })
       .lean();
 
+    if (!discussion) {
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
+    }
+
     const participants = [];
     for await (const participant of discussion.participants) {
       const part = await this.userModel
@@ -303,12 +281,6 @@ export class DiscussionController {
         .findOne({ discussionId: discussion._id, userId: participant.user })
         .lean();
       participants.push({ ...part, muted: participant.muted, grade: grade });
-    }
-    if (!discussion) {
-      throw new HttpException(
-        'Discussion does not exist',
-        HttpStatus.NOT_FOUND,
-      );
     }
 
     // Get posts
@@ -327,6 +299,7 @@ export class DiscussionController {
       ])
       .sort({ date: -1 })
       .lean();
+
     const posts = [];
     for await (const post of dbPosts) {
       const postWithComments = await this.getPostsAndComments(post);
@@ -371,17 +344,15 @@ export class DiscussionController {
   @UseGuards(JwtAuthGuard, IsDiscussionCreatorGuard)
   async archiveDiscussion(
     @Param('discussionId') discussionId: string,
-  ): Promise<any> {
+  ): Promise<HydratedDocument<Discussion>> {
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        'DiscussionId is not a valid MongoId',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_ID_INVALID;
     }
     const archivedDate = new Date();
     return await this.discussionModel.findOneAndUpdate(
       { _id: discussionId },
       { archived: archivedDate },
+      { new: true },
     );
   }
 
@@ -397,21 +368,15 @@ export class DiscussionController {
   @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async duplicateDiscussion(
     @Param('discussionId') discussionId: string,
-  ): Promise<any> {
+  ): Promise<HydratedDocument<Discussion>> {
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        'DiscussionId is not a valid MongoId',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_ID_INVALID;
     }
     const discussion = await this.discussionModel.findOne({
       _id: discussionId,
     });
     if (!discussion) {
-      throw new HttpException(
-        'Discussion does not exist!',
-        HttpStatus.NOT_FOUND,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const settings = await this.settingModel.findOne({
       _id: discussion.settings,
@@ -438,21 +403,15 @@ export class DiscussionController {
     const settingId = await newSetting.save();
 
     // duplicate a discussion
-    let found = new this.discussionModel();
-    while (found !== null) {
-      const code = makeInsoId(5);
-      found = await this.discussionModel.findOne({ insoCode: code });
-      if (!found) {
-        const createdDiscussion = new this.discussionModel({
-          name: discussion.name,
-          facilitators: discussion.facilitators,
-          insoCode: code,
-          settings: settingId._id,
-          poster: discussion.poster,
-        });
-        return await createdDiscussion.save();
-      }
-    }
+    const code = await getUniqueInsoCode(this.discussionModel, 5);
+    const createdDiscussion = new this.discussionModel({
+      name: discussion.name,
+      facilitators: discussion.facilitators,
+      insoCode: code,
+      settings: settingId._id,
+      poster: discussion.poster,
+    });
+    return await createdDiscussion.save();
   }
 
   @Get('users/:userId/discussions')
@@ -505,19 +464,16 @@ export class DiscussionController {
     @Query('text') query: any,
   ): Promise<any[]> {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+      throw DISCUSSION_ERRORS.USER_ID_INVALID;
     }
 
     const user = await this.userModel.findOne({ _id: userId });
     if (!user) {
-      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.USER_NOT_FOUND;
     }
 
     if (req.user.userId != userId) {
-      throw new HttpException(
-        'User id does not match user in authentication token',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.USER_ID_AUTHENTICATION_MISMATCH;
     }
 
     // Add search for inso code and text
@@ -599,19 +555,16 @@ export class DiscussionController {
     @Request() req,
   ) {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException('UserId is not valid!', HttpStatus.BAD_REQUEST);
+      throw DISCUSSION_ERRORS.USER_ID_INVALID;
     }
 
     const user = await this.userModel.findOne({ _id: userId });
     if (!user) {
-      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.USER_NOT_FOUND;
     }
 
     if (req.user.userId != userId) {
-      throw new HttpException(
-        'User id does not match user in authentication token',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.USER_ID_AUTHENTICATION_MISMATCH;
     }
 
     const aggregation = [];
@@ -663,20 +616,14 @@ export class DiscussionController {
   ): Promise<HydratedDocument<Setting>> {
     //check discussionId is valid
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        'Discussion Id is invalid',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_ID_INVALID;
     }
 
     const found = await this.discussionModel.findOne({
       _id: new Types.ObjectId(discussionId),
     });
     if (!found) {
-      throw new HttpException(
-        'Discussion Id does not exist',
-        HttpStatus.NOT_FOUND,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
 
     if (setting.score) {
@@ -684,10 +631,7 @@ export class DiscussionController {
         _id: new Types.ObjectId(setting.score),
       });
       if (!score) {
-        throw new HttpException(
-          'Score Id does not exist',
-          HttpStatus.NOT_FOUND,
-        );
+        throw DISCUSSION_ERRORS.SCORE_NOT_FOUND;
       }
       setting.score = new Types.ObjectId(setting.score);
     }
@@ -697,10 +641,7 @@ export class DiscussionController {
         _id: new Types.ObjectId(setting.calendar),
       });
       if (!calendar) {
-        throw new HttpException(
-          'Calendar Id does not exist',
-          HttpStatus.NOT_FOUND,
-        );
+        throw DISCUSSION_ERRORS.CALENDAR_NOT_FOUND;
       }
       setting.calendar = new Types.ObjectId(setting.calendar);
     }
@@ -713,10 +654,7 @@ export class DiscussionController {
           _id: [new Types.ObjectId(post_inspiration)],
         });
         if (!found) {
-          throw new HttpException(
-            'Post inspiration Id does not exist',
-            HttpStatus.NOT_FOUND,
-          );
+          throw DISCUSSION_ERRORS.POST_INSPIRATION_NOT_FOUND;
         }
         objectIds.push(new Types.ObjectId(post_inspiration));
       }
@@ -744,10 +682,10 @@ export class DiscussionController {
     @Param('insoCode') insoCode: string,
   ): Promise<HydratedDocument<Discussion>> {
     if (insoCode.length !== 5) {
-      throw new HttpException('InsoCode not valid', HttpStatus.BAD_REQUEST);
+      throw DISCUSSION_ERRORS.INSO_CODE_INVALID;
     }
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException('UserId is not valid', HttpStatus.BAD_REQUEST);
+      throw DISCUSSION_ERRORS.USER_ID_INVALID;
     }
 
     //check for user
@@ -755,13 +693,13 @@ export class DiscussionController {
       _id: new Types.ObjectId(userId),
     });
     if (!findUser) {
-      throw new HttpException('UserId not found', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.USER_NOT_FOUND;
     }
 
     //check for discusionId
     const found = await this.discussionModel.findOne({ insoCode: insoCode });
     if (!found) {
-      throw new HttpException('Discussion is not found', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
 
     // Add the participants to the discussion
@@ -771,10 +709,7 @@ export class DiscussionController {
       'participants.user': queryId,
     });
     if (foundParticipant) {
-      throw new HttpException(
-        'User is already a participant',
-        HttpStatus.CONFLICT,
-      );
+      throw DISCUSSION_ERRORS.USER_ALREADY_IN_DISCUSSION;
     }
 
     const newParticipant = {
@@ -807,10 +742,7 @@ export class DiscussionController {
       })
       .lean();
     if (!discussionParticipant) {
-      throw new HttpException(
-        `${participantId} is not a member of the discussion and cannot be removed`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.PARTICIPANT_NOT_IN_DISUCSSION;
     }
     // Remove that participant object from the discussion participants array
     return await this.discussionModel.findOneAndUpdate(
@@ -829,27 +761,22 @@ export class DiscussionController {
   async addTag(
     @Param('discussionId') discussionId: string,
     @Body('tag') tag: string,
-  ) {
+  ): Promise<HydratedDocument<Discussion>> {
     const discussion = await this.discussionModel
       .findOne({ _id: discussionId })
       .lean();
     if (!discussion) {
-      throw new HttpException(
-        `Discussion does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
     // Check if the tag is already in the array
     if (discussion.tags.includes(tag.toString())) {
-      throw new HttpException(
-        `${discussionId} already has tag ${tag}`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DUPLICATE_TAG;
     }
     // Add the tag to the tags array on the discussion
     return await this.discussionModel.findOneAndUpdate(
       { _id: discussionId },
       { $push: { tags: tag.toString() } },
+      { new: true },
     );
   }
 
@@ -864,14 +791,11 @@ export class DiscussionController {
   ): Promise<any> {
     //Invalid UserId and DiscussionId
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException('UserId is invalid', HttpStatus.BAD_REQUEST);
+      throw DISCUSSION_ERRORS.USER_ID_INVALID;
     }
 
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        'DiscussionId is invalid',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_ID_INVALID;
     }
 
     //UserId and DiscussionId not found
@@ -879,17 +803,14 @@ export class DiscussionController {
       _id: new Types.ObjectId(userId),
     });
     if (!findUser) {
-      throw new HttpException('UserId was not found', HttpStatus.NOT_FOUND);
+      throw DISCUSSION_ERRORS.USER_NOT_FOUND;
     }
 
     const findDiscussion = await this.discussionModel.findOne({
       _id: new Types.ObjectId(discussionId),
     });
     if (!findDiscussion) {
-      throw new HttpException(
-        'DiscussionId was not found',
-        HttpStatus.NOT_FOUND,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
     // TODO FIX THIS UPDATE
     // TODO ADD 409 if user is already muted
@@ -915,10 +836,7 @@ export class DiscussionController {
     const discussion = new Types.ObjectId(discussionId);
     const posts = await this.postModel.find({ discussionId: discussion });
     if (posts.length > 0) {
-      throw new HttpException(
-        'Cannot delete a discussion that has posts',
-        HttpStatus.CONFLICT,
-      );
+      throw DISCUSSION_ERRORS.DISCUSSION_HAS_POSTS;
     }
     await this.discussionModel.deleteOne({ _id: discussion });
     return 'Discussion deleted';

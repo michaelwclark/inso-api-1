@@ -1,14 +1,24 @@
 import faker from 'test/faker';
 import { Discussion } from './discussion';
 import { DiscussionCreateDTO } from './create-discussion';
+import { DiscussionEditDTO } from './edit-discussion';
 
 export function makeFakeDiscussionCreateDTO(
-  discussion: Partial<DiscussionCreateDTO>,
+  discussion: Partial<DiscussionCreateDTO> = {},
 ): DiscussionCreateDTO {
   return {
     name: faker.lorem.words(3),
     poster: faker.database.fakeMongoId(),
     facilitators: [faker.database.fakeMongoId()],
+    ...discussion,
+  };
+}
+
+export function makeFakeDiscussionCreateDTOPlain(discussion: any = {}) {
+  return {
+    name: faker.lorem.words(3),
+    poster: faker.database.mongodbObjectId(),
+    facilitators: [faker.database.mongodbObjectId()],
     ...discussion,
   };
 }
@@ -35,6 +45,20 @@ export function makeFakeDiscussionPayload(
       },
     ],
     set: [faker.database.fakeMongoId()],
+    ...discussion,
+  };
+}
+
+export function makeFakeDiscussionEditDTO(
+  discussion: Partial<DiscussionEditDTO> = {},
+): DiscussionEditDTO {
+  return {
+    name: faker.lorem.words(3),
+    archived: faker.date.past(),
+    settings: faker.database.fakeMongoId(),
+    facilitators: [faker.database.fakeMongoId()],
+    keywords: [faker.random.word()],
+    participants: [faker.database.fakeMongoId()],
     ...discussion,
   };
 }
