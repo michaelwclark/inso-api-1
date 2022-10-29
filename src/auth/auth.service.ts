@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
@@ -12,6 +12,7 @@ import { validatePassword } from '../entities/user/commonFunctions/validatePassw
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { UserReadDTO } from '../entities/user/read-user';
 import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
+import authErrors from './auth-errors';
 
 @Injectable()
 export class AuthService {
@@ -31,24 +32,15 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ 'contact.email': email });
     if (!user) {
-      throw new HttpException(
-        'Email does not exist in database',
-        HttpStatus.NOT_FOUND,
-      );
+      throw authErrors.EMAIL_NOT_FOUND;
     }
 
     if (!user.password) {
-      throw new HttpException(
-        'User has Google SSO configured. Please login through Google',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw authErrors.SSO_CONFIGURED;
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch == false) {
-      throw new HttpException(
-        'Invalid credentials, password is not correct',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw authErrors.INVALID_PASSWORD;
     }
 
     return this.login(user);
@@ -64,10 +56,7 @@ export class AuthService {
   /** GOOGLE LOGIN */
   async googleLogin(req: any) {
     if (!req.user) {
-      throw new HttpException(
-        'User does not exist to Google!',
-        HttpStatus.NOT_FOUND,
-      );
+      throw authErrors.USER_NOT_FOUND_GOOGLE;
     }
     // Check out db for the user and see if the email is attached
     const user = await this.userModel.findOne({
@@ -130,10 +119,7 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (isMatch == false) {
-      throw new HttpException(
-        'Invalid credentials, old password is not correct',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw authErrors.PASSWORD_NOT_MATCH;
     }
 
     validatePassword(newPassword);
@@ -223,10 +209,7 @@ export class AuthService {
         ? false
         : true;
     if (!isCreator) {
-      throw new HttpException(
-        `User: ${userId} is not permitted to perform this action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isCreator;
   }
@@ -240,10 +223,7 @@ export class AuthService {
         ? false
         : true;
     if (!isFacilitator) {
-      throw new HttpException(
-        `User: ${userId} is not a facilitator and cannon perform action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isFacilitator;
   }
@@ -253,19 +233,13 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw new HttpException(
-        `Discussion could not be found`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw authErrors.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
     });
     if (!participantIds.includes(userId)) {
-      throw new HttpException(
-        `User: ${userId} is not a participant of the discussion and cannot perform action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return true;
   }
@@ -279,10 +253,7 @@ export class AuthService {
         ? false
         : true;
     if (!isPoster) {
-      throw new HttpException(
-        `User: ${userId} is not the author of the post and cannot perform this action`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isPoster;
   }
@@ -296,10 +267,7 @@ export class AuthService {
         ? false
         : true;
     if (!isReactionCreator) {
-      throw new HttpException(
-        `User ${userId} is not the creator of the reaction and cannot modify it`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isReactionCreator;
   }
@@ -319,10 +287,7 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw new HttpException(
-        `Discussion does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw authErrors.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
@@ -330,10 +295,7 @@ export class AuthService {
     const isParticipant = participantIds.includes(userId);
 
     if (!isFacilitator && !isParticipant) {
-      throw new HttpException(
-        `${userId} is not a member of this discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isFacilitator || isParticipant;
   }
@@ -347,10 +309,7 @@ export class AuthService {
         ? false
         : true;
     if (!isScorer) {
-      throw new HttpException(
-        `${userId} is not permitted to perform action on the score`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isScorer;
   }
@@ -367,10 +326,7 @@ export class AuthService {
         ? false
         : true;
     if (!isCalendarCreator) {
-      throw new HttpException(
-        `${userId} is not permitted to perform action on the calendar`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     return isCalendarCreator;
   }
@@ -379,10 +335,7 @@ export class AuthService {
   verifyMongoIds(ids: string[]) {
     ids.forEach((id) => {
       if (!Types.ObjectId.isValid(id)) {
-        throw new HttpException(
-          `${id} is not a valid Mongo Id`,
-          HttpStatus.BAD_REQUEST,
-        );
+        throw authErrors.INVALID_ID;
       }
     });
   }

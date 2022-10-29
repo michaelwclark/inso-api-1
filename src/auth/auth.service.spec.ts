@@ -19,6 +19,7 @@ import * as bcrypt from 'bcrypt';
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { UserReadDTO } from 'src/entities/user/read-user';
+import authErrors from './auth-errors';
 
 jest.mock('bcrypt');
 jest.mock('@nestjs/jwt');
@@ -95,10 +96,7 @@ describe('AuthService', () => {
 
     it('should raise an error if user is not found', async () => {
       await expect(service.validateUser('test', 'test')).rejects.toEqual(
-        new HttpException(
-          'Email does not exist in database',
-          HttpStatus.NOT_FOUND,
-        ),
+        authErrors.EMAIL_NOT_FOUND,
       );
     });
 
@@ -112,12 +110,7 @@ describe('AuthService', () => {
 
       await expect(
         service.validateUser('mockuser@inso.com', 'asdf'),
-      ).rejects.toEqual(
-        new HttpException(
-          'User has Google SSO configured. Please login through Google',
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
+      ).rejects.toEqual(authErrors.SSO_CONFIGURED);
     });
 
     it('should raise an error if the passwords to not match', async () => {
@@ -133,12 +126,7 @@ describe('AuthService', () => {
 
       await expect(
         service.validateUser('mock_user_bad_password@inso.com', 'asdf1'),
-      ).rejects.toEqual(
-        new HttpException(
-          'Invalid credentials, password is not correct',
-          HttpStatus.BAD_REQUEST,
-        ),
-      );
+      ).rejects.toEqual(authErrors.INVALID_PASSWORD);
     });
 
     it('should call login if user found and valid password', async () => {
@@ -192,10 +180,7 @@ describe('AuthService', () => {
         email: ' ',
       };
       await expect(service.googleLogin(payload)).rejects.toEqual(
-        new HttpException(
-          'User does not exist to Google!',
-          HttpStatus.NOT_FOUND,
-        ),
+        authErrors.USER_NOT_FOUND_GOOGLE,
       );
     });
 
@@ -544,12 +529,7 @@ describe('AuthService', () => {
       const discussion = await new discussionModel({ poster: null }).save();
       await expect(
         service.isDiscussionCreator(user._id, discussion._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User: ${user._id} is not permitted to perform this action on the discussion`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion creator', async () => {
@@ -571,14 +551,10 @@ describe('AuthService', () => {
       const discussion = await new discussionModel({
         facilitators: [],
       }).save();
+
       await expect(
-        service.isDiscussionFacilitator(user._id, discussion._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User: ${user._id} is not a facilitator and cannon perform action on the discussion`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+        service.isDiscussionCreator(user._id, discussion._id),
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion Facilitator', async () => {
@@ -601,12 +577,7 @@ describe('AuthService', () => {
       const user = await new userModel({}).save();
       await expect(
         service.isDiscussionParticipant(user._id, '5e9f1b9b9b9b9b9b9b9b9b9b'),
-      ).rejects.toThrowError(
-        new HttpException(
-          `Discussion could not be found`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.DISCUSSION_NOT_FOUND);
     });
 
     it('should raise exception if user is not discussion Participant', async () => {
@@ -616,12 +587,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isDiscussionParticipant(user._id, discussion._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User: ${user._id} is not a participant of the discussion and cannot perform action on the discussion`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion Participant', async () => {
@@ -638,23 +604,11 @@ describe('AuthService', () => {
         user: user._id,
       });
       await discussion.save();
-      await expect(
-        service.isDiscussionParticipant(user._id, discussion._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User: ${user._id} is not a participant of the discussion and cannot perform action on the discussion`,
-          HttpStatus.FORBIDDEN,
-        ),
+      const result = await service.isDiscussionParticipant(
+        user._id.toString(),
+        discussion._id,
       );
-      // There is some wierd juju going on with participants array that I can't figure out in a reasonable amount of time.
-      // TODO: Fix this test
-      // CC: @pzalep1 HELP! ?? :confused:
-      // await expect(
-      //   service.isDiscussionFacilitator(
-      //     user._id.toString(),
-      //     discussion._id.toString(),
-      //   ),
-      // ).resolves.toEqual(true);
+      expect(result).toEqual(true);
     });
   });
 
@@ -670,12 +624,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isPostCreator(user._id, discussionPost._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User: ${user._id} is not the author of the post and cannot perform this action`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion post creator', async () => {
@@ -701,12 +650,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isReactionCreator(user._id, reaction._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `User ${user._id} is not the creator of the reaction and cannot modify it`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion post reaction creator', async () => {
@@ -732,12 +676,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isDiscussionMember(user._id, discussion._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `${user._id} is not a member of this discussion`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion member', async () => {
@@ -751,25 +690,21 @@ describe('AuthService', () => {
     });
 
     it('should return true if user is discussion participant  member', async () => {
-      expect(true).toBe(true);
-      // TODO: again participants array is not working as expected
-      // const user = await new userModel({}).save();
-      // const discussion = await new discussionModel({
-      //   participants: [{ user: user._id }],
-      // }).save();
+      const user = await new userModel({}).save();
+      const discussion = await new discussionModel({
+        participants: [{ user: user._id }],
+      }).save();
 
-      // await expect(
-      //   service.isDiscussionMember(user._id, discussion._id),
-      // ).resolves.toEqual(true);
+      await expect(
+        service.isDiscussionMember(user._id.toString(), discussion._id),
+      ).resolves.toEqual(true);
     });
 
     it('should raise error if discussion is not fonud', async () => {
       const user = await new userModel({}).save();
       await expect(
         service.isDiscussionMember(user._id, '5e9f1b9b9b9b9b9b9b9b9b9b'),
-      ).rejects.toThrowError(
-        new HttpException(`Discussion does not exist`, HttpStatus.NOT_FOUND),
-      );
+      ).rejects.toThrowError(authErrors.DISCUSSION_NOT_FOUND);
     });
   });
 
@@ -785,12 +720,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isScoreCreator(user._id, score._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `${user._id} is not permitted to perform action on the score`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is score creator', async () => {
@@ -816,12 +746,7 @@ describe('AuthService', () => {
       }).save();
       await expect(
         service.isCalendarCreator(user._id, calendar._id),
-      ).rejects.toThrowError(
-        new HttpException(
-          `${user._id} is not permitted to perform action on the calendar`,
-          HttpStatus.FORBIDDEN,
-        ),
-      );
+      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is calendar creator', async () => {
@@ -842,10 +767,7 @@ describe('AuthService', () => {
 
     it('should raise exception if mongo id is invalid', async () => {
       expect(() => service.verifyMongoIds(['a'])).toThrowError(
-        new HttpException(
-          `${'a'} is not a valid Mongo Id`,
-          HttpStatus.BAD_REQUEST,
-        ),
+        authErrors.INVALID_ID,
       );
     });
   });
