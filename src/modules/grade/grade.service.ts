@@ -20,75 +20,29 @@ export class GradeService {
         @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
         @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>
     ) {
+      // The following code is to reload all discussions for autograding
+      const discussions = this.returnAllDiscussions().then(discussions => {
+        let now = new Date();
 
-      // The following code is to reload all discussions for autograding,
-      // everything in the constructor is run as soon as the app starts
-
-      console.log('This will print from the grade service constructor.');
-
-      const discussions = this.returnAllDiscussions().then( discussions => {
-
-        var newDiscussionsArray = [];
-
-        var now = new Date();
-        console.log(now); // Make sure it saves current date, which it does but the time is a little off by a few hours
-
-        for(var i = 0; i < discussions.length; i++){
-          var temp = new DiscussionReadDTO(discussions[i]);
-          console.log('Discussion ' + i + ': ' + temp);
-          if(temp.hasOwnProperty('settings')){
-            var settings = temp.settings;
-            if(settings.hasOwnProperty('calendar') && settings.calendar !== null){
-              var calendar = settings.calendar;
-              console.log('calendar: ' + calendar);
-              if(calendar.hasOwnProperty('close')){
-                var closeDate = new Date(calendar.close)
-                if(closeDate > now){
-                  newDiscussionsArray.push(discussions[i]);
-                  console.log(closeDate);
-                }
+        const newDiscussions = discussions.filter(discussion => {
+          let temp = new DiscussionReadDTO(discussion);
+          if(temp.settings.calendar && temp.settings.calendar.close) {
+            if(new Date(temp.settings.calendar.close) >= now) {
+              let data = {
+                id: temp._id,
+                closeDate: new Date(temp.settings.calendar.close)
               }
+              this.addEventForAutoGrading(data);
             }
-          } // This block of nested if statements is to be replaced by the following code: 
-
-          // if(temp.settings.calendar.close && temp.settings.calendar.close !== null && temp.settings.calendar.close !== undefined){
-          //   var closeDate = new Date(temp.settings.calendar.close);
-          //   if(closeDate > now){
-          //     newDiscussionsArray.push(discussions[i]);
-          //     console.log(closeDate);
-          //   }
-          // }
-        }
-
-        console.log('discussions array length: ' + newDiscussionsArray.length);
-        console.log(newDiscussionsArray[0]); // show that active discussions are pushed to the array, WORKS FINE
-        
-        newDiscussionsArray.forEach(element => {
-          var readDiscussion = new DiscussionReadDTO(element);
-          var data = {
-            id: readDiscussion._id,
-            closeDate: readDiscussion.settings.calendar.close
           }
-          this.addEventForAutoGrading(data);
-          console.log('event added!'); // only prints if active discussions exist, WORKS FINE
-        })
-
+        });
       });
-      
-      
-      
-
     }
 
     async addEventForAutoGrading(details: any) { // needs discussion id and close date
 
       const discussionId = details.id;
       const closeDate = details.closeDate;
-
-      console.log('DETAILS: ');
-      console.log(discussionId);
-      console.log(closeDate);
-      // show that correct information is sent and received by addEvent function, WORKS FINE
 
       const discussion = await this.discussionModel.findOne({ _id: discussionId })
         .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
@@ -99,18 +53,10 @@ export class GradeService {
       const gradingEvent = schedule.scheduleJob(closeDate, async function(){
         for await(const participant of discussion.participants) {
           await this.gradeParticipant(new Types.ObjectId(readDiscussion._id), new Types.ObjectId(readDiscussion.poster._id), new Types.ObjectId(participant.user), readDiscussion.settings.scores);
-        } // ERROR - function this.gradeParticipant is not a function ?
+        }
       });
       
       gradingEvent;
-    }
-
-    async returnAllDiscussions(){
-      const discussions = await this.discussionModel.find({})
-          .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
-          .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-          .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
-      return discussions;
     }
 
     async gradeDiscussion(discussionId: string) {
@@ -156,7 +102,7 @@ export class GradeService {
         });
     }
 
-    private async gradeParticipant(discussionId: Types.ObjectId, facilitator: Types.ObjectId, participantId: Types.ObjectId, rubric: any) {
+    async gradeParticipant(discussionId: Types.ObjectId, facilitator: Types.ObjectId, participantId: Types.ObjectId, rubric: any) {
       // Add check to see if the discussion is actually closed
         const total = rubric.total;
         let gradeCriteria = {
@@ -292,7 +238,13 @@ export class GradeService {
         } else {
           await this.gradeModel.findOneAndUpdate({ discussionId: discussionId, userId: participantId}, {grade: confirmedGrade.total, maxScore: max, rubric: confirmedGrade.criteria, facilitator: facilitator, comment: confirmedGrade.comments})
         }
+    }
 
-        console.log('Student has been given grade for discussion!');
+    async returnAllDiscussions(){
+      const discussions = await this.discussionModel.find({})
+          .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+          .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+          .populate({ path: 'settings', populate: [{ path: 'calendar'}, { path: 'score'}, { path: 'post_inspirations'}]}).lean();
+      return discussions;
     }
 }
