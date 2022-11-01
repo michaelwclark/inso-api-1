@@ -6,7 +6,6 @@ import { ReactionModule } from './modules/reaction/reaction.module';
 import { PostModule } from './modules/post/post.module';
 import { InspirationModule } from './modules/inspiration/inspiration.module';
 import { GradeModule } from './modules/grade/grade.module';
-import { DiscussionSetModule } from './modules/discussion-set/discussion-set.module';
 import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -32,7 +31,6 @@ import environment from 'src/environment';
     PostModule,
     InspirationModule,
     GradeModule,
-    DiscussionSetModule,
     DiscussionModule,
     CalendarModule,
     PostModule,
@@ -49,11 +47,6 @@ import environment from 'src/environment';
         useCreateIndex: true,
       }),
     }),
-
-    // MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
-    //   useUnifiedTopology: true,
-    //   useNewUrlParser: true,
-    // }),
     SendGridModule.forRoot({
       apiKey: environment.SENDGRID_KEY,
     }),

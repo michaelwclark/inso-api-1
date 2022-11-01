@@ -6,7 +6,6 @@ import {
   NotificationDocument,
 } from '../../entities/notification/notification';
 import { NotificationReadDTO } from '../../entities/notification/read-notification';
-// import { User, UserDocument } from '../../entities/user/user';
 
 @Injectable()
 export class NotificationService {

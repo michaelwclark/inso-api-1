@@ -215,13 +215,11 @@ export class AuthService {
   }
 
   async isDiscussionFacilitator(userId: string, discussionId: string) {
-    const isFacilitator =
-      (await this.discussionModel.findOne({
-        _id: new Types.ObjectId(discussionId),
-        facilitators: new Types.ObjectId(userId),
-      })) === null
-        ? false
-        : true;
+    const count = await this.discussionModel.countDocuments({
+      _id: new Types.ObjectId(discussionId),
+      facilitators: new Types.ObjectId(userId),
+    });
+    const isFacilitator = count > 0;
     if (!isFacilitator) {
       throw authErrors.FORBIDDEN_FOR_USER;
     }

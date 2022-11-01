@@ -552,8 +552,12 @@ describe('AuthService', () => {
         facilitators: [],
       }).save();
 
+      expect.assertions(1);
       await expect(
-        service.isDiscussionCreator(user._id, discussion._id),
+        service.isDiscussionFacilitator(
+          user._id.toString(),
+          discussion._id.toString(),
+        ),
       ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
     });
 
@@ -562,9 +566,11 @@ describe('AuthService', () => {
       const discussion = await new discussionModel({
         facilitators: [user._id],
       }).save();
-      await expect(
-        service.isDiscussionFacilitator(user._id, discussion._id),
-      ).resolves.toEqual(true);
+      const result = await service.isDiscussionFacilitator(
+        user._id.toString(),
+        discussion._id.toString(),
+      );
+      expect(result).toEqual(true);
     });
   });
 

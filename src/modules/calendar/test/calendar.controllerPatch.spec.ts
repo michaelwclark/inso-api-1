@@ -111,8 +111,6 @@ describe('CalendarController', () => {
       controllers: [CalendarController],
       providers: [
         { provide: AuthService, useValue: {} },
-        // { provide: JwtAuthGuard, useValue: jest.fn() },
-        // { provide: IsCalendarCreatorGuard, useValue: jest.fn() },
         { provide: getModelToken(Calendar.name), useValue: calendarModel },
         { provide: getModelToken(User.name), useValue: userModel },
       ],
@@ -644,8 +642,4 @@ describe('CalendarController', () => {
       }).rejects.toThrow(error);
     }); // FINISHED
   });
-
-  //afterAll(async () => {
-  //  return await mongod.stop({doCleanup: true});
-  //});
 });

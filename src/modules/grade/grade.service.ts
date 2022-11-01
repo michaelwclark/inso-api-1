@@ -1,8 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -144,8 +140,6 @@ export class GradeService {
     participantId: Types.ObjectId,
     rubric: any,
   ) {
-    // Add check to see if the discussion is actually closed
-    const total = rubric.total;
     const gradeCriteria = {
       posts_made: rubric.posts_made ? rubric.posts_made : null,
       active_days: rubric.active_days ? rubric.active_days : null,

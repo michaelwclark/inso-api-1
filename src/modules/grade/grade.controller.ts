@@ -1,27 +1,15 @@
 import {
   Body,
   Controller,
-  Get,
   HttpException,
   HttpStatus,
   Param,
   Patch,
-  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { ConnectParticipant } from 'aws-sdk';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
@@ -33,8 +21,9 @@ import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
 import environment from 'src/environment';
+
 @Controller()
 export class GradeController {
   constructor(
@@ -82,6 +71,7 @@ export class GradeController {
         return part;
       }
     })[0];
+    // TODO: above will throw unhandled exception if participant is not found
     if (!participant) {
       throw new HttpException(
         "Participant is not a part of this discussion and can't receive a grade",

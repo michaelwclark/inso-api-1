@@ -74,6 +74,6 @@ export default {
 
   DUPLICATE_TAG: new HttpException(
     'Duplicate tag in discussion',
-    HttpStatus.BAD_REQUEST,
+    HttpStatus.CONFLICT,
   ),
 };

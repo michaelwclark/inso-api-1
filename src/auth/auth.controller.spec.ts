@@ -1,17 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { decodeOta } from 'src/drivers/otaDriver';
 import { AuthService } from './auth.service';
+import faker from 'test/faker';
+import { PasswordResetDTO } from 'src/entities/user/password-reset';
+import authErrors from './auth-errors';
+import { decodeOta } from 'src/drivers/otaDriver';
 
 jest.mock('src/drivers/otaDriver');
 
-describe('AuthController e2e', () => {
+describe('AuthController', () => {
   let authController: AuthController;
+  let mockRequest: any;
+  let mockUser: any;
 
   const authServiceMock = {
     login: jest.fn(),
     resetPasswordFromEmail: jest.fn(),
+    fetchUserAndStats: jest.fn(() => mockUser),
+    resetPassword: jest.fn(),
   };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -24,50 +32,119 @@ describe('AuthController e2e', () => {
     }).compile();
 
     authController = module.get<AuthController>(AuthController);
+    mockUser = {
+      id: faker.database.mongodbObjectId(),
+      email: faker.internet.email(),
+      access_token: faker.random.alphaNumeric(32),
+    };
+
+    mockRequest = {
+      user: {
+        userId: mockUser.id,
+        access_token: faker.random.alphaNumeric(32),
+      },
+    };
   });
 
-  it('should be defined', () => {
-    expect(authController).toBeDefined();
-  });
-
-  describe('POST /auth/login', () => {
-    it('Should return OK when valid user login', async () => true);
-    it('Should return NOT_FOUND when user not found', async () => true);
-    it('Should return BAD_REQUEST when user signed up with SSO', async () =>
-      true);
-    it('Should return UNAUTHORIZED when password is incorrect', async () =>
-      true);
-  });
-
-  describe('GET /profile', () => {
-    it('Should return OK when valid token', async () => true);
-    it('Should return BAD_REQUEST when token invalid', async () => true);
-  });
-
-  describe('PATCH /users/:userId/reset-password', () => {
-    it('Should return OK when password reset', async () => true);
-    it('Should return BAD_REQUEST when password not in right format', async () =>
-      true);
-    it('Should return FORBIDDEN when user ids do not match', async () => true);
-  });
-
-  describe('PATCH /users/reset-password/:ota', () => {
-    it('Should return OK when password reset', async () => {
-      const ota = '123456';
-      const password = 'Password#23333';
-
-      (decodeOta as jest.Mock).mockResolvedValue({
-        data: {
-          userId: '123456',
-        },
+  describe('login (POST /auth/login)', () => {
+    describe('200 OK', () => {
+      it('should return user', async () => {
+        const result = await authController.login(mockRequest);
+        expect(result).toEqual(mockRequest.user);
       });
-      const response = await authController.resetPasswordOta(ota, password);
-      expect(decodeOta).toBeCalledWith(ota);
-      expect(authServiceMock.resetPasswordFromEmail).toBeCalledWith(
-        '123456',
-        password,
-      );
-      expect(response).toEqual('Password updated!');
+    });
+  });
+
+  describe('getProfile (GET /profile)', () => {
+    describe('200 OK', () => {
+      it('should return user', async () => {
+        const result = await authController.getProfile(mockRequest);
+        expect(authServiceMock.fetchUserAndStats).toHaveBeenCalledWith(
+          mockRequest.user.userId,
+        );
+        expect(result).toEqual(mockUser);
+      });
+    });
+  });
+
+  describe('resetPasswordLoggedIn (PATCH /users/:userId/reset-password)', () => {
+    const passwordResetDto = <PasswordResetDTO>{
+      oldPassword: faker.random.alphaNumeric(32),
+      newPassword: faker.random.alphaNumeric(32),
+    };
+    describe('200 OK', () => {
+      it('should update password with password service', async () => {
+        const result = await authController.resetPasswordLoggedIn(
+          mockUser.id,
+          passwordResetDto,
+          mockRequest,
+        );
+        expect(authServiceMock.resetPassword).toHaveBeenCalledWith(
+          mockUser.id,
+          passwordResetDto.oldPassword,
+          passwordResetDto.newPassword,
+        );
+        expect(result).toEqual('Password updated!');
+      });
+    });
+
+    describe('403 Forbidden', () => {
+      it('throw error when users do not match', async () => {
+        const badReq = {
+          user: {
+            access_token: faker.random.alphaNumeric(32), // eslint-disable-line camelcase
+            userId: faker.database.mongodbObjectId(),
+          },
+        };
+
+        return await expect(
+          authController.resetPasswordLoggedIn(
+            faker.database.mongodbObjectId(),
+            passwordResetDto,
+            badReq,
+          ),
+        ).rejects.toThrow(authErrors.FORBIDDEN_FOR_USER);
+      });
+    });
+  });
+
+  describe('resetPasswordOta (PATCH /users/reset-password/:ota)', () => {
+    let mockOtaCode, mockPassword;
+    beforeEach(() => {
+      mockOtaCode = faker.random.alphaNumeric(4);
+      mockPassword = faker.random.alphaNumeric(32);
+      const mockDecodeOta = jest.mocked(decodeOta);
+
+      mockDecodeOta.mockResolvedValue({
+        data: {
+          userId: mockUser.id,
+        },
+        action: faker.random.alphaNumeric(32),
+        iat: faker.random.alphaNumeric(),
+        exp: faker.random.alphaNumeric(),
+        iss: faker.random.alphaNumeric(),
+      });
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    describe('200 OK', () => {
+      it('should reset password with from email with auth service', async () => {
+        const result = await authController.resetPasswordOta(
+          mockOtaCode,
+          mockPassword,
+        );
+
+        expect(decodeOta).toHaveBeenCalledWith(mockOtaCode);
+        expect(authServiceMock.resetPasswordFromEmail).toHaveBeenCalledWith(
+          mockUser.id,
+          mockPassword,
+        );
+
+        expect(result).toEqual('Password updated!');
+      });
     });
   });
 });
