@@ -11,6 +11,9 @@ export class Discussion {
   @Prop({ type: String, index: true })
   public name: string;
 
+  @Prop({ type: String })
+  public type: string;
+
   @Prop({ Date, default: Date.now })
   public created: Date;
 
