@@ -7,6 +7,7 @@ export class DiscussionReadDTO {
   public created: string;
   public archived: string;
   public keywords: string[];
+  public type: string;
 
   public tags: {
     tag: string;
@@ -104,6 +105,7 @@ export class DiscussionReadDTO {
       this.created = partial.created;
       this.archived = partial.archived;
       this.keywords = partial.keywords;
+      this.type = partial.type;
 
       // Set the tags
       if (partial.tags) {
@@ -123,54 +125,54 @@ export class DiscussionReadDTO {
           post_inspirations: partial.post_inspirations,
           scores: partial.settings.score
             ? {
-                _id: partial.settings.score._id,
-                type: partial.settings.score.type,
-                total: partial.settings.score.total,
-                posts_made: partial.settings.score.posts_made
-                  ? {
-                      max_points: partial.settings.score.posts_made.max_points,
-                      required: partial.settings.score.posts_made.required,
-                    }
-                  : null,
-                active_days: partial.settings.score.active_days
-                  ? {
-                      max_points: partial.settings.score.active_days.max_points,
-                      required: partial.settings.score.active_days.required,
-                    }
-                  : null,
-                comments_received: partial.settings.score.comments_received
-                  ? {
-                      max_points:
-                        partial.settings.score.comments_received.max_points,
-                      required:
-                        partial.settings.score.comments_received.required,
-                    }
-                  : null,
-                post_inspirations: partial.settings.score.post_inspirations
-                  ? {
-                      max_points:
-                        partial.settings.score.post_inspirations.max_points,
-                      selected:
-                        partial.settings.score.post_inspirations.selected,
-                    }
-                  : null,
-                criteria: partial.settings.score.criteria
-                  ? partial.settings.score.criteria.map((criteria) => {
-                      return {
-                        max_points: criteria.max_points,
-                        criteria: criteria.criteria,
-                      };
-                    })
-                  : null,
-              }
+              _id: partial.settings.score._id,
+              type: partial.settings.score.type,
+              total: partial.settings.score.total,
+              posts_made: partial.settings.score.posts_made
+                ? {
+                  max_points: partial.settings.score.posts_made.max_points,
+                  required: partial.settings.score.posts_made.required,
+                }
+                : null,
+              active_days: partial.settings.score.active_days
+                ? {
+                  max_points: partial.settings.score.active_days.max_points,
+                  required: partial.settings.score.active_days.required,
+                }
+                : null,
+              comments_received: partial.settings.score.comments_received
+                ? {
+                  max_points:
+                    partial.settings.score.comments_received.max_points,
+                  required:
+                    partial.settings.score.comments_received.required,
+                }
+                : null,
+              post_inspirations: partial.settings.score.post_inspirations
+                ? {
+                  max_points:
+                    partial.settings.score.post_inspirations.max_points,
+                  selected:
+                    partial.settings.score.post_inspirations.selected,
+                }
+                : null,
+              criteria: partial.settings.score.criteria
+                ? partial.settings.score.criteria.map((criteria) => {
+                  return {
+                    max_points: criteria.max_points,
+                    criteria: criteria.criteria,
+                  };
+                })
+                : null,
+            }
             : null,
           calendar:
             partial.settings.calendar !== null
               ? {
-                  _id: partial.settings.calendar._id,
-                  open: new Date(partial.settings?.calendar.open).toString(),
-                  close: new Date(partial.settings?.calendar.close).toString(),
-                }
+                _id: partial.settings.calendar._id,
+                open: new Date(partial.settings?.calendar.open).toString(),
+                close: new Date(partial.settings?.calendar.close).toString(),
+              }
               : null,
         };
       }
@@ -187,27 +189,27 @@ export class DiscussionReadDTO {
       // Map the facilitators
       this.facilitators = partial.facilitators
         ? partial.facilitators.map((facilitator) => {
-            return {
-              _id: facilitator._id,
-              username: facilitator.username,
-              f_name: facilitator.f_name,
-              l_name: facilitator.l_name,
-            };
-          })
+          return {
+            _id: facilitator._id,
+            username: facilitator.username,
+            f_name: facilitator.f_name,
+            l_name: facilitator.l_name,
+          };
+        })
         : null;
 
       // Map the participants
       this.participants = partial.participants
         ? partial.participants.map((participant) => {
-            return {
-              _id: participant._id,
-              f_name: participant.f_name,
-              l_name: participant.l_name,
-              username: participant.username,
-              muted: participant.muted,
-              grade: participant.grade,
-            };
-          })
+          return {
+            _id: participant._id,
+            f_name: participant.f_name,
+            l_name: participant.l_name,
+            username: participant.username,
+            muted: participant.muted,
+            grade: participant.grade,
+          };
+        })
         : null;
 
       // Map the posts
