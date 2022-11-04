@@ -36,7 +36,7 @@ export class GradeService {
     private discussionPostModel: Model<DiscussionPostDocument>,
     @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
-  ) {}
+  ) { }
 
   async addEventForAutoGrading() {
     const params = {
@@ -296,3 +296,4 @@ export class GradeService {
     }
   }
 }
+
