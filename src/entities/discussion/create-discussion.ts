@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsIn,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
@@ -22,6 +23,20 @@ export class DiscussionCreateDTO {
   @IsNotEmpty()
   @IsString()
   public name: string;
+
+  @ApiProperty({
+    name: 'type',
+    description: 'The type of the discussion',
+    required: false,
+    type: String,
+    isArray: false,
+    example: 'topic',
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  @IsString()
+  @IsIn(['topic', 'debate', 'peerReview', 'testPrep', 'testReview', 'caseStudy', 'designThinking', 'introductions', 'lessonSummary', 'solutions'])
+  public type: string;
 
   @ApiProperty({
     name: 'poster',
