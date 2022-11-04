@@ -25,20 +25,6 @@ export class DiscussionEditDTO {
   public name: string;
 
   @ApiProperty({
-    name: 'type',
-    description: 'The type of the discussion',
-    required: false,
-    type: String,
-    isArray: false,
-    example: 'topic',
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  @IsString()
-  @IsIn(['topic', 'debate', 'peerReview', 'testPrep', 'testReview', 'caseStudy', 'designThinking', 'introductions', 'lessonSummary', 'solutions'])
-  public type: string;
-
-  @ApiProperty({
     name: 'archived',
     description: 'The date that the discussion is being archived',
     required: false,

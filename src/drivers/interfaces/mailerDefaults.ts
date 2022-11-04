@@ -17,7 +17,7 @@ export interface DefaultEmailParams {
  */
 
 export enum FROM {
-  NO_REPLY = 'INSO < >',
+  NO_REPLY = 'INSO <info@inso.ai>',
 }
 export enum SUBJECTS {
   CONFIRM_EMAIL = 'Please confirm your Inso Email',
