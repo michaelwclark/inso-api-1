@@ -1,6 +1,6 @@
 const envVars = {
   MONGO_CONNECTION_STRING:
-    process.env.MONGO_CONNECTION_STRING || 'mongodb+srv://inso:vjhzjVzKBcRICuwG@development.zgzhhxa.mongodb.net/inso?retryWrites=true&w=majority',
+    process.env.MONGO_CONNECTION_STRING || 'mongodb://localhost:27017/inso',
   SENDGRID_KEY: process.env.SENDGRID_KEY || 'SENDGRID_KEY',
   PORT: process.env.PORT || 3000,
   SECRET: process.env.SECRET || 'SECRET',
