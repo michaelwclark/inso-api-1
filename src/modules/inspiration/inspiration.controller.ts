@@ -33,8 +33,12 @@ export class InspirationController {
   @ApiOperation({ description: 'Gets all valid inspirations on the system' })
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: 'The user is not logged in' })
-  // @UseGuards(JwtAuthGuard)
-  // @ApiQuery()
+  @UseGuards(JwtAuthGuard)
+  @ApiQuery({
+    name: 'subcats',
+    required: false,
+    description: 'An array of subcats to return',
+  })
   @ApiTags('Inspiration')
   async getInspirations(@Query('subcats') subcats: string[]): Promise<any> {
     const returnVal = {
@@ -45,26 +49,43 @@ export class InspirationController {
 
     const types = ["posting", "responding", "synthesizing"];
 
-    if (subcats) {
-      if (!Array.isArray(subcats)) {
-        subcats = !!subcats ? [subcats] : [];
+    for await (const type of types) {
+      const aggregation = [];
+      // Group by the unique elements
+      aggregation.push(
+        {
+          $match: { type: type }
+        },
+        {
+          $unwind: { path: "$subcats", preserveNullAndEmptyArrays: true }
+        },
+        {
+          $group: {
+            _id: "$subcats",
+            values: {
+              $addToSet: { name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
+            }
+          }
+        },
+        {
+          $project: { cat: "$_id", values: "$values", _id: 0 }
+        }
+      );
+
+      let vals = await this.inspirationModel.aggregate(aggregation);
+
+      if (subcats) {
+        if (!Array.isArray(subcats)) {
+          subcats = !!subcats ? [subcats] : [];
+        }
+        vals = vals.filter(val => {
+          if (subcats.includes(val.cat)) {
+            return val;
+          }
+        });
       }
 
-      for await (const type of types) {
-        const aggregation = [];
-        // Group by the unique elements
-        aggregation.push(
-          {
-            $match: { subcats: { $in: subcats } }
-          },
-          {
-            $match: { type: type }
-          },
-        )
-
-        const vals = await this.inspirationModel.aggregate(aggregation);
-        returnVal[type] = vals;
-      }
+      returnVal[type] = vals;
     }
 
     return returnVal;
