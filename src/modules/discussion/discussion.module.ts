@@ -20,6 +20,7 @@ import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
 import { MilestoneModule } from '../milestone/milestone.module';
+import { DiscussionType, DiscussionTypeSchema } from 'src/entities/discussionType/discussion-type';
 
 @Module({
   imports: [
@@ -45,6 +46,9 @@ import { MilestoneModule } from '../milestone/milestone.module';
       { name: Reaction.name, schema: ReactionSchema },
     ]),
     MongooseModule.forFeature([{ name: Grade.name, schema: GradeSchema }]),
+    MongooseModule.forFeature([
+      { name: DiscussionType.name, schema: DiscussionTypeSchema },
+    ]),
     AuthModule,
     UserModule,
     MilestoneModule,
@@ -53,4 +57,4 @@ import { MilestoneModule } from '../milestone/milestone.module';
   providers: [DiscussionController, JwtStrategy],
   exports: [DiscussionController],
 })
-export class DiscussionModule {}
+export class DiscussionModule { }

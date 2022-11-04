@@ -55,6 +55,7 @@ import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 import { MilestoneService } from '../milestone/milestone.service';
+import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 
 const { removeStopwords } = require('stopword');
 const count = require('count-array-values');
@@ -74,6 +75,7 @@ export class DiscussionController {
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
+    @InjectModel(DiscussionType.name) private discussionTypeModel: Model<DiscussionType>,
     private milestoneService: MilestoneService,
   ) {
     DiscussionSchema.index(
@@ -146,7 +148,7 @@ export class DiscussionController {
       const code = makeInsoId(5);
       found = await this.discussionModel.findOne({ insoCode: code });
       if (!found) {
-        const inspirations = await this.post_inspirationModel.find().lean();
+        const inspirations = await this.post_inspirationModel.find({ "subcats": discussion.type }).lean();
         const inspirationIds = inspirations.map((inspo) => {
           return inspo._id;
         });
@@ -336,6 +338,16 @@ export class DiscussionController {
     });
 
     return discussionRead;
+  }
+
+  @Get('discussions/types')
+  @ApiOperation({ description: 'Get valid types for a discussion' })
+  @ApiOkResponse({ type: DiscussionType })
+  @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
+  @ApiTags('Discussion')
+  @UseGuards(JwtAuthGuard)
+  async getDiscussionTypes() {
+    return await this.discussionTypeModel.find().lean();
   }
 
   @Post('discussion/:discussionId/archive')
