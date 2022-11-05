@@ -1,852 +1,400 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connect, Connection, Model, Types } from 'mongoose';
-import { AuthService } from 'src/auth/auth.service';
-import { ScoreCreateDTO } from 'src/entities/score/create-score';
-import { ScoreEditDTO } from 'src/entities/score/edit-score';
-import { Score, ScoreSchema } from 'src/entities/score/score';
-import { User, UserSchema } from 'src/entities/user/user';
+import { Score } from 'src/entities/score/score';
+import { User } from 'src/entities/user/user';
+import { TestingDatabase, testingDatabase, FakeDocuments } from 'test/database';
 import { ScoreController } from './score.controller';
-import {
-  criteriaDescEmpty,
-  criteriaDescNotString,
-  criteriaMaxEmpty,
-  criteriaMaxNotNum,
-  impactEmpty,
-  impactMaxEmpty,
-  impactMaxNotNum,
-  instPostingEmpty,
-  instPostingNotNum,
-  instRespondingEmpty,
-  instRespondingNotNum,
-  instructionsEmpty,
-  instSynthesizingEmpty,
-  instSynthesizingNotNum,
-  interactionsEmpty,
-  interMaxEmpty,
-  interMaxNotNum,
-  rubricCriteriaArrayWrongType,
-  rubricCriteriaEmpty,
-  rubricCriteriaEmptyArray,
-  rubricEmpty,
-  rubricMaxEmpty,
-  rubricMaxNotNum,
-  typeNotString,
-  typeNull,
-  validScore,
-} from './scoreMocks';
-import {
-  criteriaDescEmptyUpdate,
-  criteriaDescNotStringUpdate,
-  criteriaMaxEmptyUpdate,
-  criteriaMaxNotNumUpdate,
-  impactEmptyUpdate,
-  impactMaxEmptyUpdate,
-  impactMaxNotNumUpdate,
-  instPostingEmptyUpdate,
-  instPostingNotNumUpdate,
-  instRespondingEmptyUpdate,
-  instRespondingNotNumUpdate,
-  instructionsEmptyUpdate,
-  instSynthesizingEmptyUpdate,
-  instSynthesizingNotNumUpdate,
-  interactionsEmptyUpdate,
-  interMaxEmptyUpdate,
-  interMaxNotNumUpdate,
-  rubricCriteriaArrayWrongTypeUpdate,
-  rubricCriteriaEmptyArrayUpdate,
-  rubricCriteriaEmptyUpdate,
-  rubricEmptyUpdate,
-  rubricMaxEmptyUpdate,
-  rubricMaxNotNumUpdate,
-  typeNotStringUpdate,
-  typeNullUpdate,
-} from './scoreMocksPatch';
+import SCORE_ERRORS from './score-errors';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
+import { IsScoreCreatorGuard } from 'src/auth/guards/userGuards/isScoreCreator.guard';
 
-const testScore = {
-  type: 'rubric',
-  instructions: {
-    posting: 10,
-    responding: 10,
-    synthesizing: 10,
-  },
-  interactions: {
-    max: 10,
-  },
-  impact: {
-    max: 10,
-  },
-  rubric: {
-    max: 10,
-    criteria: [
-      {
-        description: 'This is an example',
-        max: 10,
-      },
-      {
-        description: 'This is another example',
-        max: 10,
-      },
-    ],
-  },
-};
-
-const testScoreUpdate = {
-  id: new Types.ObjectId('629a3aaa17d028a1f19f0888'),
-  _id: new Types.ObjectId('629a3aaa17d028a1f19f0888'),
-  type: 'rubric',
-  instructions: {
-    posting: 10,
-    responding: 10,
-    synthesizing: 10,
-  },
-  interactions: {
-    max: 10,
-  },
-  impact: {
-    max: 10,
-  },
-  rubric: {
-    max: 10,
-    criteria: [
-      {
-        description: 'This is an example',
-        max: 10,
-      },
-    ],
-  },
-  creatorId: new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
-};
+import faker from 'test/faker';
+import {
+  makeFakeCreateGradingCriteria,
+  // makeFakeCreateAutoRequirements,
+  // makeFakeCreateGradingCriteria,
+  // makeFakeCreatePostInspirationOptions,
+  makeFakeScoreCreateDTO,
+  makeFakeScoreEditDTO,
+} from 'src/entities/score/score-fakes';
 
 describe('ScoreController', () => {
-  let appController: ScoreController;
-  let mongod: MongoMemoryServer;
-  let mongoConnection: Connection;
-  let scoreModel: Model<any>;
-  let userModel: Model<any>;
+  let database: TestingDatabase;
+  let checkScore: any;
+  let fakeDocuments: FakeDocuments;
+  let module: TestingModule;
 
   beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    mongoConnection = (await connect(uri)).connection;
-    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
-    userModel = mongoConnection.model(User.name, UserSchema);
+    database = await testingDatabase();
+  });
 
-    const tempUser = new userModel({
-      _id: new Types.ObjectId('629a3aaa17d028a1f19f0e5c'),
-      username: 'mockuser1234',
-    });
-    const tempUser2 = new userModel({
-      _id: new Types.ObjectId('444a3aaa17d028a1f19f9999'),
-      username: 'mockuser5678',
-    });
-    await userModel.insertMany([tempUser, tempUser2]);
-    await scoreModel.insertMany([testScore, testScoreUpdate]);
-
-    const app: TestingModule = await Test.createTestingModule({
+  let scoreController: ScoreController;
+  beforeAll(async () => {
+    module = await Test.createTestingModule({
       controllers: [ScoreController],
       providers: [
-        { provide: AuthService, useValue: {} },
-        { provide: getModelToken(Score.name), useValue: scoreModel },
-        { provide: getModelToken(User.name), useValue: userModel },
+        {
+          provide: getModelToken(Score.name),
+          useValue: database.score,
+        },
+        {
+          provide: getModelToken(User.name),
+          useValue: database.user,
+        },
       ],
-    }).compile();
-
-    appController = app.get<ScoreController>(ScoreController);
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(RequesterIsUserGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .overrideGuard(IsScoreCreatorGuard)
+      .useValue({
+        canActivate: () => true,
+      })
+      .compile();
+    scoreController = module.get<ScoreController>(ScoreController);
   });
 
-  describe('POST /users/{userId}/score 200 STATUS', () => {
-    it('Test case valid request', async () => {
-      const result = await appController.createScore(
-        '629a3aaa17d028a1f19f0e5c',
-        plainToInstance(ScoreCreateDTO, testScore),
-      );
-      expect(Types.ObjectId.isValid(result)).toBe(true);
-    }); // FINISHED
+  beforeEach(async () => {
+    fakeDocuments = await database.createFakes();
+    checkScore = scoreController.checkScore;
   });
 
-  describe('POST /users/{userId}/score 400 STATUS', () => {
-    it('Test case invalid user id', () => {
-      const error = new HttpException(
-        'User id is not valid',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.createScore(
-          'User id is not valid',
-          plainToInstance(ScoreCreateDTO, validScore),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-
-    it('Test case no user id', () => {
-      const error = new HttpException(
-        'No user id provided',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.createScore(
-          null,
-          plainToInstance(ScoreCreateDTO, validScore),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-
-    it('Test case type is not a string', async () => {
-      const typeNotStringScore = plainToInstance(ScoreCreateDTO, typeNotString);
-      const typeNotStringErrors = await validate(typeNotStringScore);
-      expect(typeNotStringErrors.length).not.toBe(0);
-      expect(JSON.stringify(typeNotStringErrors)).toContain(
-        'type must be a string',
-      );
-    }); // FINISHED
-
-    it('Test case type is null', async () => {
-      const typeUndefinedScore = plainToInstance(ScoreCreateDTO, typeNull);
-      const typeNullErrors = await validate(typeUndefinedScore);
-      expect(typeNullErrors.length).not.toBe(0);
-      expect(JSON.stringify(typeNullErrors)).toContain(
-        'type should not be empty',
-      );
-    }); // FINISHED
-
-    it('Test case instructions is empty', async () => {
-      const instructionsEmptyScore = plainToInstance(
-        ScoreCreateDTO,
-        instructionsEmpty,
-      );
-      const errors = await validate(instructionsEmptyScore);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'instructions should not be empty',
-      );
-    }); // FINISHED
-
-    it('Test case instructions posting is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instPostingNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions posting must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case instructions posting is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instPostingEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions posting should not be empty');
-    }); // FINISHED
-
-    it('Test case instructions responding is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instRespondingNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions responding must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case instructions responding is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instRespondingEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions responding should not be empty');
-    }); // FINISHED
-
-    it('Test case instructions synthesizing is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instSynthesizingNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions synthesizing must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case instructions synthesizing is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, instSynthesizingEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions synthesizing should not be empty');
-    }); // FINISHED
-
-    it('Test case interactions is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, interactionsEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'interactions should not be empty',
-      );
-    }); // FINISHED
-
-    it('Test case interactions max is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, interMaxNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'interactions max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case interactions max is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, interMaxEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('interactions max should not be empty');
-    }); // FINISHED
-
-    it('Test case impact is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, impactEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('impact should not be empty');
-    }); // FINISHED
-
-    it('Test case impact max is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, impactMaxNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'impact max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case impact max is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, impactMaxEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('impact max should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, rubricEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('rubric should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric max is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, rubricMaxNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'rubric max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case rubric max is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, rubricMaxEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric max should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric criteria is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, rubricCriteriaEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric criteria is empty array', () => {
-      const error = new HttpException(
-        'Array length for criteria cannot be 0',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.createScore(
-          '629a3aaa17d028a1f19f0e5c',
-          plainToInstance(ScoreCreateDTO, rubricCriteriaEmptyArray),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-
-    it('Test case rubric criteria array is of wrong type', async () => {
-      const Score = plainToInstance(
-        ScoreCreateDTO,
-        rubricCriteriaArrayWrongType,
-      );
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'nested property criteria must be either object or array',
-      );
-    }); // FINISHED
-
-    it('Test case criteria description is not a string', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, criteriaDescNotString);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isString;
-      expect(message).toBe('rubric criteria description must be a string');
-    }); // FINISHED
-
-    it('Test case criteria description is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, criteriaDescEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria description should not be empty');
-    }); // FINISHED
-
-    it('Test case criteria max is not a number', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, criteriaMaxNotNum);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'rubric criteria max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case criteria max is empty', async () => {
-      const Score = plainToInstance(ScoreCreateDTO, criteriaMaxEmpty);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria max should not be empty');
-    }); // FINISHED
+  afterEach(async () => {
+    jest.clearAllMocks();
+    scoreController.checkScore = checkScore;
+    await database.clearDatabase();
   });
 
-  describe('POST /users/{userId}/score 404 STATUS', () => {
-    it('Test case non existent user id', () => {
-      const error = new HttpException(
-        'User does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.createScore(
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreCreateDTO, validScore),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
+  describe('createScore (POST users/:userId/score)', () => {
+    describe('200 OK', () => {
+      it('should create score', async () => {
+        const scoreDTO = makeFakeScoreCreateDTO();
+        jest.spyOn(database.score, 'create');
+        scoreController.checkScore = jest.fn().mockResolvedValue(true);
+        const createdScore = await scoreController.createScore(
+          fakeDocuments.user._id.toString(),
+          scoreDTO,
+        );
+
+        expect(database.score.create).toHaveBeenCalledWith({
+          ...scoreDTO,
+          creatorId: fakeDocuments.user._id,
+        });
+        expect(scoreController.checkScore).toHaveBeenCalledWith(scoreDTO);
+        expect(createdScore).toBeDefined();
+      });
+    });
+
+    describe('400 BAD REQUEST', () => {
+      it('should throw an error if the user id is invalid', async () => {
+        expect.assertions(3);
+        const scoreDTO = makeFakeScoreCreateDTO();
+        await expect(
+          scoreController.createScore('invalid', scoreDTO),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+
+        await expect(
+          scoreController.createScore(null, scoreDTO),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+
+        await expect(
+          scoreController.createScore(undefined, scoreDTO),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+      });
+    });
+
+    describe('404 NOT FOUND', () => {
+      it('should throw an error if the user is not found', async () => {
+        const scoreDTO = makeFakeScoreCreateDTO();
+
+        expect.assertions(1);
+        await expect(
+          scoreController.createScore(
+            faker.database.mongodbObjectId(),
+            scoreDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.USER_NOT_FOUND);
+      });
+    });
   });
 
-  // PATCH TESTS
+  describe('updateScore (PATCH users/:userId/score/:scoreId)', () => {
+    describe('200 OK', () => {
+      it('should update score', async () => {
+        const scoreEditDTO = makeFakeScoreEditDTO();
+        jest.spyOn(database.score, 'findOneAndUpdate');
+        scoreController.checkScore = jest.fn().mockResolvedValue(true);
+        const updatedScore = await scoreController.updateScore(
+          fakeDocuments.user._id.toString(),
+          fakeDocuments.score._id.toString(),
+          scoreEditDTO,
+        );
 
-  describe('PATCH /users/{userId}/score/{scoreId} 200 STATUS', () => {
-    it('Test case valid request', async () => {
-      expect(
-        await appController.updateScore(
-          '629a3aaa17d028a1f19f0e5c',
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreCreateDTO, testScoreUpdate),
-        ),
-      ).toBe('Score Updated');
-    }); // FINISHED
+        expect(database.score.findOneAndUpdate).toHaveBeenCalledWith(
+          { _id: fakeDocuments.score._id },
+          scoreEditDTO,
+        );
+        expect(scoreController.checkScore).toHaveBeenCalledWith({
+          ...fakeDocuments.score.toObject(),
+          ...scoreEditDTO,
+        });
+        expect(updatedScore).toBeDefined();
+      });
+    });
+
+    describe('400 BAD REQUEST', () => {
+      it('should throw an error if the score id is empty', async () => {
+        await expect(
+          scoreController.updateScore(
+            faker.database.mongodbObjectId(),
+            faker.database.mongodbObjectId(),
+            null,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.SCORE_EMPTY);
+      });
+
+      it('should throw an error if the userId is invalid', async () => {
+        const scoreEditDTO = makeFakeScoreEditDTO();
+        expect.assertions(3);
+        await expect(
+          scoreController.updateScore(
+            'invalid',
+            faker.database.mongodbObjectId(),
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+
+        await expect(
+          scoreController.updateScore(
+            null,
+            faker.database.mongodbObjectId(),
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+
+        await expect(
+          scoreController.updateScore(
+            undefined,
+            faker.database.mongodbObjectId(),
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
+      });
+
+      it('should throw an error if the scoreId is not valid', async () => {
+        const scoreEditDTO = makeFakeScoreEditDTO();
+        expect.assertions(3);
+        await expect(
+          scoreController.updateScore(
+            fakeDocuments.user._id.toString(),
+            'invalid',
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.SCORE_ID_INVALID);
+
+        await expect(
+          scoreController.updateScore(
+            fakeDocuments.user._id.toString(),
+            null,
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.SCORE_ID_INVALID);
+
+        await expect(
+          scoreController.updateScore(
+            fakeDocuments.user._id.toString(),
+            undefined,
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.SCORE_ID_INVALID);
+      });
+    });
+
+    describe('404 NOT FOUND', () => {
+      it('should throw an error if the user is not found', async () => {
+        const scoreEditDTO = makeFakeScoreEditDTO();
+        expect.assertions(1);
+        await expect(
+          scoreController.updateScore(
+            faker.database.mongodbObjectId(),
+            faker.database.mongodbObjectId(),
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.USER_NOT_FOUND);
+      });
+
+      it('should throw an error if the score is not found', async () => {
+        const scoreEditDTO = makeFakeScoreEditDTO();
+        expect.assertions(1);
+        await expect(
+          scoreController.updateScore(
+            fakeDocuments.user._id.toString(),
+            faker.database.mongodbObjectId(),
+            scoreEditDTO,
+          ),
+        ).rejects.toThrow(SCORE_ERRORS.SCORE_NOT_FOUND);
+      });
+    });
   });
 
-  describe('PATCH /users/{userId}/score/{scoreId} 400 STATUS', () => {
-    it('Test case invalid user id', () => {
-      const error = new HttpException(
-        'User id is not valid',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.updateScore(
-          'User id is not valid',
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreCreateDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
+  describe('checkScore', () => {
+    describe('failures', () => {
+      it('should throw an error if auto score totals do not add up', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+        });
 
-    it('Test case no user id', () => {
-      const error = new HttpException(
-        'No user id provided',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.updateScore(
-          null,
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreCreateDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
+        expect(() => scoreController.checkScore(autoScore)).toThrow(
+          SCORE_ERRORS.SCORE_TOTAL_INVALID,
+        );
+      });
 
-    it('Test case invalid score id', () => {
-      const error = new HttpException(
-        'Score id is not valid',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.updateScore(
-          '629a3aaa17d028a1f19f0e5c',
-          'Score id is not valid',
-          plainToInstance(ScoreCreateDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
+      it('should throw an error if ruberic score total do not add up', () => {
+        const rubericScore = makeFakeScoreCreateDTO({
+          type: 'rubric',
+          total: 100,
+        });
+        expect(() => scoreController.checkScore(rubericScore)).toThrow(
+          SCORE_ERRORS.SCORE_TOTAL_INVALID,
+        );
+      });
+    });
 
-    it('Test case no score id', () => {
-      const error = new HttpException(
-        'No score id provided',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.updateScore(
-          '629a3aaa17d028a1f19f0e5c',
-          null,
-          plainToInstance(ScoreCreateDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
+    describe('success', () => {
+      it('should return true if auto score is valid', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+          active_days: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          comments_received: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          post_inspirations: {
+            max_points: 25,
+            selected: faker.datatype.boolean(),
+          },
+          posts_made: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+        });
 
-    it('Test case type is not a string', async () => {
-      const score = plainToInstance(ScoreEditDTO, typeNotStringUpdate);
-      const errors = await validate(score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('type must be a string');
-    }); // FINISHED
+        expect(() => scoreController.checkScore(autoScore)).not.toThrow();
+      });
 
-    it('Test case type is null', async () => {
-      const score = plainToInstance(ScoreEditDTO, typeNullUpdate);
-      const errors = await validate(score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('type should not be empty');
-    }); // FINISHED
+      it('should return true if auto score is valid with no active_days', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+          active_days: undefined,
+          comments_received: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          post_inspirations: {
+            max_points: 25,
+            selected: faker.datatype.boolean(),
+          },
+          posts_made: {
+            max_points: 50,
+            required: faker.datatype.number(),
+          },
+        });
 
-    it('Test case instructions is empty', async () => {
-      const score = plainToInstance(ScoreEditDTO, instructionsEmptyUpdate);
-      const errors = await validate(score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'instructions should not be empty',
-      );
-    }); // FINISHED
+        expect(() => scoreController.checkScore(autoScore)).not.toThrow();
+      });
 
-    it('Test case instructions posting is not a number', async () => {
-      const score = plainToInstance(ScoreEditDTO, instPostingNotNumUpdate);
-      const errors = await validate(score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions posting must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
+      it('should return true if auto score is valid with no comments_received', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+          active_days: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          comments_received: undefined,
+          post_inspirations: {
+            max_points: 25,
+            selected: faker.datatype.boolean(),
+          },
+          posts_made: {
+            max_points: 50,
+            required: faker.datatype.number(),
+          },
+        });
+        // Jest coverage is lying about line 124. It is being hit. :shrug:
+        expect(() => scoreController.checkScore(autoScore)).not.toThrow();
+      });
 
-    it('Test case instructions posting is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, instPostingEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions posting should not be empty');
-    }); // FINISHED
+      it('should return true if auto score is valid with no post_inspirations', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+          active_days: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          comments_received: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          post_inspirations: undefined,
+          posts_made: {
+            max_points: 50,
+            required: faker.datatype.number(),
+          },
+        });
 
-    it('Test case instructions responding is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, instRespondingNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions responding must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
+        expect(() => scoreController.checkScore(autoScore)).not.toThrow();
+      });
 
-    it('Test case instructions responding is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, instRespondingEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions responding should not be empty');
-    }); // FINISHED
+      it('should return true if auto score is valid with no posts_made', () => {
+        const autoScore = makeFakeScoreCreateDTO({
+          type: 'auto',
+          total: 100,
+          active_days: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          comments_received: {
+            max_points: 25,
+            required: faker.datatype.number(),
+          },
+          post_inspirations: {
+            max_points: 50,
+            selected: faker.datatype.boolean(),
+          },
+          posts_made: undefined,
+        });
 
-    it('Test case instructions synthesizing is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, instSynthesizingNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'instructions synthesizing must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
+        expect(() => scoreController.checkScore(autoScore)).not.toThrow();
+      });
 
-    it('Test case instructions synthesizing is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, instSynthesizingEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('instructions synthesizing should not be empty');
-    }); // FINISHED
+      it('should return true if ruberic score is valid', () => {
+        const rubricScore = makeFakeScoreCreateDTO({
+          type: 'rubric',
+          total: 100,
+          criteria: [
+            makeFakeCreateGradingCriteria({ max_points: 25 }),
+            makeFakeCreateGradingCriteria({ max_points: 25 }),
+            makeFakeCreateGradingCriteria({ max_points: 25 }),
+            makeFakeCreateGradingCriteria({ max_points: 25 }),
+          ],
+        });
 
-    it('Test case interactions is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, interactionsEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'interactions should not be empty',
-      );
-    }); // FINISHED
-
-    it('Test case interactions max is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, interMaxNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'interactions max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case interactions max is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, interMaxEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('interactions max should not be empty');
-    }); // FINISHED
-
-    it('Test case impact is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, impactEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('impact should not be empty');
-    }); // FINISHED
-
-    it('Test case impact max is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, impactMaxNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'impact max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case impact max is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, impactMaxEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('impact max should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, rubricEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain('rubric should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric max is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, rubricMaxNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'rubric max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case rubric max is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, rubricMaxEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric max should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric criteria is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, rubricCriteriaEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property + ' ' + errors[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria should not be empty');
-    }); // FINISHED
-
-    it('Test case rubric criteria is empty array', () => {
-      const error = new HttpException(
-        'Array length for criteria cannot be 0',
-        HttpStatus.BAD_REQUEST,
-      );
-      return expect(
-        appController.updateScore(
-          '629a3aaa17d028a1f19f0e5c',
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreEditDTO, rubricCriteriaEmptyArrayUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-
-    it('Test case rubric criteria array is of wrong type', async () => {
-      const Score = plainToInstance(
-        ScoreEditDTO,
-        rubricCriteriaArrayWrongTypeUpdate,
-      );
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      expect(JSON.stringify(errors)).toContain(
-        'nested property criteria must be either object or array',
-      );
-    }); // FINISHED
-
-    it('Test case criteria description is not a string', async () => {
-      const Score = plainToInstance(ScoreEditDTO, criteriaDescNotStringUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isString;
-      expect(message).toBe('rubric criteria description must be a string');
-    }); // FINISHED
-
-    it('Test case criteria description is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, criteriaDescEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria description should not be empty');
-    }); // FINISHED
-
-    it('Test case criteria max is not a number', async () => {
-      const Score = plainToInstance(ScoreEditDTO, criteriaMaxNotNumUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNumber;
-      expect(message).toBe(
-        'rubric criteria max must be a number conforming to the specified constraints',
-      );
-    }); // FINISHED
-
-    it('Test case criteria max is empty', async () => {
-      const Score = plainToInstance(ScoreEditDTO, criteriaMaxEmptyUpdate);
-      const errors = await validate(Score);
-      expect(errors.length).not.toBe(0);
-      const message =
-        errors[0].property +
-        ' ' +
-        errors[0].children[0].property +
-        ' ' +
-        errors[0].children[0].children[0].children[0].constraints.isNotEmpty;
-      expect(message).toBe('rubric criteria max should not be empty');
-    }); // FINISHED
-  });
-
-  describe('PATCH /users/{userId}/score/{scoreId} 403 STATUS', () => {
-    it('Test case user id and creator id do not match', () => {
-      const error = new HttpException(
-        'Total score does not add up',
-        HttpStatus.FORBIDDEN,
-      );
-      return expect(
-        appController.updateScore(
-          '444a3aaa17d028a1f19f9999',
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreEditDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-  });
-
-  describe('PATCH /users/{userId}/score/{scoreId} 404 STATUS', () => {
-    it('Test case non existent user', () => {
-      const error = new HttpException(
-        'User does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateScore(
-          '629a3aaa17d028a1f19f0888',
-          '629a3aaa17d028a1f19f0888',
-          plainToInstance(ScoreEditDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-
-    it('Test case non existent score', () => {
-      const error = new HttpException(
-        'Score does not exist',
-        HttpStatus.NOT_FOUND,
-      );
-      return expect(
-        appController.updateScore(
-          '629a3aaa17d028a1f19f0e5c',
-          '629a3aaa17d028a1f19f0e5c',
-          plainToInstance(ScoreEditDTO, testScoreUpdate),
-        ),
-      ).rejects.toThrow(error);
-    }); // FINISHED
-  });
-
-  afterAll(async () => {
-    await mongoConnection.close();
+        expect(() => scoreController.checkScore(rubricScore)).not.toThrow();
+      });
+    });
   });
 });

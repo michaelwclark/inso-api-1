@@ -2,8 +2,6 @@ import {
   Body,
   Controller,
   HttpCode,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -26,11 +24,12 @@ import { ScoreCreateDTO } from 'src/entities/score/create-score';
 import { ScoreEditDTO } from 'src/entities/score/edit-score';
 import { Score, ScoreDocument } from 'src/entities/score/score';
 import { User } from 'src/entities/user/user';
+import SCORE_ERRORS from './score-errors';
 
 @Controller()
 export class ScoreController {
   constructor(
-    @InjectModel(Score.name) private ScoreModel: Model<ScoreDocument>,
+    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
@@ -52,25 +51,21 @@ export class ScoreController {
     @Param('userId') id: string,
     @Body() score: ScoreCreateDTO,
   ) {
-    if (id === undefined) {
-      throw new HttpException('User id is undefined', HttpStatus.BAD_REQUEST);
-    }
-    if (id === null) {
-      throw new HttpException('No user id provided', HttpStatus.BAD_REQUEST);
-    }
-    if (!Types.ObjectId.isValid(id)) {
-      throw new HttpException('User id is not valid', HttpStatus.BAD_REQUEST);
+    if (!id || !Types.ObjectId.isValid(id)) {
+      throw SCORE_ERRORS.USER_ID_INVALID;
     }
     const user = await this.userModel.findOne({ _id: id });
     if (!user) {
-      throw new HttpException('User does not exist', HttpStatus.BAD_REQUEST);
+      throw SCORE_ERRORS.USER_NOT_FOUND;
     }
 
     // Double check all of the scoring adds up to the total score possible
     this.checkScore(score);
 
-    const createdScore = new this.ScoreModel({ ...score, creatorId: user._id });
-    await createdScore.save();
+    const createdScore = await this.scoreModel.create({
+      ...score,
+      creatorId: user._id,
+    });
 
     return createdScore._id;
   }
@@ -88,45 +83,33 @@ export class ScoreController {
     @Param('scoreId') scoreId: string,
     @Body() score: ScoreEditDTO,
   ) {
-    if (score === null) {
-      throw new HttpException('Score object is empty', HttpStatus.BAD_REQUEST);
+    if (!score) {
+      throw SCORE_ERRORS.SCORE_EMPTY;
     }
     //USER ID VALIDATION
-    if (id === undefined) {
-      throw new HttpException('User id is undefined', HttpStatus.BAD_REQUEST);
-    }
-    if (id === null) {
-      throw new HttpException('No user id provided', HttpStatus.BAD_REQUEST);
-    }
-    if (!Types.ObjectId.isValid(id)) {
-      throw new HttpException('User id is not valid', HttpStatus.BAD_REQUEST);
+    if (!id || !Types.ObjectId.isValid(id)) {
+      throw SCORE_ERRORS.USER_ID_INVALID;
     }
     const user = await this.userModel.findOne({ _id: id });
     if (!user) {
-      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+      throw SCORE_ERRORS.USER_NOT_FOUND;
     }
 
     //SCORE ID VALIDATION
-    if (scoreId === undefined) {
-      throw new HttpException('Score id is undefined', HttpStatus.BAD_REQUEST);
-    }
-    if (scoreId === null) {
-      throw new HttpException('No score id provided', HttpStatus.BAD_REQUEST);
-    }
-    if (!Types.ObjectId.isValid(scoreId)) {
-      throw new HttpException('Score id is not valid', HttpStatus.BAD_REQUEST);
+    if (!scoreId || !Types.ObjectId.isValid(scoreId)) {
+      throw SCORE_ERRORS.SCORE_ID_INVALID;
     }
 
-    const foundScore = await this.ScoreModel.findOne({ _id: scoreId }).lean();
+    const foundScore = await this.scoreModel.findOne({ _id: scoreId }).lean();
     if (!foundScore) {
-      throw new HttpException('Score does not exist', HttpStatus.NOT_FOUND);
+      throw SCORE_ERRORS.SCORE_NOT_FOUND;
     }
 
     // Concat the update and check that the score still checks out
     const updatedScore = { ...foundScore, ...score };
     this.checkScore(updatedScore);
 
-    await this.ScoreModel.findOneAndUpdate({ _id: foundScore._id }, score);
+    await this.scoreModel.findOneAndUpdate({ _id: foundScore._id }, score);
 
     return 'Score Updated';
   }
@@ -149,19 +132,13 @@ export class ScoreController {
       const totaled =
         active_days + comments_received + post_inspirations + posts_made;
       if (totaled !== score.total) {
-        throw new HttpException(
-          'Total score does not add up',
-          HttpStatus.BAD_REQUEST,
-        );
+        throw SCORE_ERRORS.SCORE_TOTAL_INVALID;
       }
     }
     if (score.type === 'rubric') {
       const totaled = score.criteria.reduce((a, b) => a + b.max_points, 0);
       if (totaled !== score.total) {
-        throw new HttpException(
-          'Total score does not add up',
-          HttpStatus.BAD_REQUEST,
-        );
+        throw SCORE_ERRORS.SCORE_TOTAL_INVALID;
       }
     }
   }
