@@ -34,7 +34,18 @@ export class DiscussionCreateDTO {
   @IsOptional()
   @IsNotEmpty()
   @IsString()
-  @IsIn(['topic', 'debate', 'peerReview', 'testPrep', 'testReview', 'caseStudy', 'designThinking', 'introductions', 'lessonSummary', 'solutions'])
+  @IsIn([
+    'topic',
+    'debate',
+    'peerReview',
+    'testPrep',
+    'testReview',
+    'caseStudy',
+    'designThinking',
+    'introductions',
+    'lessonSummary',
+    'solutions',
+  ])
   public type: string;
 
   @ApiProperty({

@@ -11,7 +11,7 @@ export function makeFakeDiscussionCreateDTO(
     poster: faker.database.fakeMongoId(),
     facilitators: [faker.database.fakeMongoId()],
     ...discussion,
-  };
+  } as DiscussionCreateDTO;
 }
 
 export function makeFakeDiscussionCreateDTOPlain(discussion: any = {}) {
@@ -46,7 +46,7 @@ export function makeFakeDiscussionPayload(
     ],
     set: [faker.database.fakeMongoId()],
     ...discussion,
-  };
+  } as Discussion;
 }
 
 export function makeFakeDiscussionEditDTO(
@@ -60,5 +60,5 @@ export function makeFakeDiscussionEditDTO(
     keywords: [faker.random.word()],
     participants: [faker.database.fakeMongoId()],
     ...discussion,
-  };
+  } as DiscussionEditDTO;
 }

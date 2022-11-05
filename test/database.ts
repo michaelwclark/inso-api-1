@@ -5,40 +5,44 @@ import { makeFakeCalendarPayload } from '../src/entities/calendar/calendar-fakes
 import {
   DiscussionSet,
   DiscussionSetSchema,
-} from '../src//entities/discussion-set/discussion-set';
+} from '../src/entities/discussion-set/discussion-set';
 import {
   Discussion,
   DiscussionSchema,
-} from '../src//entities/discussion/discussion';
-import { makeFakeDiscussionPayload } from '../src//entities/discussion/discussion-fakes';
-import { Grade, GradeSchema } from '../src//entities/grade/grade';
-import { makeFakeGradePayload } from '../src//entities/grade/grade-fakes';
+} from '../src/entities/discussion/discussion';
+import { makeFakeDiscussionPayload } from '../src/entities/discussion/discussion-fakes';
+import { Grade, GradeSchema } from '../src/entities/grade/grade';
+import { makeFakeGradePayload } from '../src/entities/grade/grade-fakes';
 import {
   Inspiration,
   InspirationSchema,
-} from '../src//entities/inspiration/inspiration';
-import { makeFakeInspirationPayload } from '../src//entities/inspiration/inspiration-fakes';
+} from '../src/entities/inspiration/inspiration';
+import { makeFakeInspirationPayload } from '../src/entities/inspiration/inspiration-fakes';
 import {
   Milestone,
   MilestoneSchema,
-} from '../src//entities/milestone/milestone';
+} from '../src/entities/milestone/milestone';
 import {
   Notification,
   NotificationSchema,
-} from '../src//entities/notification/notification';
+} from '../src/entities/notification/notification';
 import {
   DiscussionPost,
   DiscussionPostSchema,
-} from '../src//entities/post/post';
-import { Reaction, ReactionSchema } from '../src//entities/reaction/reaction';
-import { Score, ScoreSchema } from '../src//entities/score/score';
-import { makeFakeScorePayload } from '../src//entities/score/score-fakes';
-import { Setting, SettingSchema } from '../src//entities/setting/setting';
-import { makeFakeSettingPayload } from '../src//entities/setting/setting-fakes';
-import { User, UserSchema } from '../src//entities/user/user';
-import { makeFakeUserPayload } from '../src//entities/user/user-fakes';
+} from '../src/entities/post/post';
+import { Reaction, ReactionSchema } from '../src/entities/reaction/reaction';
+import { Score, ScoreSchema } from '../src/entities/score/score';
+import { makeFakeScorePayload } from '../src/entities/score/score-fakes';
+import { Setting, SettingSchema } from '../src/entities/setting/setting';
+import { makeFakeSettingPayload } from '../src/entities/setting/setting-fakes';
+import { User, UserSchema } from '../src/entities/user/user';
+import { makeFakeUserPayload } from '../src/entities/user/user-fakes';
 import faker from './faker';
 import { HydratedDocument } from 'mongoose';
+import {
+  DiscussionType,
+  DiscussionTypeSchema,
+} from '../src/entities/discussionType/discussion-type';
 
 export interface TestingDatabase {
   calendar: Model<Calendar>;
@@ -46,6 +50,7 @@ export interface TestingDatabase {
   connection: Connection;
   discussionSet: Model<DiscussionSet>;
   discussion: Model<Discussion>;
+  discussionType: Model<DiscussionType>;
   grade: Model<Grade>;
   inspiration: Model<Inspiration>;
   milestone: Model<Milestone>;
@@ -63,6 +68,7 @@ export interface FakeDocuments {
   calendar: HydratedDocument<Calendar>;
   discussionSet: HydratedDocument<DiscussionSet>;
   discussion: HydratedDocument<Discussion>;
+  discussionType: HydratedDocument<DiscussionType>;
   grade: HydratedDocument<Grade>;
   inspiration: HydratedDocument<Inspiration>;
   milestone: HydratedDocument<Milestone>;
@@ -84,6 +90,11 @@ export async function testingDatabase(): Promise<TestingDatabase> {
     Discussion.name,
     DiscussionSchema,
   );
+  const discussionTypeModel = mongoConnection.model(
+    DiscussionType.name,
+    DiscussionTypeSchema,
+  );
+
   const discussionSetModel = mongoConnection.model(
     DiscussionSet.name,
     DiscussionSetSchema,
@@ -112,6 +123,7 @@ export async function testingDatabase(): Promise<TestingDatabase> {
     connection: mongoConnection,
     discussion: discussionModel,
     discussionSet: discussionSetModel,
+    discussionType: discussionTypeModel,
     grade: gradeModel,
     inspiration: inspirationModel,
     milestone: milestoneModel,
@@ -176,7 +188,7 @@ async function createFakes(database: TestingDatabase): Promise<FakeDocuments> {
       ],
     }),
   );
-
+  const discussionType = await database.discussionType.create({});
   const discussionSet = await database.discussionSet.create({});
   const milestone = await database.milestone.create({});
   const notification = await database.notification.create({});
@@ -186,6 +198,7 @@ async function createFakes(database: TestingDatabase): Promise<FakeDocuments> {
   return {
     calendar,
     discussionSet,
+    discussionType,
     discussion,
     grade,
     inspiration,

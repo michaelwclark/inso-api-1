@@ -26,6 +26,7 @@ import faker from 'test/faker';
 import { getUniqueInsoCode } from 'src/modules/shared/generateInsoCode';
 import DISCUSSION_ERRORS from '../discussion-errors';
 import { TestingDatabase, testingDatabase, FakeDocuments } from 'test/database';
+import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 
 jest.mock('src/modules/shared/generateInsoCode');
 
@@ -73,6 +74,10 @@ describe('DiscussionController', () => {
         },
         { provide: getModelToken(Reaction.name), useValue: database.reaction },
         { provide: getModelToken(Grade.name), useValue: database.grade },
+        {
+          provide: getModelToken(DiscussionType.name),
+          useValue: database.discussionType,
+        },
         {
           provide: MilestoneService,
           useValue: mockMilestoneService,
@@ -223,14 +228,13 @@ describe('DiscussionController', () => {
       });
 
       it('facilitator not found', () => {
-        const validDiscussion = {
-          name: 'Power',
+        const discussionDTO = makeFakeDiscussionCreateDTO({
           poster: fakeDocuments.user._id,
           facilitators: [faker.database.fakeMongoId()],
-        };
+        });
 
         return expect(
-          discussionController.createDiscussion(validDiscussion, mockRequest),
+          discussionController.createDiscussion(discussionDTO, mockRequest),
         ).rejects.toThrow(DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND);
       });
     });
