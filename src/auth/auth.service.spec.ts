@@ -1,25 +1,22 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { getModelToken } from '@nestjs/mongoose';
-import { connect, Connection, Model } from 'mongoose';
-
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
-import {
-  Discussion,
-  DiscussionSchema,
-} from 'src/entities/discussion/discussion';
-import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
-import { Score, ScoreSchema } from 'src/entities/score/score';
-import { User, UserSchema } from 'src/entities/user/user';
-import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
-import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
+import { Discussion } from 'src/entities/discussion/discussion';
+import { DiscussionPost } from 'src/entities/post/post';
+import { Score } from 'src/entities/score/score';
+import { User } from 'src/entities/user/user';
+import { Reaction } from 'src/entities/reaction/reaction';
+import { Calendar } from 'src/entities/calendar/calendar';
 import * as bcrypt from 'bcrypt';
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
 import { UserReadDTO } from 'src/entities/user/read-user';
-import authErrors from './auth-errors';
+import AUTH_ERRORS from './auth-errors';
+import { TestingDatabase, testingDatabase, FakeDocuments } from 'test/database';
+import { makeFakeUserPayload } from 'src/entities/user/user-fakes';
+import faker from 'test/faker';
 
 jest.mock('bcrypt');
 jest.mock('@nestjs/jwt');
@@ -31,57 +28,40 @@ const bcryptHash = jest.spyOn(bcrypt, 'hash');
 const jwtSign = jest.spyOn(JwtService.prototype, 'sign');
 
 describe('AuthService', () => {
+  let database: TestingDatabase;
+  let fakeDocuments: FakeDocuments;
   let service: AuthService;
-  let mongod: MongoMemoryServer;
-  let mongoConnection: Connection;
-  let discussionModel: Model<any>;
-  let discussionPostModel: Model<any>;
-  let scoreModel: Model<any>;
-  let calendarModel: Model<any>;
-  let userModel: Model<any>;
-  let reactionModel: Model<any>;
-
   let module: TestingModule;
-  beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    mongoConnection = (await connect(uri)).connection;
 
-    discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-    discussionPostModel = mongoConnection.model(
-      DiscussionPost.name,
-      DiscussionPostSchema,
-    );
-    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
-    calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
-    userModel = mongoConnection.model(User.name, UserSchema);
-    reactionModel = mongoConnection.model(Reaction.name, ReactionSchema);
+  beforeAll(async () => {
+    database = await testingDatabase();
+  });
+
+  beforeEach(async () => {
+    fakeDocuments = await database.createFakes();
     module = await Test.createTestingModule({
       providers: [
         AuthService,
         JwtService,
-        { provide: getModelToken(Discussion.name), useValue: discussionModel },
+        {
+          provide: getModelToken(Discussion.name),
+          useValue: database.discussion,
+        },
         {
           provide: getModelToken(DiscussionPost.name),
-          useValue: discussionPostModel,
+          useValue: database.post,
         },
-        { provide: getModelToken(Score.name), useValue: scoreModel },
-        { provide: getModelToken(Calendar.name), useValue: calendarModel },
-        { provide: getModelToken(User.name), useValue: userModel },
-
-        { provide: getModelToken(Reaction.name), useValue: reactionModel },
+        { provide: getModelToken(Score.name), useValue: database.score },
+        { provide: getModelToken(Calendar.name), useValue: database.calendar },
+        { provide: getModelToken(User.name), useValue: database.user },
+        { provide: getModelToken(Reaction.name), useValue: database.reaction },
       ],
     }).compile();
     service = module.get<AuthService>(AuthService);
   });
 
   afterEach(async () => {
-    await userModel.deleteMany({});
-    await discussionModel.deleteMany({});
-    await discussionPostModel.deleteMany({});
-    await scoreModel.deleteMany({});
-    await calendarModel.deleteMany({});
-    await reactionModel.deleteMany({});
+    await database.clearDatabase();
     jest.clearAllMocks();
   });
 
@@ -96,55 +76,50 @@ describe('AuthService', () => {
 
     it('should raise an error if user is not found', async () => {
       await expect(service.validateUser('test', 'test')).rejects.toEqual(
-        authErrors.EMAIL_NOT_FOUND,
+        AUTH_ERRORS.EMAIL_NOT_FOUND,
       );
     });
 
     it('should raise an error if user is found but has no password (SSO configured)', async () => {
-      await new userModel({
-        username: 'mockuser1234',
-        contact: {
-          email: 'mockuser@inso.com',
-        },
-      }).save();
+      const mockUser = await database.user.create(
+        makeFakeUserPayload({
+          password: undefined,
+        }),
+      );
 
       await expect(
-        service.validateUser('mockuser@inso.com', 'asdf'),
-      ).rejects.toEqual(authErrors.SSO_CONFIGURED);
+        service.validateUser(
+          mockUser.contact[0].email,
+          faker.datatype.string(),
+        ),
+      ).rejects.toEqual(AUTH_ERRORS.SSO_CONFIGURED);
     });
 
     it('should raise an error if the passwords to not match', async () => {
-      await new userModel({
-        username: 'mock_user_bad_password',
-        contact: {
-          email: 'mock_user_bad_password@inso.com',
-        },
-        password: 'asdf',
-      }).save();
-
       bcryptCompare.mockImplementation(() => Promise.resolve(false));
 
       await expect(
-        service.validateUser('mock_user_bad_password@inso.com', 'asdf1'),
-      ).rejects.toEqual(authErrors.INVALID_PASSWORD);
+        service.validateUser(
+          fakeDocuments.user.contact[0].email,
+          faker.datatype.string(),
+        ),
+      ).rejects.toEqual(AUTH_ERRORS.INVALID_PASSWORD);
     });
 
     it('should call login if user found and valid password', async () => {
       const oldLogin = service.login;
       service.login = jest.fn();
       bcryptCompare.mockImplementation(() => Promise.resolve(true));
-
-      await new userModel({
-        username: 'mock_user_good_password',
-        contact: {
-          email: 'mock_user_good_password@inso.com',
-        },
-        password: 'asdf',
-      }).save();
-
-      await service.validateUser('mock_user_good_password@inso.com', 'asdf');
+      const password = faker.datatype.string();
+      await service.validateUser(
+        fakeDocuments.user.contact[0].email,
+        password, // Mocked the hash check.
+      );
       expect(service.login).toHaveBeenCalled();
-      expect(bcrypt.compare).toHaveBeenCalledWith('asdf', 'asdf');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        password,
+        fakeDocuments.user.password,
+      );
       service.login = oldLogin;
     });
   });
@@ -155,17 +130,13 @@ describe('AuthService', () => {
     });
 
     it('should return a jwt token', async () => {
-      const userPayload = {
-        username: 'mock_user_good_password',
-        _id: '1234',
-      };
       jwtSign.mockImplementation(() => 'token');
-      const token = await service.login(userPayload);
+      const token = await service.login(fakeDocuments.user);
       expect.assertions(2);
       expect(token).toBeDefined();
       expect(jwtSign).toHaveBeenCalledWith({
-        username: 'mock_user_good_password',
-        sub: '1234',
+        username: fakeDocuments.user.username,
+        sub: fakeDocuments.user._id,
       });
     });
   });
@@ -180,48 +151,34 @@ describe('AuthService', () => {
         email: ' ',
       };
       await expect(service.googleLogin(payload)).rejects.toEqual(
-        authErrors.USER_NOT_FOUND_GOOGLE,
+        AUTH_ERRORS.USER_NOT_FOUND_GOOGLE,
       );
     });
 
     it('should look for user by email', async () => {
-      await new userModel({
-        username: 'mock_user_good_password',
-        contact: {
-          email: 'googleUser@inso.com',
-        },
-      }).save();
-
-      jest.spyOn(userModel, 'findOne');
+      jest.spyOn(database.user, 'findOne');
       const payload = {
         user: {
-          email: 'googleUser@inso.com',
+          email: fakeDocuments.user.contact[0].email,
         },
       };
       service.googleLogin(payload);
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        'contact.email': 'googleUser@inso.com',
+      expect(database.user.findOne).toHaveBeenCalledWith({
+        'contact.email': fakeDocuments.user.contact[0].email,
       });
     });
 
     it('should sign jwt if user found by email', async () => {
-      await new userModel({
-        username: 'mock_user_good_password',
-        contact: {
-          email: 'googleUser@inso.com',
-        },
-      }).save();
-
-      jest.spyOn(userModel, 'findOne');
+      jest.spyOn(database.user, 'findOne');
       const payload = {
         user: {
-          email: 'googleUser@inso.com',
+          email: fakeDocuments.user.contact[0].email,
         },
       };
       jwtSign.mockImplementation(() => 'Googletoken');
       const token = await service.googleLogin(payload);
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        'contact.email': 'googleUser@inso.com',
+      expect(database.user.findOne).toHaveBeenCalledWith({
+        'contact.email': fakeDocuments.user.contact[0].email,
       });
       expect(token).toEqual({
         access_token: 'Googletoken',
@@ -229,13 +186,6 @@ describe('AuthService', () => {
     });
 
     it('should lookup username based on first and last name', async () => {
-      await new userModel({
-        username: 'mock_user_good_password',
-        contact: {
-          email: 'googleUser@inso.com',
-        },
-      }).save();
-
       const payload = {
         user: {
           firstName: 'John',
@@ -260,11 +210,11 @@ describe('AuthService', () => {
     });
 
     it('should create unique new user name ', async () => {
-      await new userModel({
+      await new database.user({
         username: `JohnDoe`,
       }).save();
       for (let index = 0; index < 101; index++) {
-        await new userModel({
+        await new database.user({
           username: `JohnDoe${index}`,
         }).save();
       }
@@ -300,10 +250,13 @@ describe('AuthService', () => {
     });
 
     it('should raise an exception if passwords do not match', async () => {
-      const user = await new userModel({}).save();
       bcryptCompare.mockImplementation(() => Promise.resolve(false));
       await expect(
-        service.resetPassword(user._id, 'asdf', 'asdf1'),
+        service.resetPassword(
+          fakeDocuments.user._id.toString(),
+          faker.datatype.string(),
+          faker.datatype.string(),
+        ),
       ).rejects.toEqual(
         new HttpException(
           'Invalid credentials, old password is not correct',
@@ -313,21 +266,29 @@ describe('AuthService', () => {
     });
 
     it('should validate passowrd if passwords match', async () => {
-      const user = await new userModel({}).save();
       bcryptCompare.mockImplementation(() => Promise.resolve(true));
-      await service.resetPassword(user._id, 'oldPass', 'newPass');
+      await service.resetPassword(
+        fakeDocuments.user._id.toString(),
+        'oldPass',
+        'newPass',
+      );
       expect(validatePassword).toHaveBeenCalledWith('newPass');
     });
 
     it('should update passowrd if passwords match', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(userModel, 'findOneAndUpdate');
+      jest.spyOn(database.user, 'findOneAndUpdate');
 
       bcryptCompare.mockImplementation(() => Promise.resolve(true));
       bcryptHash.mockImplementation(() => Promise.resolve('newPassHash'));
-      await service.resetPassword(user._id, 'oldPass', 'newPass');
-      expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: user._id },
+
+      await service.resetPassword(
+        fakeDocuments.user._id.toString(),
+        'oldPass',
+        'newPass',
+      );
+
+      expect(database.user.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: fakeDocuments.user._id },
         { password: 'newPassHash' },
       );
     });
@@ -339,27 +300,33 @@ describe('AuthService', () => {
     });
 
     it('should verify mongoIds', async () => {
-      const user = await new userModel({}).save();
       jest.spyOn(service, 'verifyMongoIds');
-      await service.resetPasswordFromEmail(user._id, 'asdf');
-      expect(service.verifyMongoIds).toHaveBeenCalledWith([user._id]);
+      await service.resetPasswordFromEmail(
+        fakeDocuments.user._id.toString(),
+        'asdf',
+      );
+      expect(service.verifyMongoIds).toHaveBeenCalledWith([
+        fakeDocuments.user._id.toString(),
+      ]);
     });
 
     it('should validate passowrd', async () => {
-      const user = await new userModel({}).save();
-
-      await service.resetPasswordFromEmail(user._id, 'asdf');
+      await service.resetPasswordFromEmail(
+        fakeDocuments.user._id.toString(),
+        'asdf',
+      );
       expect(validatePassword).toHaveBeenCalledWith('asdf');
     });
 
     it('should set new passowrd', async () => {
-      const user = await new userModel({}).save();
-
       bcryptHash.mockImplementation(() => Promise.resolve('newPassHash'));
-      jest.spyOn(userModel, 'findOneAndUpdate');
-      await service.resetPasswordFromEmail(user._id, 'asdf');
-      expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
-        { _id: user._id },
+      jest.spyOn(database.user, 'findOneAndUpdate');
+      await service.resetPasswordFromEmail(
+        fakeDocuments.user._id.toString(),
+        'asdf',
+      );
+      expect(database.user.findOneAndUpdate).toHaveBeenCalledWith(
+        { _id: fakeDocuments.user._id },
         { password: 'newPassHash' },
       );
     });
@@ -371,59 +338,55 @@ describe('AuthService', () => {
     });
 
     it('should fetch discussions for user', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(discussionModel, 'find');
-      await service.fetchUserAndStats(user._id);
-      expect(discussionModel.find).toHaveBeenCalledWith({
-        poster: user._id,
+      jest.spyOn(database.discussion, 'find');
+      await service.fetchUserAndStats(fakeDocuments.user._id.toString());
+      expect(database.discussion.find).toHaveBeenCalledWith({
+        poster: fakeDocuments.user._id,
       });
     });
 
     it('should fetch discussions joined for the user', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(discussionModel, 'find');
-      await service.fetchUserAndStats(user._id);
-      expect(discussionModel.find).toHaveBeenCalledWith({
-        'participants.user': user._id,
+      jest.spyOn(database.discussion, 'find');
+      await service.fetchUserAndStats(fakeDocuments.user._id.toString());
+      expect(database.discussion.find).toHaveBeenCalledWith({
+        'participants.user': fakeDocuments.user._id,
       });
     });
 
     it('should fetch posts created for the user', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(discussionPostModel, 'find');
-      await service.fetchUserAndStats(user._id);
-      expect(discussionPostModel.find).toHaveBeenCalledWith({
-        userId: user._id,
+      jest.spyOn(database.post, 'find');
+      await service.fetchUserAndStats(fakeDocuments.user._id.toString());
+      expect(database.post.find).toHaveBeenCalledWith({
+        userId: fakeDocuments.user._id,
       });
     });
 
     it('should fetch comments recieved for user posts', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(discussionPostModel, 'find');
-      await service.fetchUserAndStats(user._id);
-      expect(discussionPostModel.find).toHaveBeenCalledWith({
+      jest.spyOn(database.post, 'find');
+      await service.fetchUserAndStats(fakeDocuments.user._id.toString());
+      expect(database.post.find).toHaveBeenCalledWith({
         comment_for: { $in: [] },
       });
     });
 
     it('should fetch upvotes for user', async () => {
-      const user = await new userModel({}).save();
-      jest.spyOn(reactionModel, 'find');
-      await service.fetchUserAndStats(user._id);
-      expect(reactionModel.find).toHaveBeenCalledWith({
+      jest.spyOn(database.reaction, 'find');
+      await service.fetchUserAndStats(fakeDocuments.user._id.toString());
+      expect(database.reaction.find).toHaveBeenCalledWith({
         postId: { $in: [] },
         reaction: '+1',
       });
     });
 
     it('should return UserReadDTO', async () => {
-      const user = await new userModel({}).save();
-      const result = await service.fetchUserAndStats(user._id);
+      const result = await service.fetchUserAndStats(
+        fakeDocuments.user._id.toString(),
+      );
       expect(UserReadDTO).toHaveBeenCalledWith({
-        ...user.toObject(),
+        ...fakeDocuments.user.toObject(),
         statistics: {
-          discussions_created: 0,
-          discussions_joined: 0,
+          discussions_created: 1,
+          discussions_joined: 1,
           posts_made: 0,
           comments_received: 0,
           upvotes: 0,
@@ -433,77 +396,77 @@ describe('AuthService', () => {
     });
 
     it('should return UserReadDTO populated with stats', async () => {
-      const user = await new userModel({
+      const user = await new database.user({
         _id: '5e9f1b9b9b9b9b9b9b9b9b9b',
       }).save();
-      await new discussionModel({
+      await new database.discussion({
         poster: user._id,
       }).save();
-      await new discussionModel({
+      await new database.discussion({
         poster: user._id,
       }).save();
 
-      await new discussionModel({
+      await new database.discussion({
         participants: {
           user: user._id,
         },
       }).save();
-      await new discussionModel({
+      await new database.discussion({
         participants: {
           user: user._id,
         },
       }).save();
-      await new discussionModel({
+      await new database.discussion({
         participants: {
           user: user._id,
         },
       }).save();
 
-      await new discussionPostModel({
+      await new database.post({
         userId: user._id,
       }).save();
 
-      const post1 = await new discussionPostModel({
+      const post1 = await new database.post({
         userId: user._id,
       }).save();
-      const post2 = await new discussionPostModel({
+      const post2 = await new database.post({
         userId: user._id,
       }).save();
-      const post3 = await new discussionPostModel({
+      const post3 = await new database.post({
         userId: user._id,
       }).save();
 
-      await new discussionPostModel({
+      await new database.post({
         comment_for: [post1._id],
       }).save();
-      await new discussionPostModel({
+      await new database.post({
         comment_for: [post1._id],
       }).save();
-      await new discussionPostModel({
+      await new database.post({
         comment_for: [post2._id],
       }).save();
-      await new discussionPostModel({
+      await new database.post({
         comment_for: [post3._id],
       }).save();
 
-      await new reactionModel({
+      await new database.reaction({
         postId: post1._id,
         reaction: '+1',
       }).save();
-      await new reactionModel({
+      await new database.reaction({
         postId: post1._id,
         reaction: '+1',
       }).save();
-      await new reactionModel({
+      await new database.reaction({
         postId: post2._id,
         reaction: '+1',
       }).save();
-      await new reactionModel({
+      await new database.reaction({
         postId: post3._id,
         reaction: '+1',
       }).save();
 
-      const result = await service.fetchUserAndStats(user._id);
+      const result = await service.fetchUserAndStats(user._id.toString());
       expect(UserReadDTO).toHaveBeenCalledWith({
         ...user.toObject(),
         statistics: {
@@ -525,18 +488,24 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not discussion creator', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({ poster: null }).save();
+      const discussion = await new database.discussion({ poster: null }).save();
       await expect(
-        service.isDiscussionCreator(user._id, discussion._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isDiscussionCreator(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion creator', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({ poster: user._id }).save();
+      const discussion = await new database.discussion({
+        poster: fakeDocuments.user._id,
+      }).save();
       await expect(
-        service.isDiscussionCreator(user._id, discussion._id),
+        service.isDiscussionCreator(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
   });
@@ -547,27 +516,25 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not discussion Facilitator', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
+      const discussion = await new database.discussion({
         facilitators: [],
       }).save();
 
       expect.assertions(1);
       await expect(
         service.isDiscussionFacilitator(
-          user._id.toString(),
+          fakeDocuments.user._id.toString(),
           discussion._id.toString(),
         ),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion Facilitator', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
-        facilitators: [user._id],
+      const discussion = await new database.discussion({
+        facilitators: [fakeDocuments.user._id],
       }).save();
       const result = await service.isDiscussionFacilitator(
-        user._id.toString(),
+        fakeDocuments.user._id.toString(),
         discussion._id.toString(),
       );
       expect(result).toEqual(true);
@@ -580,39 +547,46 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if discussion is not found', async () => {
-      const user = await new userModel({}).save();
       await expect(
-        service.isDiscussionParticipant(user._id, '5e9f1b9b9b9b9b9b9b9b9b9b'),
-      ).rejects.toThrowError(authErrors.DISCUSSION_NOT_FOUND);
+        service.isDiscussionParticipant(
+          fakeDocuments.user._id.toString(),
+          faker.database.mongodbObjectId(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.DISCUSSION_NOT_FOUND);
     });
 
     it('should raise exception if user is not discussion Participant', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
+      const discussion = await new database.discussion({
         participants: [],
       }).save();
       await expect(
-        service.isDiscussionParticipant(user._id, discussion._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isDiscussionParticipant(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion Participant', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
+      const discussion = await new database.discussion({
         participants: [
           {
-            user: user._id,
+            user: fakeDocuments.user._id,
           },
         ],
       }).save();
 
       discussion.participants.push({
-        user: user._id,
+        user: fakeDocuments.user._id,
+        joined: faker.date.past(),
+        muted: faker.datatype.boolean(),
+        grade: faker.database.fakeMongoId(),
       });
+
       await discussion.save();
       const result = await service.isDiscussionParticipant(
-        user._id.toString(),
-        discussion._id,
+        fakeDocuments.user._id.toString(),
+        discussion._id.toString(),
       );
       expect(result).toEqual(true);
     });
@@ -624,22 +598,26 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not discussion post creator', async () => {
-      const user = await new userModel({}).save();
-      const discussionPost = await new discussionPostModel({
+      const discussionPost = await new database.post({
         userId: null,
       }).save();
       await expect(
-        service.isPostCreator(user._id, discussionPost._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isPostCreator(
+          fakeDocuments.user._id.toString(),
+          discussionPost._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion post creator', async () => {
-      const user = await new userModel({}).save();
-      const discussionPost = await new discussionPostModel({
-        userId: user._id,
+      const discussionPost = await new database.post({
+        userId: fakeDocuments.user._id,
       }).save();
       await expect(
-        service.isPostCreator(user._id, discussionPost._id),
+        service.isPostCreator(
+          fakeDocuments.user._id.toString(),
+          discussionPost._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
   });
@@ -650,22 +628,26 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not discussion post reaction creator', async () => {
-      const user = await new userModel({}).save();
-      const reaction = await new reactionModel({
+      const reaction = await new database.reaction({
         userId: null,
       }).save();
       await expect(
-        service.isReactionCreator(user._id, reaction._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isReactionCreator(
+          fakeDocuments.user._id.toString(),
+          reaction._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion post reaction creator', async () => {
-      const user = await new userModel({}).save();
-      const reaction = await new reactionModel({
-        userId: user._id,
+      const reaction = await new database.reaction({
+        userId: fakeDocuments.user._id,
       }).save();
       await expect(
-        service.isReactionCreator(user._id, reaction._id),
+        service.isReactionCreator(
+          fakeDocuments.user._id.toString(),
+          reaction._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
   });
@@ -676,41 +658,49 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not discussion member', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
+      const discussion = await new database.discussion({
         facilitators: null,
       }).save();
       await expect(
-        service.isDiscussionMember(user._id, discussion._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isDiscussionMember(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is discussion member', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
-        facilitators: user._id,
+      const discussion = await new database.discussion({
+        facilitators: fakeDocuments.user._id,
       }).save();
       await expect(
-        service.isDiscussionMember(user._id, discussion._id),
+        service.isDiscussionMember(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
 
     it('should return true if user is discussion participant  member', async () => {
-      const user = await new userModel({}).save();
-      const discussion = await new discussionModel({
-        participants: [{ user: user._id }],
+      const discussion = await new database.discussion({
+        participants: [{ user: fakeDocuments.user._id }],
       }).save();
 
       await expect(
-        service.isDiscussionMember(user._id.toString(), discussion._id),
+        service.isDiscussionMember(
+          fakeDocuments.user._id.toString(),
+          discussion._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
 
-    it('should raise error if discussion is not fonud', async () => {
-      const user = await new userModel({}).save();
+    it('should raise error if discussion is not found', async () => {
       await expect(
-        service.isDiscussionMember(user._id, '5e9f1b9b9b9b9b9b9b9b9b9b'),
-      ).rejects.toThrowError(authErrors.DISCUSSION_NOT_FOUND);
+        service.isDiscussionMember(
+          fakeDocuments.user._id.toString(),
+          faker.database.mongodbObjectId(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.DISCUSSION_NOT_FOUND);
     });
   });
 
@@ -720,22 +710,26 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not score creator', async () => {
-      const user = await new userModel({}).save();
-      const score = await new scoreModel({
+      const score = await new database.score({
         creatorId: null,
       }).save();
       await expect(
-        service.isScoreCreator(user._id, score._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isScoreCreator(
+          fakeDocuments.user._id.toString(),
+          score._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is score creator', async () => {
-      const user = await new userModel({}).save();
-      const score = await new scoreModel({
-        creatorId: user._id,
+      const score = await new database.score({
+        creatorId: fakeDocuments.user._id,
       }).save();
       await expect(
-        service.isScoreCreator(user._id, score._id),
+        service.isScoreCreator(
+          fakeDocuments.user._id.toString(),
+          score._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
   });
@@ -746,22 +740,26 @@ describe('AuthService', () => {
     });
 
     it('should raise exception if user is not calendar creator', async () => {
-      const user = await new userModel({}).save();
-      const calendar = await new calendarModel({
+      const calendar = await new database.calendar({
         creator: null,
       }).save();
       await expect(
-        service.isCalendarCreator(user._id, calendar._id),
-      ).rejects.toThrowError(authErrors.FORBIDDEN_FOR_USER);
+        service.isCalendarCreator(
+          fakeDocuments.user._id.toString(),
+          calendar._id.toString(),
+        ),
+      ).rejects.toThrowError(AUTH_ERRORS.FORBIDDEN_FOR_USER);
     });
 
     it('should return true if user is calendar creator', async () => {
-      const user = await new userModel({}).save();
-      const calendar = await new calendarModel({
-        creator: user._id,
+      const calendar = await new database.calendar({
+        creator: fakeDocuments.user._id,
       }).save();
       await expect(
-        service.isCalendarCreator(user._id, calendar._id),
+        service.isCalendarCreator(
+          fakeDocuments.user._id.toString(),
+          calendar._id.toString(),
+        ),
       ).resolves.toEqual(true);
     });
   });
@@ -773,7 +771,7 @@ describe('AuthService', () => {
 
     it('should raise exception if mongo id is invalid', async () => {
       expect(() => service.verifyMongoIds(['a'])).toThrowError(
-        authErrors.INVALID_ID,
+        AUTH_ERRORS.INVALID_ID,
       );
     });
   });

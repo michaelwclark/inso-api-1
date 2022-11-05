@@ -12,7 +12,7 @@ import { validatePassword } from '../entities/user/commonFunctions/validatePassw
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { UserReadDTO } from '../entities/user/read-user';
 import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
-import authErrors from './auth-errors';
+import AUTH_ERRORS from './auth-errors';
 
 @Injectable()
 export class AuthService {
@@ -32,15 +32,15 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ 'contact.email': email });
     if (!user) {
-      throw authErrors.EMAIL_NOT_FOUND;
+      throw AUTH_ERRORS.EMAIL_NOT_FOUND;
     }
 
     if (!user.password) {
-      throw authErrors.SSO_CONFIGURED;
+      throw AUTH_ERRORS.SSO_CONFIGURED;
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch == false) {
-      throw authErrors.INVALID_PASSWORD;
+      throw AUTH_ERRORS.INVALID_PASSWORD;
     }
 
     return this.login(user);
@@ -56,7 +56,7 @@ export class AuthService {
   /** GOOGLE LOGIN */
   async googleLogin(req: any) {
     if (!req.user) {
-      throw authErrors.USER_NOT_FOUND_GOOGLE;
+      throw AUTH_ERRORS.USER_NOT_FOUND_GOOGLE;
     }
     // Check out db for the user and see if the email is attached
     const user = await this.userModel.findOne({
@@ -119,7 +119,7 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (isMatch == false) {
-      throw authErrors.PASSWORD_NOT_MATCH;
+      throw AUTH_ERRORS.PASSWORD_NOT_MATCH;
     }
 
     validatePassword(newPassword);
@@ -209,7 +209,7 @@ export class AuthService {
         ? false
         : true;
     if (!isCreator) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isCreator;
   }
@@ -221,7 +221,7 @@ export class AuthService {
     });
     const isFacilitator = count > 0;
     if (!isFacilitator) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isFacilitator;
   }
@@ -231,13 +231,13 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw authErrors.DISCUSSION_NOT_FOUND;
+      throw AUTH_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
     });
     if (!participantIds.includes(userId)) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return true;
   }
@@ -251,7 +251,7 @@ export class AuthService {
         ? false
         : true;
     if (!isPoster) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isPoster;
   }
@@ -265,7 +265,7 @@ export class AuthService {
         ? false
         : true;
     if (!isReactionCreator) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isReactionCreator;
   }
@@ -285,7 +285,7 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw authErrors.DISCUSSION_NOT_FOUND;
+      throw AUTH_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
@@ -293,7 +293,7 @@ export class AuthService {
     const isParticipant = participantIds.includes(userId);
 
     if (!isFacilitator && !isParticipant) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isFacilitator || isParticipant;
   }
@@ -307,7 +307,7 @@ export class AuthService {
         ? false
         : true;
     if (!isScorer) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isScorer;
   }
@@ -324,7 +324,7 @@ export class AuthService {
         ? false
         : true;
     if (!isCalendarCreator) {
-      throw authErrors.FORBIDDEN_FOR_USER;
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isCalendarCreator;
   }
@@ -333,7 +333,7 @@ export class AuthService {
   verifyMongoIds(ids: string[]) {
     ids.forEach((id) => {
       if (!Types.ObjectId.isValid(id)) {
-        throw authErrors.INVALID_ID;
+        throw AUTH_ERRORS.INVALID_ID;
       }
     });
   }

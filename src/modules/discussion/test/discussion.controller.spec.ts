@@ -1,36 +1,22 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { HydratedDocument } from 'mongoose';
-import { connect, Connection, Model, Types } from 'mongoose';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
-import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
-import { makeFakeCalendarPayload } from 'src/entities/calendar/calendar-fakes';
-import {
-  makeFakeSettingPayload,
-  makeFakeSettingsCreateDTO,
-} from 'src/entities/setting/setting-fakes';
-import {
-  Discussion,
-  DiscussionSchema,
-} from 'src/entities/discussion/discussion';
-import {
-  Inspiration,
-  InspirationSchema,
-} from 'src/entities/inspiration/inspiration';
-import { Score, ScoreSchema } from 'src/entities/score/score';
-import { Setting, SettingSchema } from 'src/entities/setting/setting';
-import { DiscussionPost, DiscussionPostSchema } from 'src/entities/post/post';
-import { User, UserSchema } from 'src/entities/user/user';
+import { Calendar } from 'src/entities/calendar/calendar';
+import { makeFakeSettingsCreateDTO } from 'src/entities/setting/setting-fakes';
+import { Discussion } from 'src/entities/discussion/discussion';
+import { Inspiration } from 'src/entities/inspiration/inspiration';
+import { Score } from 'src/entities/score/score';
+import { Setting } from 'src/entities/setting/setting';
+import { DiscussionPost } from 'src/entities/post/post';
+import { User } from 'src/entities/user/user';
 import { DiscussionController } from '../discussion.controller';
-import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
-import { Grade, GradeSchema } from 'src/entities/grade/grade';
+import { Reaction } from 'src/entities/reaction/reaction';
+import { Grade } from 'src/entities/grade/grade';
 import { MilestoneService } from 'src/modules/milestone/milestone.service';
 import { makeFakeUserPayload } from 'src/entities/user/user-fakes';
 import { makeFakeInspirationPayload } from 'src/entities/inspiration/inspiration-fakes';
-import { makeFakeScorePayload } from 'src/entities/score/score-fakes';
 import {
   makeFakeDiscussionCreateDTO,
   makeFakeDiscussionEditDTO,
@@ -39,117 +25,54 @@ import {
 import faker from 'test/faker';
 import { getUniqueInsoCode } from 'src/modules/shared/generateInsoCode';
 import DISCUSSION_ERRORS from '../discussion-errors';
+import { TestingDatabase, testingDatabase, FakeDocuments } from 'test/database';
 
 jest.mock('src/modules/shared/generateInsoCode');
 
 describe('DiscussionController', () => {
-  let appController: DiscussionController;
-  let mongod: MongoMemoryServer;
-  let mongoConnection: Connection;
-  let discussionModel: Model<any>;
-  let userModel: Model<any>;
-  let settingModel: Model<any>;
-  let scoreModel: Model<any>;
-  let inspirationModel: Model<any>;
-  let calendarModel: Model<any>;
-  let postModel: Model<any>;
-  let reactionModel: Model<any>;
-  let gradeModel: Model<any>;
-  let user: HydratedDocument<User>;
-  let calendar: HydratedDocument<Calendar>;
-  let inspiration: HydratedDocument<Inspiration>;
-  let score: HydratedDocument<Score>;
-  let setting: HydratedDocument<Setting>;
-  let discussionA: HydratedDocument<Discussion>;
-  let discussionB: HydratedDocument<Discussion>;
+  let database: TestingDatabase;
+  let discussionController: DiscussionController;
+  let fakeDocuments: FakeDocuments;
   let mockRequest: any;
-
-  beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    mongoConnection = (await connect(uri)).connection;
-    discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-    settingModel = mongoConnection.model(Setting.name, SettingSchema);
-    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
-
-    inspirationModel = mongoConnection.model(
-      Inspiration.name,
-      InspirationSchema,
-    );
-    userModel = mongoConnection.model(User.name, UserSchema);
-    calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
-    postModel = mongoConnection.model(
-      DiscussionPost.name,
-      DiscussionPostSchema,
-    );
-
-    reactionModel = mongoConnection.model(Reaction.name, ReactionSchema);
-    gradeModel = mongoConnection.model(Grade.name, GradeSchema);
-  });
-
   const mockMilestoneService = {
     getMilestoneForUser: jest.fn(),
     createMilestoneForUser: jest.fn(),
   };
 
+  beforeAll(async () => {
+    database = await testingDatabase();
+  });
+
   beforeEach(async () => {
-    user = await userModel.create(makeFakeUserPayload());
-    calendar = await calendarModel.create(makeFakeCalendarPayload());
-    inspiration = await inspirationModel.create(makeFakeInspirationPayload());
-    score = await scoreModel.create(makeFakeScorePayload());
+    fakeDocuments = await database.createFakes();
+
     mockRequest = {
       user: {
-        userId: user._id,
-        username: user.username,
+        userId: fakeDocuments.user._id,
+        username: fakeDocuments.user.username,
       },
     };
-    setting = await settingModel.create(
-      makeFakeSettingPayload({
-        userId: user._id,
-        calendar: calendar._id,
-        post_inspirations: [inspiration._id],
-        score: score._id,
-      }),
-    );
-    discussionA = await discussionModel.create(
-      makeFakeDiscussionPayload({
-        archived: null,
-        settings: setting._id,
-        poster: user._id,
-        participants: [
-          {
-            user: user._id,
-            joined: faker.date.past(),
-            muted: faker.datatype.boolean(),
-            grade: faker.database.fakeMongoId(),
-          },
-        ],
-      }),
-    );
-
-    discussionB = await discussionModel.create(
-      makeFakeDiscussionPayload({
-        poster: user._id,
-        archived: null,
-        settings: setting._id,
-      }),
-    );
-
     const app: TestingModule = await Test.createTestingModule({
       controllers: [DiscussionController],
       providers: [
-        { provide: getModelToken(Discussion.name), useValue: discussionModel },
-        { provide: getModelToken(Setting.name), useValue: settingModel },
-        { provide: getModelToken(Score.name), useValue: scoreModel },
+        {
+          provide: getModelToken(Discussion.name),
+          useValue: database.discussion,
+        },
+        { provide: getModelToken(Setting.name), useValue: database.setting },
+        { provide: getModelToken(Score.name), useValue: database.score },
         {
           provide: getModelToken(Inspiration.name),
-          useValue: inspirationModel,
+          useValue: database.inspiration,
         },
-        { provide: getModelToken(User.name), useValue: userModel },
-        { provide: getModelToken(Calendar.name), useValue: calendarModel },
-        { provide: getModelToken(DiscussionPost.name), useValue: postModel },
-        { provide: getModelToken(Reaction.name), useValue: reactionModel },
-        { provide: getModelToken(Grade.name), useValue: gradeModel },
+        { provide: getModelToken(User.name), useValue: database.user },
+        { provide: getModelToken(Calendar.name), useValue: database.calendar },
+        {
+          provide: getModelToken(DiscussionPost.name),
+          useValue: database.post,
+        },
+        { provide: getModelToken(Reaction.name), useValue: database.reaction },
+        { provide: getModelToken(Grade.name), useValue: database.grade },
         {
           provide: MilestoneService,
           useValue: mockMilestoneService,
@@ -170,30 +93,22 @@ describe('DiscussionController', () => {
       })
       .compile();
 
-    appController = app.get<DiscussionController>(DiscussionController);
+    discussionController = app.get<DiscussionController>(DiscussionController);
   });
 
   afterEach(async () => {
     jest.clearAllMocks();
-    await discussionModel.deleteMany({});
-    await settingModel.deleteMany({});
-    await scoreModel.deleteMany({});
-    await inspirationModel.deleteMany({});
-    await userModel.deleteMany({});
-    await calendarModel.deleteMany({});
-    await postModel.deleteMany({});
-    await reactionModel.deleteMany({});
-    await gradeModel.deleteMany({});
+    await database.clearDatabase();
   });
 
   describe('createDiscussion (POST /discussion)', () => {
     describe('200 OK', () => {
       it('should create discussion with unique new insoID', async () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user._id,
-          facilitators: [user._id],
+          poster: fakeDocuments.user._id,
+          facilitators: [fakeDocuments.user._id],
         });
-        const result = await appController.createDiscussion(
+        const result = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
@@ -203,68 +118,77 @@ describe('DiscussionController', () => {
 
       it('should create a discussion and discussion setting with all existing inspirations', async () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user._id,
-          facilitators: [user._id],
+          poster: fakeDocuments.user._id,
+          facilitators: [fakeDocuments.user._id],
         });
-        const result = await appController.createDiscussion(
+        const result = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
-        const newSettings = await settingModel.findById(result.settings);
+        const newSettings = await database.setting.findById(result.settings);
         expect(newSettings.post_inspirations).toHaveLength(1);
-        expect(newSettings.post_inspirations[0]).toEqual(inspiration._id);
+        expect(newSettings.post_inspirations[0]).toEqual(
+          fakeDocuments.inspiration._id,
+        );
 
-        const newInspiration = await inspirationModel.create(
+        const newInspiration = await database.inspiration.create(
           makeFakeInspirationPayload(),
         );
-        const result2 = await appController.createDiscussion(
+        const result2 = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
-        const newSettings2 = await settingModel.findById(result2.settings);
+        const newSettings2 = await database.setting.findById(result2.settings);
         expect(newSettings2.post_inspirations).toHaveLength(2);
-        expect(newSettings2.post_inspirations[0]).toEqual(inspiration._id);
+        expect(newSettings2.post_inspirations[0]).toEqual(
+          fakeDocuments.inspiration._id,
+        );
         expect(newSettings2.post_inspirations[1]).toEqual(newInspiration._id);
       });
 
       it('should create milestone for Discussion Created if it does not exist for user', async () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user._id,
-          facilitators: [user._id],
+          poster: fakeDocuments.user._id,
+          facilitators: [fakeDocuments.user._id],
         });
-        const result = await appController.createDiscussion(
+        const result = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
         expect(result).toMatchObject(discussionDTO);
         expect(mockMilestoneService.getMilestoneForUser).toHaveBeenCalledWith(
-          user._id,
+          fakeDocuments.user._id,
           'Discussion Created',
         );
         expect(
           mockMilestoneService.createMilestoneForUser,
-        ).toHaveBeenCalledWith(user._id, 'discussion', 'Discussion Created', {
-          discussionId: result._id,
-          postId: null,
-          date: expect.any(Date),
-        });
+        ).toHaveBeenCalledWith(
+          fakeDocuments.user._id,
+          'discussion',
+          'Discussion Created',
+          {
+            discussionId: result._id,
+            postId: null,
+            date: expect.any(Date),
+          },
+        );
       });
 
       it('should not create milestone for Discussion Created if it does exist for user', async () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user._id,
-          facilitators: [user._id],
+          poster: fakeDocuments.user._id,
+          facilitators: [fakeDocuments.user._id],
         });
         mockMilestoneService.getMilestoneForUser.mockResolvedValueOnce(
           "I'm a milestone",
         );
-        const result = await appController.createDiscussion(
+        const result = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
         expect(result).toMatchObject(discussionDTO);
         expect(mockMilestoneService.getMilestoneForUser).toHaveBeenCalledWith(
-          user._id,
+          fakeDocuments.user._id,
           'Discussion Created',
         );
         expect(
@@ -274,11 +198,11 @@ describe('DiscussionController', () => {
 
       it('should create and return a valid discussion', async () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user._id,
-          facilitators: [user._id],
+          poster: fakeDocuments.user._id,
+          facilitators: [fakeDocuments.user._id],
         });
 
-        const result = await appController.createDiscussion(
+        const result = await discussionController.createDiscussion(
           discussionDTO,
           mockRequest,
         );
@@ -290,37 +214,37 @@ describe('DiscussionController', () => {
       it('poster not found', () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
           poster: faker.database.fakeMongoId(),
-          facilitators: [user._id],
+          facilitators: [fakeDocuments.user._id],
         });
 
         return expect(
-          appController.createDiscussion(discussionDTO, mockRequest),
+          discussionController.createDiscussion(discussionDTO, mockRequest),
         ).rejects.toThrow(DISCUSSION_ERRORS.USER_NOT_FOUND);
       });
 
       it('facilitator not found', () => {
         const validDiscussion = {
           name: 'Power',
-          poster: user._id,
-          facilitators: [new Types.ObjectId()],
+          poster: fakeDocuments.user._id,
+          facilitators: [faker.database.fakeMongoId()],
         };
 
         return expect(
-          appController.createDiscussion(validDiscussion, mockRequest),
+          discussionController.createDiscussion(validDiscussion, mockRequest),
         ).rejects.toThrow(DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND);
       });
     });
 
     describe('400 Errors', () => {
       it('request user not matching poster', async () => {
-        const user2 = await userModel.create(makeFakeUserPayload());
+        const user2 = await database.user.create(makeFakeUserPayload());
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: user2,
-          facilitators: [user._id],
+          poster: user2._id,
+          facilitators: [fakeDocuments.user._id],
         });
 
         return expect(
-          appController.createDiscussion(discussionDTO, mockRequest),
+          discussionController.createDiscussion(discussionDTO, mockRequest),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_POSTER_MISMATCH);
       });
     });
@@ -330,28 +254,30 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       it('should update discussion metadata and return updated discussion', async () => {
         const discussionEditDTO = makeFakeDiscussionEditDTO({
-          facilitators: [user._id],
+          facilitators: [fakeDocuments.user._id],
           participants: undefined,
         });
-        const result = await appController.updateDiscussionMetadata(
-          discussionA._id.toString(),
+        const result = await discussionController.updateDiscussionMetadata(
+          fakeDocuments.discussion._id.toString(),
           discussionEditDTO,
         );
         expect(result.facilitators).toMatchObject(
           discussionEditDTO.facilitators,
         );
-        expect(result.participants).toMatchObject(discussionA.participants);
+        expect(result.participants).toMatchObject(
+          fakeDocuments.discussion.participants,
+        );
       });
     });
 
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         const discussionEditDTO = makeFakeDiscussionEditDTO({
-          facilitators: [user._id],
+          facilitators: [fakeDocuments.user._id],
           participants: undefined,
         });
         return expect(
-          appController.updateDiscussionMetadata(
+          discussionController.updateDiscussionMetadata(
             faker.database.mongodbObjectId(),
             discussionEditDTO,
           ),
@@ -364,8 +290,8 @@ describe('DiscussionController', () => {
           participants: undefined,
         });
         return expect(
-          appController.updateDiscussionMetadata(
-            discussionA._id.toString(),
+          discussionController.updateDiscussionMetadata(
+            fakeDocuments.discussion._id.toString(),
             discussionEditDTO,
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.FACILITATOR_NOT_FOUND);
@@ -375,12 +301,12 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('adding participant', async () => {
         const discussionEditDTO = makeFakeDiscussionEditDTO({
-          facilitators: [user._id],
-          participants: [user._id],
+          facilitators: [fakeDocuments.user._id],
+          participants: [fakeDocuments.user._id],
         });
         return expect(
-          appController.updateDiscussionMetadata(
-            discussionA._id.toString(),
+          discussionController.updateDiscussionMetadata(
+            fakeDocuments.discussion._id.toString(),
             discussionEditDTO,
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS);
@@ -392,61 +318,65 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       // TODO: Better testing and breaking out of this monstosity and the ReadDTO
       it('should return discussion', async () => {
-        const result = await appController.getDiscussion(
-          discussionA._id.toString(),
+        const result = await discussionController.getDiscussion(
+          fakeDocuments.discussion._id.toString(),
         );
 
         expect(result).toMatchObject({
-          archived: discussionA.archived,
-          created: discussionA.created,
-          insoCode: discussionA.insoCode,
-          keywords: discussionA.keywords,
-          name: discussionA.name,
+          archived: fakeDocuments.discussion.archived,
+          created: fakeDocuments.discussion.created,
+          insoCode: fakeDocuments.discussion.insoCode,
+          keywords: fakeDocuments.discussion.keywords,
+          name: fakeDocuments.discussion.name,
           participants: [
             {
-              f_name: user.f_name,
-              l_name: user.l_name,
-              username: user.username,
+              f_name: fakeDocuments.user.f_name,
+              l_name: fakeDocuments.user.l_name,
+              username: fakeDocuments.user.username,
             },
           ],
           poster: {
-            f_name: user.f_name,
-            l_name: user.l_name,
-            username: user.username,
+            f_name: fakeDocuments.user.f_name,
+            l_name: fakeDocuments.user.l_name,
+            username: fakeDocuments.user.username,
           },
           posts: [],
           settings: {
             calendar: {
-              close: calendar.close.toString(),
-              open: calendar.open.toString(),
+              close: fakeDocuments.calendar.close.toString(),
+              open: fakeDocuments.calendar.open.toString(),
             },
             // post_inspiration: setting.post_inspirations,
             scores: {
               active_days: {
-                max_points: score.active_days.max_points,
-                required: score.active_days.required,
+                max_points: fakeDocuments.score.active_days.max_points,
+                required: fakeDocuments.score.active_days.required,
               },
               comments_received: {
-                max_points: score.comments_received.max_points,
-                required: score.comments_received.required,
+                max_points: fakeDocuments.score.comments_received.max_points,
+                required: fakeDocuments.score.comments_received.required,
               },
               criteria: [
                 {
-                  criteria: score.criteria[0].criteria,
-                  max_points: score.criteria[0].max_points,
+                  criteria: fakeDocuments.score.criteria[0].criteria,
+                  max_points: fakeDocuments.score.criteria[0].max_points,
+                },
+                {
+                  criteria: fakeDocuments.score.criteria[1].criteria,
+                  max_points: fakeDocuments.score.criteria[1].max_points,
                 },
               ],
               post_inspirations: {
-                max_points: score.post_inspirations.max_points,
-                selected: score.post_inspirations.selected,
+                max_points: fakeDocuments.score.post_inspirations.max_points,
+                selected: fakeDocuments.score.post_inspirations.selected,
               },
 
               posts_made: {
-                max_points: score.posts_made.max_points,
-                required: score.posts_made.required,
+                max_points: fakeDocuments.score.posts_made.max_points,
+                required: fakeDocuments.score.posts_made.required,
               },
             },
-            starter_prompt: setting.starter_prompt,
+            starter_prompt: fakeDocuments.setting.starter_prompt,
           },
         });
       });
@@ -455,16 +385,16 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         return expect(
-          appController.getDiscussion(faker.database.mongodbObjectId()),
+          discussionController.getDiscussion(faker.database.mongodbObjectId()),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
     });
 
     describe('400 Errors', () => {
       it('discussion id invalid', async () => {
-        return expect(appController.getDiscussion('invalid')).rejects.toThrow(
-          DISCUSSION_ERRORS.DISCUSSION_ID_INVALID,
-        );
+        return expect(
+          discussionController.getDiscussion('invalid'),
+        ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
       });
     });
   });
@@ -472,8 +402,8 @@ describe('DiscussionController', () => {
   describe('archiveDiscussion (POST discussion/:discussionId/archive)', () => {
     describe('200 OK', () => {
       it('should archive discussion', async () => {
-        const result = await appController.archiveDiscussion(
-          discussionA._id.toString(),
+        const result = await discussionController.archiveDiscussion(
+          fakeDocuments.discussion._id.toString(),
         );
         expect(result).toMatchObject({ archived: expect.any(Date) });
       });
@@ -482,7 +412,7 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('discussion id invalid', async () => {
         return expect(
-          appController.archiveDiscussion('invalid'),
+          discussionController.archiveDiscussion('invalid'),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
       });
     });
@@ -491,14 +421,14 @@ describe('DiscussionController', () => {
   describe('duplicateDiscussion (POST discussion/:discussionId/duplicate)', () => {
     describe('200 OK', () => {
       it('should duplicate discussion', async () => {
-        const result = await appController.duplicateDiscussion(
-          discussionA._id.toString(),
+        const result = await discussionController.duplicateDiscussion(
+          fakeDocuments.discussion._id.toString(),
         );
         expect(result).toMatchObject({
-          name: discussionA.name,
-          facilitators: discussionA.facilitators,
-          settings: discussionA.settings,
-          poster: discussionA.poster,
+          name: fakeDocuments.discussion.name,
+          facilitators: fakeDocuments.discussion.facilitators,
+          settings: fakeDocuments.discussion.settings,
+          poster: fakeDocuments.discussion.poster,
         });
         expect(getUniqueInsoCode).toBeCalledTimes(1);
       });
@@ -507,7 +437,9 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         return expect(
-          appController.duplicateDiscussion(faker.database.mongodbObjectId()),
+          discussionController.duplicateDiscussion(
+            faker.database.mongodbObjectId(),
+          ),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
     });
@@ -515,7 +447,7 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('discussion id invalid', async () => {
         return expect(
-          appController.duplicateDiscussion('invalid'),
+          discussionController.duplicateDiscussion('invalid'),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
       });
     });
@@ -531,7 +463,7 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('user not found', async () => {
         return expect(
-          appController.getDiscussions(
+          discussionController.getDiscussions(
             faker.database.mongodbObjectId(),
             'false',
             'false',
@@ -547,7 +479,7 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('user id invalid', async () => {
         return expect(
-          appController.getDiscussions(
+          discussionController.getDiscussions(
             'invalid',
             'false',
             'false',
@@ -560,9 +492,9 @@ describe('DiscussionController', () => {
       });
 
       it('user auth mismatch', async () => {
-        const user2 = await userModel.create(makeFakeUserPayload());
+        const user2 = await database.user.create(makeFakeUserPayload());
         return expect(
-          appController.getDiscussions(
+          discussionController.getDiscussions(
             user2._id.toString(),
             'false',
             'false',
@@ -600,14 +532,14 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       it('should update discussion settings and return updated discussion', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO({
-          score: score._id,
-          calendar: calendar._id,
-          post_inspirations: [inspiration._id],
+          score: fakeDocuments.score._id,
+          calendar: fakeDocuments.calendar._id,
+          post_inspirations: [fakeDocuments.inspiration._id],
         });
         return expect(
-          appController.updateDiscussionSettings(
+          discussionController.updateDiscussionSettings(
             settingsCreateDTO,
-            discussionA._id.toString(),
+            fakeDocuments.discussion._id.toString(),
           ),
         ).resolves.not.toThrow();
       });
@@ -619,7 +551,7 @@ describe('DiscussionController', () => {
         const nonExistantDiscussionId = faker.database.mongodbObjectId();
 
         return expect(
-          appController.updateDiscussionSettings(
+          discussionController.updateDiscussionSettings(
             settingsCreateDTO,
             nonExistantDiscussionId,
           ),
@@ -628,28 +560,28 @@ describe('DiscussionController', () => {
 
       it('post inspiration not found', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO({
-          ...setting.toObject(),
+          ...fakeDocuments.setting.toObject(),
           post_inspirations: [faker.database.fakeMongoId()],
         });
 
         return expect(
-          appController.updateDiscussionSettings(
+          discussionController.updateDiscussionSettings(
             settingsCreateDTO,
-            discussionA._id.toString(),
+            fakeDocuments.discussion._id.toString(),
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.POST_INSPIRATION_NOT_FOUND);
       });
 
       it('calander not found', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO({
-          ...setting.toObject(),
+          ...fakeDocuments.setting.toObject(),
           calendar: faker.database.fakeMongoId(),
         });
 
         return expect(
-          appController.updateDiscussionSettings(
+          discussionController.updateDiscussionSettings(
             settingsCreateDTO,
-            discussionA._id.toString(),
+            fakeDocuments.discussion._id.toString(),
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.CALENDAR_NOT_FOUND);
       });
@@ -665,13 +597,20 @@ describe('DiscussionController', () => {
   describe('joinDiscussion (PATCH /users/:userId/discussions/:insoCode/join)', () => {
     describe('200 OK', () => {
       it('should join discussion', async () => {
-        const results = await appController.joinDiscussion(
-          user._id.toString(),
-          discussionB.insoCode,
+        const discussion = await database.discussion.create(
+          makeFakeDiscussionPayload({
+            archived: null,
+            settings: fakeDocuments.setting._id,
+            poster: fakeDocuments.user._id,
+          }),
+        );
+        const results = await discussionController.joinDiscussion(
+          fakeDocuments.user._id.toString(),
+          discussion.insoCode,
         );
 
         expect(results.participants).toContainEqual({
-          user: user._id,
+          user: fakeDocuments.user._id,
           joined: expect.any(Date),
           muted: false,
           grade: null,
@@ -682,9 +621,9 @@ describe('DiscussionController', () => {
     describe('409 Errors', () => {
       it('user already in discussion', async () => {
         await expect(
-          appController.joinDiscussion(
-            user._id.toString(),
-            discussionA.insoCode,
+          discussionController.joinDiscussion(
+            fakeDocuments.user._id.toString(),
+            fakeDocuments.discussion.insoCode,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ALREADY_IN_DISCUSSION);
       });
@@ -692,8 +631,8 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         await expect(
-          appController.joinDiscussion(
-            user._id.toString(),
+          discussionController.joinDiscussion(
+            fakeDocuments.user._id.toString(),
             faker.datatype.string(5),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
@@ -701,9 +640,9 @@ describe('DiscussionController', () => {
 
       it('user not found', async () => {
         await expect(
-          appController.joinDiscussion(
+          discussionController.joinDiscussion(
             faker.database.mongodbObjectId(),
-            discussionA.insoCode,
+            fakeDocuments.discussion.insoCode,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
       });
@@ -712,8 +651,8 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('insoCode is invalid', async () => {
         await expect(
-          appController.joinDiscussion(
-            user._id.toString(),
+          discussionController.joinDiscussion(
+            fakeDocuments.user._id.toString(),
             faker.datatype.string(6),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.INSO_CODE_INVALID);
@@ -721,9 +660,9 @@ describe('DiscussionController', () => {
 
       it('user id invalid', async () => {
         await expect(
-          appController.joinDiscussion(
+          discussionController.joinDiscussion(
             faker.datatype.string(6),
-            discussionA.insoCode,
+            fakeDocuments.discussion.insoCode,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ID_INVALID);
       });
@@ -733,13 +672,13 @@ describe('DiscussionController', () => {
   describe('removeParticipant (PATCH discussions/:discussionId/participants/:participantId/remove)', () => {
     describe('200 OK', () => {
       it('should remove participant', async () => {
-        const results = await appController.removeParticipant(
-          discussionA._id.toString(),
-          user._id.toString(),
+        const results = await discussionController.removeParticipant(
+          fakeDocuments.discussion._id.toString(),
+          fakeDocuments.user._id.toString(),
         );
 
         expect(results.participants).not.toContainEqual({
-          user: user._id,
+          user: fakeDocuments.user._id,
           joined: expect.any(Date),
           muted: false,
           grade: null,
@@ -750,8 +689,8 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('participant not memeber', async () => {
         await expect(
-          appController.removeParticipant(
-            discussionA._id.toString(),
+          discussionController.removeParticipant(
+            fakeDocuments.discussion._id.toString(),
             faker.database.mongodbObjectId(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.PARTICIPANT_NOT_IN_DISUCSSION);
@@ -763,8 +702,8 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       it('should add tag', async () => {
         const tag = faker.datatype.string();
-        const results = await appController.addTag(
-          discussionA._id.toString(),
+        const results = await discussionController.addTag(
+          fakeDocuments.discussion._id.toString(),
           tag,
         );
 
@@ -775,7 +714,7 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion does not exist', async () => {
         await expect(
-          appController.addTag(
+          discussionController.addTag(
             faker.database.mongodbObjectId(),
             faker.datatype.string(),
           ),
@@ -786,7 +725,10 @@ describe('DiscussionController', () => {
     describe('400 Errors', () => {
       it('tag already exists', async () => {
         await expect(
-          appController.addTag(discussionA._id.toString(), discussionA.tags[0]),
+          discussionController.addTag(
+            fakeDocuments.discussion._id.toString(),
+            fakeDocuments.discussion.tags[0],
+          ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DUPLICATE_TAG);
       });
     });
@@ -796,9 +738,9 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       it('should mute user', async () => {
         return expect(
-          appController.muteUserInDiscussion(
-            user._id.toString(),
-            discussionA._id.toString(),
+          discussionController.muteUserInDiscussion(
+            fakeDocuments.user._id.toString(),
+            fakeDocuments.discussion._id.toString(),
           ),
         ).resolves.not.toThrow();
       });
@@ -807,17 +749,17 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion does not exist', async () => {
         await expect(
-          appController.muteUserInDiscussion(
-            user._id.toString(),
+          discussionController.muteUserInDiscussion(
+            fakeDocuments.user._id.toString(),
             faker.database.mongodbObjectId(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
       it('user not in discussion', async () => {
         await expect(
-          appController.muteUserInDiscussion(
+          discussionController.muteUserInDiscussion(
             faker.database.mongodbObjectId(),
-            discussionA._id.toString(),
+            fakeDocuments.discussion._id.toString(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
       });
@@ -827,17 +769,17 @@ describe('DiscussionController', () => {
   describe('400 Errors', () => {
     it('user id invalid', async () => {
       await expect(
-        appController.muteUserInDiscussion(
+        discussionController.muteUserInDiscussion(
           faker.datatype.string(6),
-          discussionA._id.toString(),
+          fakeDocuments.discussion._id.toString(),
         ),
       ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ID_INVALID);
     });
 
     it('discussion id invalid', async () => {
       await expect(
-        appController.muteUserInDiscussion(
-          user._id.toString(),
+        discussionController.muteUserInDiscussion(
+          fakeDocuments.user._id.toString(),
           faker.datatype.string(6),
         ),
       ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
@@ -848,18 +790,22 @@ describe('DiscussionController', () => {
     describe('200 OK', () => {
       it('should delete discussion', async () => {
         return expect(
-          appController.deleteDiscussion(discussionA._id.toString()),
+          discussionController.deleteDiscussion(
+            fakeDocuments.discussion._id.toString(),
+          ),
         ).resolves.not.toThrow();
       });
     });
 
     describe('409 Errors', () => {
       it('discussion has posts', async () => {
-        await postModel.create({
-          discussionId: discussionA._id,
+        await database.post.create({
+          discussionId: fakeDocuments.discussion._id,
         });
         await expect(
-          appController.deleteDiscussion(discussionA._id.toString()),
+          discussionController.deleteDiscussion(
+            fakeDocuments.discussion._id.toString(),
+          ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_HAS_POSTS);
       });
     });
@@ -867,7 +813,7 @@ describe('DiscussionController', () => {
 
   afterAll((done) => {
     // Closing the DB connection allows Jest to exit successfully.
-    mongoConnection.close();
+    database.connection.close();
     done();
   });
 });

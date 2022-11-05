@@ -1,57 +1,24 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { GradeController } from './grade.controller';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connect, Model, Connection } from 'mongoose';
-import { Grade, GradeSchema } from 'src/entities/grade/grade';
-import { HydratedDocument } from 'mongoose';
+import { Grade } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
-import {
-  Discussion,
-  DiscussionSchema,
-} from 'src/entities/discussion/discussion';
-import {
-  Inspiration,
-  InspirationSchema,
-} from 'src/entities/inspiration/inspiration';
-import { Score, ScoreSchema } from 'src/entities/score/score';
-import { Setting, SettingSchema } from 'src/entities/setting/setting';
-import { User, UserSchema } from 'src/entities/user/user';
-import { Calendar, CalendarSchema } from 'src/entities/calendar/calendar';
+import { Discussion } from 'src/entities/discussion/discussion';
 import { makeFakeUserPayload } from 'src/entities/user/user-fakes';
-import { makeFakeInspirationPayload } from 'src/entities/inspiration/inspiration-fakes';
-import { makeFakeScorePayload } from 'src/entities/score/score-fakes';
-import { makeFakeCalendarPayload } from 'src/entities/calendar/calendar-fakes';
-import { makeFakeSettingPayload } from 'src/entities/setting/setting-fakes';
 import { makeFakeDiscussionPayload } from 'src/entities/discussion/discussion-fakes';
 import faker from 'test/faker';
 import { makeFakeGradeDTO } from 'src/entities/grade/grade-fakes';
 import GRADE_ERRORS from './grade-errors';
+import { TestingDatabase, FakeDocuments, testingDatabase } from 'test/database';
 
 describe('GradeController', () => {
-  let mongod: MongoMemoryServer;
-  let mongoConnection: Connection;
+  let database: TestingDatabase;
   let gradeController: GradeController;
-  let discussionModel: Model<any>;
-  let userModel: Model<any>;
-  let settingModel: Model<any>;
-  let scoreModel: Model<any>;
-  let inspirationModel: Model<any>;
-  let calendarModel: Model<any>;
-  // let postModel: Model<any>;
-  // let reactionModel: Model<any>;
-  let grade: HydratedDocument<Grade>;
-  let gradeModel: Model<any>;
-  let user: HydratedDocument<User>;
-  let calendar: HydratedDocument<Calendar>;
-  let inspiration: HydratedDocument<Inspiration>;
-  let score: HydratedDocument<Score>;
-  let setting: HydratedDocument<Setting>;
-  let discussionA: HydratedDocument<Discussion>;
   let mockRequest: any;
+  let fakeDocuments: FakeDocuments;
   const mockGradeService = {
     addEventForAutoGrading: jest.fn(),
     updateEventForAutoGrading: jest.fn(),
@@ -61,82 +28,23 @@ describe('GradeController', () => {
   const mockNotificationService = {
     createNotification: jest.fn(),
   };
-  beforeAll(async () => {
-    mongod = await MongoMemoryServer.create();
-    const uri = mongod.getUri();
-    mongoConnection = (await connect(uri)).connection;
-    discussionModel = mongoConnection.model(Discussion.name, DiscussionSchema);
-    settingModel = mongoConnection.model(Setting.name, SettingSchema);
-    scoreModel = mongoConnection.model(Score.name, ScoreSchema);
 
-    inspirationModel = mongoConnection.model(
-      Inspiration.name,
-      InspirationSchema,
-    );
-    userModel = mongoConnection.model(User.name, UserSchema);
-    calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
-    gradeModel = mongoConnection.model(Grade.name, GradeSchema);
+  beforeAll(async () => {
+    database = await testingDatabase();
   });
 
   beforeEach(async () => {
-    user = await userModel.create(makeFakeUserPayload());
-    calendar = await calendarModel.create(makeFakeCalendarPayload());
-    inspiration = await inspirationModel.create(makeFakeInspirationPayload());
-    grade = await gradeModel.create(makeFakeGradeDTO());
-    score = await scoreModel.create(
-      makeFakeScorePayload({
-        criteria: [
-          {
-            max_points: 5,
-            criteria: 'Criteria 1',
-          },
-          {
-            max_points: 5,
-            criteria: 'Criteria 2',
-          },
-        ],
-      }),
-    );
-    mockRequest = {
-      user: {
-        userId: user._id,
-        username: user.username,
-      },
-    };
-    setting = await settingModel.create(
-      makeFakeSettingPayload({
-        userId: user._id,
-        calendar: calendar._id,
-        post_inspirations: [inspiration._id],
-        score: score._id,
-      }),
-    );
-    discussionA = await discussionModel.create(
-      makeFakeDiscussionPayload({
-        archived: null,
-        settings: setting._id,
-        poster: user._id,
-        participants: [
-          {
-            user: user._id,
-            joined: faker.date.past(),
-            muted: faker.datatype.boolean(),
-            grade: grade._id,
-          },
-        ],
-      }),
-    );
-
+    fakeDocuments = await database.createFakes();
     const app: TestingModule = await Test.createTestingModule({
       controllers: [GradeController],
       providers: [
         {
           provide: getModelToken(Discussion.name),
-          useValue: discussionModel,
+          useValue: database.discussion,
         },
         {
           provide: getModelToken(Grade.name),
-          useValue: gradeModel,
+          useValue: database.grade,
         },
         {
           provide: GradeService,
@@ -158,10 +66,17 @@ describe('GradeController', () => {
       })
       .compile();
     gradeController = app.get<GradeController>(GradeController);
+    mockRequest = {
+      user: {
+        userId: fakeDocuments.user._id,
+        username: fakeDocuments.user.username,
+      },
+    };
   });
 
   afterEach(async () => {
     jest.clearAllMocks();
+    await database.clearDatabase();
   });
 
   // TODO: GradeController & GradeService tests
@@ -185,21 +100,21 @@ describe('GradeController', () => {
         });
 
         const result = await gradeController.createGradeForParticipant(
-          discussionA._id.toString(),
-          user._id.toString(),
+          fakeDocuments.discussion._id.toString(),
+          fakeDocuments.user._id.toString(),
           gradeDTO,
           mockRequest,
         );
 
         expect(result).toMatchObject({
-          _id: grade._id,
+          _id: fakeDocuments.grade._id,
           rubric: [gradeDTO.criteria[0], gradeDTO.criteria[1]],
           comment: gradeDTO.comments,
-          discussionId: discussionA._id,
+          discussionId: fakeDocuments.discussion._id,
           facilitator: mockRequest.user.userId,
           grade: gradeDTO.total,
-          maxScore: score.total,
-          userId: user._id,
+          maxScore: fakeDocuments.score.total,
+          userId: fakeDocuments.user._id,
         });
       });
 
@@ -221,14 +136,14 @@ describe('GradeController', () => {
         });
 
         await gradeController.createGradeForParticipant(
-          discussionA._id.toString(),
-          user._id.toString(),
+          fakeDocuments.discussion._id.toString(),
+          fakeDocuments.user._id.toString(),
           gradeDTO,
           mockRequest,
         );
 
         expect(mockNotificationService.createNotification).toBeCalledWith(
-          user._id,
+          fakeDocuments.user._id,
           mockRequest.user.userId,
           {
             header: expect.any(String),
@@ -239,12 +154,12 @@ describe('GradeController', () => {
       });
 
       it('should create a grade for participant if one does not exist', async () => {
-        const participant = await userModel.create(makeFakeUserPayload());
-        const discussion = await discussionModel.create({
+        const participant = await database.user.create(makeFakeUserPayload());
+        const discussion = await database.discussion.create({
           ...makeFakeDiscussionPayload({
             archived: null,
-            settings: setting._id,
-            poster: user._id,
+            settings: fakeDocuments.setting._id,
+            poster: fakeDocuments.user._id,
             participants: [
               {
                 user: participant._id,
@@ -270,14 +185,14 @@ describe('GradeController', () => {
             },
           ],
         });
-        const countBefore = await gradeModel.countDocuments();
+        const countBefore = await database.grade.countDocuments();
         await gradeController.createGradeForParticipant(
           discussion._id.toString(),
           participant._id.toString(),
           gradeDTO,
           mockRequest,
         );
-        const countAfter = await gradeModel.countDocuments();
+        const countAfter = await database.grade.countDocuments();
 
         expect(countAfter).toBe(countBefore + 1);
       });
@@ -289,7 +204,7 @@ describe('GradeController', () => {
           gradeController.createGradeForParticipant(
             faker.database.mongodbObjectId(),
 
-            user._id.toString(),
+            fakeDocuments.user._id.toString(),
             makeFakeGradeDTO(),
             mockRequest,
           ),
@@ -301,7 +216,7 @@ describe('GradeController', () => {
       it('should return an error if the participant is not a part of the discussion', () => {
         return expect(
           gradeController.createGradeForParticipant(
-            discussionA._id.toString(),
+            fakeDocuments.discussion._id.toString(),
             faker.database.mongodbObjectId(),
             makeFakeGradeDTO(),
             mockRequest,
@@ -312,8 +227,8 @@ describe('GradeController', () => {
       it('should return an error if the grade does not have the same number of criteria as the discussion', () => {
         return expect(
           gradeController.createGradeForParticipant(
-            discussionA._id.toString(),
-            user._id.toString(),
+            fakeDocuments.discussion._id.toString(),
+            fakeDocuments.user._id.toString(),
             makeFakeGradeDTO({
               total: 5,
               criteria: [
@@ -334,10 +249,12 @@ describe('GradeController', () => {
   describe('autoGradeParticipants (PATCH /discussion/:discussionId/participants/autograde)', () => {
     describe('200 OK', () => {
       it('should use gradeSerivce to gradeDisucssion', () => {
-        gradeController.autoGradeParticipants(discussionA._id.toString());
+        gradeController.autoGradeParticipants(
+          fakeDocuments.discussion._id.toString(),
+        );
 
         expect(mockGradeService.gradeDiscussion).toBeCalledWith(
-          discussionA._id.toString(),
+          fakeDocuments.discussion._id.toString(),
         );
       });
     });
