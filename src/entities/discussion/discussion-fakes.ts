@@ -81,7 +81,7 @@ export function makeFakeDiscussionEditDTO(
     settings: faker.database.fakeMongoId(),
     facilitators: [faker.database.fakeMongoId()],
     keywords: [faker.random.word()],
-    participants: [faker.database.fakeMongoId()],
+    participants: [faker.database.mongoObjectId()],
     ...discussion,
   } as DiscussionEditDTO;
 }
