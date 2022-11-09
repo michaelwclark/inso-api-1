@@ -192,7 +192,10 @@ async function createFakes(database: TestingDatabase): Promise<FakeDocuments> {
   const discussionSet = await database.discussionSet.create({});
   const milestone = await database.milestone.create({});
   const notification = await database.notification.create({});
-  const post = await database.post.create({});
+  const post = await database.post.create({
+    discussionId: discussion._id,
+    userId: user._id,
+  });
   const reaction = await database.reaction.create({});
 
   return {

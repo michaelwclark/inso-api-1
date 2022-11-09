@@ -38,8 +38,8 @@ export function makeFakeGradeCreateDTOPlain(grade: any = {}) {
 
 export function makeFakeGradePayload(grade: Partial<Grade> = {}): Grade {
   return {
-    discussionId: faker.database.fakeMongoId(),
-    userId: faker.database.fakeMongoId(),
+    discussionId: faker.database.mongoObjectId(),
+    userId: faker.database.mongoObjectId(),
     grade: faker.datatype.number(),
     maxScore: faker.datatype.number(),
     comment: faker.lorem.words(3),
@@ -50,7 +50,7 @@ export function makeFakeGradePayload(grade: Partial<Grade> = {}): Grade {
         earned: faker.datatype.number(),
       },
     ],
-    facilitator: faker.database.fakeMongoId(),
+    facilitator: faker.database.mongoObjectId(),
     ...grade,
   };
 }

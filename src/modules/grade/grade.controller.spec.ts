@@ -202,7 +202,7 @@ describe('GradeController', () => {
       it('should return an error if the discussion does not exist', () => {
         return expect(
           gradeController.createGradeForParticipant(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
 
             fakeDocuments.user._id.toString(),
             makeFakeGradeDTO(),
@@ -217,7 +217,7 @@ describe('GradeController', () => {
         return expect(
           gradeController.createGradeForParticipant(
             fakeDocuments.discussion._id.toString(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             makeFakeGradeDTO(),
             mockRequest,
           ),

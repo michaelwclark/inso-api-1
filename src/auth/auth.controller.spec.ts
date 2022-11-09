@@ -33,7 +33,7 @@ describe('AuthController', () => {
 
     authController = module.get<AuthController>(AuthController);
     mockUser = {
-      id: faker.database.mongodbObjectId(),
+      id: faker.database.mongoObjectIdString(),
       email: faker.internet.email(),
       access_token: faker.random.alphaNumeric(32),
     };
@@ -93,13 +93,13 @@ describe('AuthController', () => {
         const badReq = {
           user: {
             access_token: faker.random.alphaNumeric(32), // eslint-disable-line camelcase
-            userId: faker.database.mongodbObjectId(),
+            userId: faker.database.mongoObjectIdString(),
           },
         };
 
         return await expect(
           authController.resetPasswordLoggedIn(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             passwordResetDto,
             badReq,
           ),

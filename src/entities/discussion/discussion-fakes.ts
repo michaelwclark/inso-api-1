@@ -8,8 +8,8 @@ export function makeFakeDiscussionCreateDTO(
 ): DiscussionCreateDTO {
   return {
     name: faker.lorem.words(3),
-    poster: faker.database.fakeMongoId(),
-    facilitators: [faker.database.fakeMongoId()],
+    poster: faker.database.mongoObjectId(),
+    facilitators: [faker.database.mongoObjectId()],
     ...discussion,
   } as DiscussionCreateDTO;
 }
@@ -17,8 +17,8 @@ export function makeFakeDiscussionCreateDTO(
 export function makeFakeDiscussionCreateDTOPlain(discussion: any = {}) {
   return {
     name: faker.lorem.words(3),
-    poster: faker.database.mongodbObjectId(),
-    facilitators: [faker.database.mongodbObjectId()],
+    poster: faker.database.mongoObjectIdString(),
+    facilitators: [faker.database.mongoObjectIdString()],
     ...discussion,
   };
 }
@@ -31,20 +31,20 @@ export function makeFakeDiscussionPayload(
     name: faker.random.word(),
     created: faker.date.past(),
     archived: faker.date.past(),
-    settings: faker.database.fakeMongoId(),
-    facilitators: [faker.database.fakeMongoId()],
-    poster: faker.database.fakeMongoId(),
+    settings: faker.database.mongoObjectId(),
+    facilitators: [faker.database.mongoObjectId()],
+    poster: faker.database.mongoObjectId(),
     tags: [faker.random.word()],
     keywords: [faker.random.word()],
     participants: [
       {
-        user: faker.database.fakeMongoId(),
+        user: faker.database.mongoObjectId(),
         joined: faker.date.past(),
         muted: faker.datatype.boolean(),
-        grade: faker.database.fakeMongoId(),
+        grade: faker.database.mongoObjectId(),
       },
     ],
-    set: [faker.database.fakeMongoId()],
+    set: [faker.database.mongoObjectId()],
     ...discussion,
   } as Discussion;
 }
@@ -55,10 +55,10 @@ export function makeFakeDiscussionEditDTO(
   return {
     name: faker.lorem.words(3),
     archived: faker.date.past(),
-    settings: faker.database.fakeMongoId(),
-    facilitators: [faker.database.fakeMongoId()],
+    settings: faker.database.mongoObjectId(),
+    facilitators: [faker.database.mongoObjectId()],
     keywords: [faker.random.word()],
-    participants: [faker.database.fakeMongoId()],
+    participants: [faker.database.mongoObjectId()],
     ...discussion,
   } as DiscussionEditDTO;
 }

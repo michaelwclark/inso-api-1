@@ -3,7 +3,7 @@ import { User } from './user';
 
 export function makeFakeUserPayload(user: Partial<User> = {}): User {
   return {
-    id: faker.database.fakeMongoId(),
+    id: faker.database.mongoObjectId(),
     username: faker.internet.userName(),
     f_name: faker.name.firstName(),
     l_name: faker.name.lastName(),
@@ -20,7 +20,7 @@ export function makeFakeUserPayload(user: Partial<User> = {}): User {
     profilePicture: faker.image.imageUrl(),
     level: faker.random.word(),
     role: faker.random.word(),
-    mutedDiscussions: [faker.database.fakeMongoId()],
+    mutedDiscussions: [faker.database.mongoObjectId()],
 
     ...user,
   };

@@ -365,7 +365,7 @@ describe('AuthService', () => {
       jest.spyOn(database.post, 'find');
       await service.fetchUserAndStats(fakeDocuments.user._id.toString());
       expect(database.post.find).toHaveBeenCalledWith({
-        comment_for: { $in: [] },
+        comment_for: { $in: [fakeDocuments.post._id] },
       });
     });
 
@@ -373,7 +373,7 @@ describe('AuthService', () => {
       jest.spyOn(database.reaction, 'find');
       await service.fetchUserAndStats(fakeDocuments.user._id.toString());
       expect(database.reaction.find).toHaveBeenCalledWith({
-        postId: { $in: [] },
+        postId: { $in: [fakeDocuments.post._id] },
         reaction: '+1',
       });
     });
@@ -387,7 +387,7 @@ describe('AuthService', () => {
         statistics: {
           discussions_created: 1,
           discussions_joined: 1,
-          posts_made: 0,
+          posts_made: 1,
           comments_received: 0,
           upvotes: 0,
         },
@@ -550,7 +550,7 @@ describe('AuthService', () => {
       await expect(
         service.isDiscussionParticipant(
           fakeDocuments.user._id.toString(),
-          faker.database.mongodbObjectId(),
+          faker.database.mongoObjectIdString(),
         ),
       ).rejects.toThrowError(AUTH_ERRORS.DISCUSSION_NOT_FOUND);
     });
@@ -580,7 +580,7 @@ describe('AuthService', () => {
         user: fakeDocuments.user._id,
         joined: faker.date.past(),
         muted: faker.datatype.boolean(),
-        grade: faker.database.fakeMongoId(),
+        grade: faker.database.mongoObjectId(),
       });
 
       await discussion.save();
@@ -698,7 +698,7 @@ describe('AuthService', () => {
       await expect(
         service.isDiscussionMember(
           fakeDocuments.user._id.toString(),
-          faker.database.mongodbObjectId(),
+          faker.database.mongoObjectIdString(),
         ),
       ).rejects.toThrowError(AUTH_ERRORS.DISCUSSION_NOT_FOUND);
     });

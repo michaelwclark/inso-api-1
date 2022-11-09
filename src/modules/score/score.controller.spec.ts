@@ -116,7 +116,7 @@ describe('ScoreController', () => {
         expect.assertions(1);
         await expect(
           scoreController.createScore(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             scoreDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.USER_NOT_FOUND);
@@ -152,8 +152,8 @@ describe('ScoreController', () => {
       it('should throw an error if the score id is empty', async () => {
         await expect(
           scoreController.updateScore(
-            faker.database.mongodbObjectId(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
+            faker.database.mongoObjectIdString(),
             null,
           ),
         ).rejects.toThrow(SCORE_ERRORS.SCORE_EMPTY);
@@ -165,7 +165,7 @@ describe('ScoreController', () => {
         await expect(
           scoreController.updateScore(
             'invalid',
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             scoreEditDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
@@ -173,7 +173,7 @@ describe('ScoreController', () => {
         await expect(
           scoreController.updateScore(
             null,
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             scoreEditDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
@@ -181,7 +181,7 @@ describe('ScoreController', () => {
         await expect(
           scoreController.updateScore(
             undefined,
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             scoreEditDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.USER_ID_INVALID);
@@ -222,8 +222,8 @@ describe('ScoreController', () => {
         expect.assertions(1);
         await expect(
           scoreController.updateScore(
-            faker.database.mongodbObjectId(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
+            faker.database.mongoObjectIdString(),
             scoreEditDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.USER_NOT_FOUND);
@@ -235,7 +235,7 @@ describe('ScoreController', () => {
         await expect(
           scoreController.updateScore(
             fakeDocuments.user._id.toString(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             scoreEditDTO,
           ),
         ).rejects.toThrow(SCORE_ERRORS.SCORE_NOT_FOUND);

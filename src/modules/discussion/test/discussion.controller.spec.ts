@@ -218,7 +218,7 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('poster not found', () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
-          poster: faker.database.fakeMongoId(),
+          poster: faker.database.mongoObjectId(),
           facilitators: [fakeDocuments.user._id],
         });
 
@@ -230,7 +230,7 @@ describe('DiscussionController', () => {
       it('facilitator not found', () => {
         const discussionDTO = makeFakeDiscussionCreateDTO({
           poster: fakeDocuments.user._id,
-          facilitators: [faker.database.fakeMongoId()],
+          facilitators: [faker.database.mongoObjectId()],
         });
 
         return expect(
@@ -282,7 +282,7 @@ describe('DiscussionController', () => {
         });
         return expect(
           discussionController.updateDiscussionMetadata(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             discussionEditDTO,
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
@@ -290,7 +290,7 @@ describe('DiscussionController', () => {
 
       it('facilitator user not found', async () => {
         const discussionEditDTO = makeFakeDiscussionEditDTO({
-          facilitators: [faker.database.fakeMongoId()],
+          facilitators: [faker.database.mongoObjectId()],
           participants: undefined,
         });
         return expect(
@@ -389,7 +389,9 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         return expect(
-          discussionController.getDiscussion(faker.database.mongodbObjectId()),
+          discussionController.getDiscussion(
+            faker.database.mongoObjectIdString(),
+          ),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
     });
@@ -442,7 +444,7 @@ describe('DiscussionController', () => {
       it('discussion not found', async () => {
         return expect(
           discussionController.duplicateDiscussion(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
           ),
         ).rejects.toThrow(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
@@ -468,7 +470,7 @@ describe('DiscussionController', () => {
       it('user not found', async () => {
         return expect(
           discussionController.getDiscussions(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             'false',
             'false',
             mockRequest,
@@ -552,7 +554,7 @@ describe('DiscussionController', () => {
     describe('404 Errors', () => {
       it('discussion not found', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO();
-        const nonExistantDiscussionId = faker.database.mongodbObjectId();
+        const nonExistantDiscussionId = faker.database.mongoObjectIdString();
 
         return expect(
           discussionController.updateDiscussionSettings(
@@ -565,7 +567,7 @@ describe('DiscussionController', () => {
       it('post inspiration not found', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO({
           ...fakeDocuments.setting.toObject(),
-          post_inspirations: [faker.database.fakeMongoId()],
+          post_inspirations: [faker.database.mongoObjectId()],
         });
 
         return expect(
@@ -579,7 +581,7 @@ describe('DiscussionController', () => {
       it('calander not found', async () => {
         const settingsCreateDTO = makeFakeSettingsCreateDTO({
           ...fakeDocuments.setting.toObject(),
-          calendar: faker.database.fakeMongoId(),
+          calendar: faker.database.mongoObjectId(),
         });
 
         return expect(
@@ -645,7 +647,7 @@ describe('DiscussionController', () => {
       it('user not found', async () => {
         await expect(
           discussionController.joinDiscussion(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             fakeDocuments.discussion.insoCode,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
@@ -695,7 +697,7 @@ describe('DiscussionController', () => {
         await expect(
           discussionController.removeParticipant(
             fakeDocuments.discussion._id.toString(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.PARTICIPANT_NOT_IN_DISUCSSION);
       });
@@ -719,7 +721,7 @@ describe('DiscussionController', () => {
       it('discussion does not exist', async () => {
         await expect(
           discussionController.addTag(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             faker.datatype.string(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
@@ -755,14 +757,14 @@ describe('DiscussionController', () => {
         await expect(
           discussionController.muteUserInDiscussion(
             fakeDocuments.user._id.toString(),
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
       it('user not in discussion', async () => {
         await expect(
           discussionController.muteUserInDiscussion(
-            faker.database.mongodbObjectId(),
+            faker.database.mongoObjectIdString(),
             fakeDocuments.discussion._id.toString(),
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
@@ -793,10 +795,11 @@ describe('DiscussionController', () => {
   describe('deleteDiscussion (DELETE discussion/:discussionId)', () => {
     describe('200 OK', () => {
       it('should delete discussion', async () => {
+        const emptyDiscussion = await database.discussion.create(
+          makeFakeDiscussionPayload(),
+        );
         return expect(
-          discussionController.deleteDiscussion(
-            fakeDocuments.discussion._id.toString(),
-          ),
+          discussionController.deleteDiscussion(emptyDiscussion._id.toString()),
         ).resolves.not.toThrow();
       });
     });

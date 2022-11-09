@@ -5,7 +5,7 @@ export function makeFakeCalendarPayload(
   calendar: Partial<Calendar> = {},
 ): Calendar {
   return {
-    id: faker.database.fakeMongoId(),
+    id: faker.database.mongoObjectId(),
     open: faker.date.past(),
     close: faker.date.future(),
     posting: {
@@ -20,7 +20,7 @@ export function makeFakeCalendarPayload(
       open: faker.date.past(),
       close: faker.date.future(),
     },
-    creator: faker.database.fakeMongoId(),
+    creator: faker.database.mongoObjectId(),
     ...calendar,
   };
 }

@@ -34,7 +34,7 @@ export function makeFakeScorePayload(score: Partial<Score> = {}): Score {
         max_points: faker.datatype.number(),
       },
     ],
-    creatorId: faker.database.fakeMongoId(),
+    creatorId: faker.database.mongoObjectId(),
     ...score,
   };
 }
