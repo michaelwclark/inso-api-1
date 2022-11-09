@@ -42,21 +42,9 @@ describe('GradeService', () => {
     gradeService = module.get<GradeService>(GradeService);
   });
 
-  beforeEach(async () => {
-    gradeService.eventBridge = {
-      putEvents: jest.fn(),
-    } as any;
-  });
-
   describe('addEventForAutoGrading', () => {
     it('should call putEvents on eventBridge', async () => {
       expect(true).toBe(true);
-    });
-  });
-
-  describe('updateEventForAutoGrading', () => {
-    it('should be defined', () => {
-      expect(gradeService.updateEventForAutoGrading).toBeDefined();
     });
   });
 

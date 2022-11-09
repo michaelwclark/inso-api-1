@@ -11,11 +11,9 @@ import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import * as schedule from 'node-schedule';
-import environment from 'src/environment';
 
 @Injectable()
 export class GradeService {
-
   constructor(
     @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
@@ -24,19 +22,18 @@ export class GradeService {
     @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
   ) {
-
     // The following code is to reload all discussions for autograding
-    this.returnAllDiscussions().then(discussions => {
-      let now = new Date();
+    this.returnAllDiscussions().then((discussions) => {
+      const now = new Date();
 
-      const newDiscussions = discussions.filter(discussion => {
-        let temp = new DiscussionReadDTO(discussion);
+      discussions.filter((discussion) => {
+        const temp = new DiscussionReadDTO(discussion);
         if (temp.settings.calendar && temp.settings.calendar.close) {
           if (new Date(temp.settings.calendar.close) >= now) {
-            let data = {
+            const data = {
               id: temp._id,
-              closeDate: new Date(temp.settings.calendar.close)
-            }
+              closeDate: new Date(temp.settings.calendar.close),
+            };
             this.addEventForAutoGrading(data);
           }
         }
@@ -44,22 +41,35 @@ export class GradeService {
     });
   }
 
-
-
-  async addEventForAutoGrading(details: any) { // needs discussion id and close date
+  async addEventForAutoGrading(details: any) {
+    // needs discussion id and close date
 
     const discussionId = details.id;
     const closeDate = details.closeDate;
 
-    const discussion = await this.discussionModel.findOne({ _id: discussionId })
+    const discussion = await this.discussionModel
+      .findOne({ _id: discussionId })
       .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+      .populate({
+        path: 'settings',
+        populate: [
+          { path: 'calendar' },
+          { path: 'score' },
+          { path: 'post_inspirations' },
+        ],
+      })
+      .lean();
     const readDiscussion = new DiscussionReadDTO(discussion);
 
     const gradingEvent = schedule.scheduleJob(closeDate, async function () {
       for await (const participant of discussion.participants) {
-        await this.gradeParticipant(new Types.ObjectId(readDiscussion._id), new Types.ObjectId(readDiscussion.poster._id), new Types.ObjectId(participant.user), readDiscussion.settings.scores);
+        await this.gradeParticipant(
+          new Types.ObjectId(readDiscussion._id),
+          new Types.ObjectId(readDiscussion.poster._id),
+          new Types.ObjectId(participant.user),
+          readDiscussion.settings.scores,
+        );
       }
     });
 
@@ -80,19 +90,28 @@ export class GradeService {
       })
       .lean();
 
-
-    const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId })
+    const foundDiscussion = await this.discussionModel
+      .findOne({ _id: discussionId })
       .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+      .populate({
+        path: 'settings',
+        populate: [
+          { path: 'calendar' },
+          { path: 'score' },
+          { path: 'post_inspirations' },
+        ],
+      })
+      .lean();
 
-    var now = new Date();
+    const now = new Date();
     const newDiscussion = new DiscussionReadDTO(foundDiscussion);
 
-    var closeDate = new Date(newDiscussion.settings.calendar.close);
+    let closeDate = new Date(newDiscussion.settings.calendar.close);
     closeDate.setHours(0, 0, 0, 0); // set hour to midnight or beginning of date
-    const addSubtractDate = require("add-subtract-date");
-    closeDate = addSubtractDate.add(closeDate, 1, "minute"); // add one minute to closing date 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const addSubtractDate = require('add-subtract-date');
+    closeDate = addSubtractDate.add(closeDate, 1, 'minute'); // add one minute to closing date
 
     if (!discussion) {
       throw new HttpException(
@@ -113,7 +132,10 @@ export class GradeService {
       );
     }
     if (closeDate < now) {
-      throw new HttpException('Discussion has not been closed yet', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Discussion has not been closed yet',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (discussion.participants.length == 0) {
       throw new HttpException(
@@ -122,7 +144,7 @@ export class GradeService {
       );
     }
 
-    const job = schedule.scheduleJob(closeDate, async function () {
+    schedule.scheduleJob(closeDate, async function () {
       for await (const participant of discussion.participants) {
         await this.gradeParticipant(
           new Types.ObjectId(newDiscussion._id),
@@ -169,7 +191,7 @@ export class GradeService {
       if (posts.length !== gradeCriteria.posts_made.required) {
         // Determine how many they are off and calculate the grade
 
-        var percentage =
+        let percentage =
           (dbPosts.length / gradeCriteria.posts_made.required) * 100;
         if (percentage > 100) {
           percentage = 100;
@@ -198,7 +220,7 @@ export class GradeService {
         activeDates = [...new Set(dates)];
       });
 
-      var percentage =
+      let percentage =
         (activeDates.length / gradeCriteria.active_days.required) * 100;
       if (percentage > 100) {
         percentage = 100;
@@ -234,7 +256,7 @@ export class GradeService {
         break;
       }
 
-      var percentage =
+      let percentage =
         (commentsToUser / gradeCriteria.comments_received.required) * 100;
       if (percentage > 100) {
         percentage = 100;
@@ -263,7 +285,7 @@ export class GradeService {
         });
         let stopFlag = false;
         if (setting.post_inspirations.length > 0 && dbPosts.length > 0) {
-          for (var i = 0; i < dbPosts.length && stopFlag == false; i++) {
+          for (let i = 0; i < dbPosts.length && stopFlag == false; i++) {
             if (Types.ObjectId.isValid(dbPosts[i].post_inspiration)) {
               stopFlag = true;
             } // checks if any of the user's posts to the discussion, actually used an inspiration
@@ -286,7 +308,7 @@ export class GradeService {
     const confirmedGrade = new GradeDTO(grade);
 
     let max = 0;
-    for (var i = 0; i < confirmedGrade.criteria.length; i++) {
+    for (let i = 0; i < confirmedGrade.criteria.length; i++) {
       max = max + confirmedGrade.criteria[i].max_points;
     }
     const graded = await this.gradeModel
@@ -318,10 +340,19 @@ export class GradeService {
   }
 
   async returnAllDiscussions() {
-    const discussions = await this.discussionModel.find({})
+    const discussions = await this.discussionModel
+      .find({})
       .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
       .populate('poster', ['f_name', 'l_name', 'email', 'username'])
-      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+      .populate({
+        path: 'settings',
+        populate: [
+          { path: 'calendar' },
+          { path: 'score' },
+          { path: 'post_inspirations' },
+        ],
+      })
+      .lean();
     return discussions;
   }
 }

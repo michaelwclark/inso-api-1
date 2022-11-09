@@ -29,7 +29,6 @@ export class NotificationService {
       notificationUser,
       date: new Date(),
     });
-    console.log('no', newNotification);
     return newNotification.save();
   }
 
@@ -59,7 +58,6 @@ export class NotificationService {
         'profilePicture',
       ]);
     return await notifications.map((notification) => {
-      console.log(notification);
       return new NotificationReadDTO(notification);
     });
   }
