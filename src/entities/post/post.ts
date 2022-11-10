@@ -10,7 +10,7 @@ export class PostType {
   public post: string;
 
   @Prop({ type: () => [Object] })
-  public outline: Object;
+  public outline: any;
 
   constructor(partial: Partial<PostType>) {
     if (partial) {

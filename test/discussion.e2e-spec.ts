@@ -226,8 +226,6 @@ describe('Discussion E2E', () => {
     });
   });
 
-  describe('GET users/:userId/discussions', () => {});
-
   describe('DELETE discussion/:discussionId', () => {
     it('should return a 200 for a discussion that was successfully deleted', () => {
       return request(app.getHttpServer()).delete('/discussion/123').expect({
