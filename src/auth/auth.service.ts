@@ -3,7 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { DiscussionDocument } from '../entities/discussion/discussion';
+import {
+  Discussion,
+  DiscussionDocument,
+} from '../entities/discussion/discussion';
 import { DiscussionPostDocument, DiscussionPost } from '../entities/post/post';
 import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
 import { Score, ScoreDocument } from '../entities/score/score';
@@ -19,14 +22,14 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
 
-    @InjectModel('Discussion')
+    @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
-    @InjectModel('DiscussionPost')
+    @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
-    @InjectModel('Score') private scoreModel: Model<ScoreDocument>,
-    @InjectModel('Calendar') private calendarModel: Model<CalendarDocument>,
-    @InjectModel('User') private userModel: Model<UserDocument>,
-    @InjectModel('Reaction') private reactionModel: Model<ReactionDocument>,
+    @InjectModel(Score.name) private scoreModel: Model<ScoreDocument>,
+    @InjectModel(Calendar.name) private calendarModel: Model<CalendarDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {

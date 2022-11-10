@@ -743,12 +743,33 @@ describe('DiscussionController', () => {
   describe('muteUserInDiscussion (PATCH users/:userId/discussions/:discussionId/mute)', () => {
     describe('200 OK', () => {
       it('should mute user', async () => {
-        return expect(
-          discussionController.muteUserInDiscussion(
-            fakeDocuments.user._id.toString(),
-            fakeDocuments.discussion._id.toString(),
-          ),
-        ).resolves.not.toThrow();
+        const unmutedDiscussion = await database.discussion.create(
+          makeFakeDiscussionPayload({
+            archived: null,
+            settings: fakeDocuments.setting._id,
+            poster: fakeDocuments.user._id,
+            participants: [
+              {
+                user: fakeDocuments.user._id,
+                joined: new Date(),
+                muted: false,
+                grade: null,
+              },
+            ],
+          }),
+        );
+
+        const result = await discussionController.muteUserInDiscussion(
+          fakeDocuments.user._id.toString(),
+          unmutedDiscussion._id.toString(),
+        );
+
+        expect(result.participants).toContainEqual({
+          user: fakeDocuments.user._id,
+          joined: expect.any(Date),
+          muted: true,
+          grade: null,
+        });
       });
     });
 

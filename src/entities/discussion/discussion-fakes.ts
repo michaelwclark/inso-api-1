@@ -23,15 +23,6 @@ export function makeFakeDiscussionCreateDTOPlain(discussion: any = {}) {
   };
 }
 
-export function makeFakeDiscussionCreateDTOPlain(discussion: any = {}) {
-  return {
-    name: faker.lorem.words(3),
-    poster: faker.database.mongodbObjectId(),
-    facilitators: [faker.database.mongodbObjectId()],
-    ...discussion,
-  };
-}
-
 export function makeFakeDiscussionPayload(
   discussion: Partial<Discussion> = {},
 ): Discussion {
@@ -66,20 +57,6 @@ export function makeFakeDiscussionEditDTO(
     archived: faker.date.past(),
     settings: faker.database.mongoObjectId(),
     facilitators: [faker.database.mongoObjectId()],
-    keywords: [faker.random.word()],
-    participants: [faker.database.mongoObjectId()],
-    ...discussion,
-  } as DiscussionEditDTO;
-}
-
-export function makeFakeDiscussionEditDTO(
-  discussion: Partial<DiscussionEditDTO> = {},
-): DiscussionEditDTO {
-  return {
-    name: faker.lorem.words(3),
-    archived: faker.date.past(),
-    settings: faker.database.fakeMongoId(),
-    facilitators: [faker.database.fakeMongoId()],
     keywords: [faker.random.word()],
     participants: [faker.database.mongoObjectId()],
     ...discussion,
