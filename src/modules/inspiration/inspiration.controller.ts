@@ -63,7 +63,7 @@ export class InspirationController {
           $group: {
             _id: "$subcats",
             values: {
-              $addToSet: { name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
+              $addToSet: { _id: "$_id", name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
             }
           }
         },
