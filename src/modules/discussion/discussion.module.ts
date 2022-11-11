@@ -19,42 +19,28 @@ import { UserModule } from '../user/user.module';
 import { JwtStrategy } from 'src/auth/guards/jwt.strategy';
 import { Reaction, ReactionSchema } from 'src/entities/reaction/reaction';
 import { Grade, GradeSchema } from 'src/entities/grade/grade';
-import { MilestoneModule } from '../milestone/milestone.module';
 import { DiscussionType, DiscussionTypeSchema } from 'src/entities/discussionType/discussion-type';
+import { MilestoneModule } from '../milestone/milestone.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Discussion.name, schema: DiscussionSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Discussion.name, schema: DiscussionSchema }]),
     MongooseModule.forFeature([{ name: Setting.name, schema: SettingSchema }]),
-    MongooseModule.forFeature([
-      { name: Inspiration.name, schema: InspirationSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Inspiration.name, schema: InspirationSchema }]),
     MongooseModule.forFeature([{ name: Score.name, schema: ScoreSchema }]),
-    MongooseModule.forFeature([
-      { name: Calendar.name, schema: CalendarSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    MongooseModule.forFeature([
-      { name: Calendar.name, schema: CalendarSchema },
-    ]),
-    MongooseModule.forFeature([
-      { name: DiscussionPost.name, schema: DiscussionPostSchema },
-    ]),
-    MongooseModule.forFeature([
-      { name: Reaction.name, schema: ReactionSchema },
-    ]),
+    MongooseModule.forFeature([{ name: Calendar.name, schema: CalendarSchema }]),
+    MongooseModule.forFeature([{ name: DiscussionPost.name, schema: DiscussionPostSchema }]),
+    MongooseModule.forFeature([{ name: Reaction.name, schema: ReactionSchema }]),
     MongooseModule.forFeature([{ name: Grade.name, schema: GradeSchema }]),
-    MongooseModule.forFeature([
-      { name: DiscussionType.name, schema: DiscussionTypeSchema },
-    ]),
+    MongooseModule.forFeature([{ name: DiscussionType.name, schema: DiscussionTypeSchema }]),
     AuthModule,
-    UserModule,
     MilestoneModule,
+    UserModule
   ],
   controllers: [DiscussionController],
   providers: [DiscussionController, JwtStrategy],
-  exports: [DiscussionController],
+  exports: [DiscussionController]
 })
 export class DiscussionModule { }

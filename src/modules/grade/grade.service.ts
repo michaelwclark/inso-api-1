@@ -1,5 +1,4 @@
 import {
-  ConsoleLogger,
   HttpException,
   HttpStatus,
   Injectable,
@@ -11,23 +10,15 @@ import {
   DiscussionDocument,
 } from 'src/entities/discussion/discussion';
 import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
-import * as AWS from 'aws-sdk';
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { GradeDTO } from 'src/entities/grade/create-grade';
-import { DiscussionController } from '../discussion/discussion.controller';
 import { Setting, SettingDocument } from 'src/entities/setting/setting';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
+import * as schedule from 'node-schedule';
 import environment from 'src/environment';
 
 @Injectable()
 export class GradeService {
-  eventBridge = new AWS.EventBridge({
-    credentials: {
-      accessKeyId: environment.AWS_EVENTBRIDGE_ACCESS_KEY_ID,
-      secretAccessKey: environment.AWS_EVENTBRIDGE_SECRET,
-    },
-    region: environment.AWS_REGION,
-  });
 
   constructor(
     @InjectModel(Discussion.name)
@@ -36,29 +27,47 @@ export class GradeService {
     private discussionPostModel: Model<DiscussionPostDocument>,
     @InjectModel(Setting.name) private settingModel: Model<SettingDocument>,
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
-  ) { }
+  ) {
 
-  async addEventForAutoGrading() {
-    const params = {
-      Entries: [
-        {
-          Source: 'node-js-test', // Must match with the source defined in rules
-          Detail: '{ "key1": "value1", "key2": "value2" }', // Need to swap them in for the discussionId and the time
-          Resources: ['resource1', 'resource2'],
-          DetailType: 'myDetailType',
-        },
-      ],
-    };
-    try {
-      const event = await this.eventBridge.putEvents(params).promise();
-      return { success: true, event };
-    } catch (error) {
-      return { success: false, error };
-    }
+    // The following code is to reload all discussions for autograding
+    this.returnAllDiscussions().then(discussions => {
+      let now = new Date();
+
+      const newDiscussions = discussions.filter(discussion => {
+        let temp = new DiscussionReadDTO(discussion);
+        if (temp.settings.calendar && temp.settings.calendar.close) {
+          if (new Date(temp.settings.calendar.close) >= now) {
+            let data = {
+              id: temp._id,
+              closeDate: new Date(temp.settings.calendar.close)
+            }
+            this.addEventForAutoGrading(data);
+          }
+        }
+      });
+    });
   }
 
-  async updateEventForAutoGrading() {
-    // Delete the rule and then put it back with the new date to run at
+
+
+  async addEventForAutoGrading(details: any) { // needs discussion id and close date
+
+    const discussionId = details.id;
+    const closeDate = details.closeDate;
+
+    const discussion = await this.discussionModel.findOne({ _id: discussionId })
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+    const readDiscussion = new DiscussionReadDTO(discussion);
+
+    const gradingEvent = schedule.scheduleJob(closeDate, async function () {
+      for await (const participant of discussion.participants) {
+        await this.gradeParticipant(new Types.ObjectId(readDiscussion._id), new Types.ObjectId(readDiscussion.poster._id), new Types.ObjectId(participant.user), readDiscussion.settings.scores);
+      }
+    });
+
+    gradingEvent;
   }
 
   async gradeDiscussion(discussionId: string) {
@@ -75,7 +84,20 @@ export class GradeService {
       })
       .lean();
 
-    const newDiscussion = new DiscussionReadDTO(discussion);
+
+    const foundDiscussion = await this.discussionModel.findOne({ _id: discussionId })
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+
+    var now = new Date();
+    const newDiscussion = new DiscussionReadDTO(foundDiscussion);
+
+    var closeDate = new Date(newDiscussion.settings.calendar.close);
+    closeDate.setHours(0, 0, 0, 0); // set hour to midnight or beginning of date
+    const addSubtractDate = require("add-subtract-date");
+    closeDate = addSubtractDate.add(closeDate, 1, "minute"); // add one minute to closing date 
+
     if (!discussion) {
       throw new HttpException(
         `${discussionId} does not exist as a discussion`,
@@ -94,30 +116,35 @@ export class GradeService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
+    if (closeDate < now) {
+      throw new HttpException('Discussion has not been closed yet', HttpStatus.BAD_REQUEST);
+    }
     if (discussion.participants.length == 0) {
       throw new HttpException(
         'Discussion has no participants to grade',
         HttpStatus.BAD_REQUEST,
       );
     }
-    // Go through each participant and grade them according to the auto grading requirements
-    for await (const participant of discussion.participants) {
-      await this.gradeParticipant(
-        new Types.ObjectId(newDiscussion._id),
-        new Types.ObjectId(newDiscussion.poster._id),
-        new Types.ObjectId(participant.user),
-        newDiscussion.settings.scores,
-      );
-    }
+
+    const job = schedule.scheduleJob(closeDate, async function () {
+      for await (const participant of discussion.participants) {
+        await this.gradeParticipant(
+          new Types.ObjectId(newDiscussion._id),
+          new Types.ObjectId(newDiscussion.poster._id),
+          new Types.ObjectId(participant.user),
+          newDiscussion.settings.scores,
+        );
+      }
+    });
   }
 
-  private async gradeParticipant(
+  async gradeParticipant(
     discussionId: Types.ObjectId,
     facilitator: Types.ObjectId,
     participantId: Types.ObjectId,
     rubric: any,
   ) {
+    // Add check to see if the discussion is actually closed
     const total = rubric.total;
     const gradeCriteria = {
       posts_made: rubric.posts_made ? rubric.posts_made : null,
@@ -294,6 +321,14 @@ export class GradeService {
         },
       );
     }
+  }
+
+  async returnAllDiscussions() {
+    const discussions = await this.discussionModel.find({})
+      .populate('facilitators', ['f_name', 'l_name', 'email', 'username'])
+      .populate('poster', ['f_name', 'l_name', 'email', 'username'])
+      .populate({ path: 'settings', populate: [{ path: 'calendar' }, { path: 'score' }, { path: 'post_inspirations' }] }).lean();
+    return discussions;
   }
 }
 

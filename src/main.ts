@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import environment from 'src/environment';
 import helmet from 'helmet';
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
@@ -31,8 +32,5 @@ async function bootstrap() {
   app.use(helmet());
 
   await app.listen(environment.PORT);
-
-  // go through all discussions in the db and find the ones that have a close date after today
-  // Use the node scheduler to add each close as an event in the queue
 }
 bootstrap();
