@@ -41,7 +41,6 @@ export class GradeService {
               id: temp._id,
               closeDate: new Date(temp.settings.calendar.close)
             }
-            console.log(data);
             this.addEventForAutoGrading(data);
           }
         }
