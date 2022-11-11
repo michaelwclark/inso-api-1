@@ -1,110 +1,99 @@
-
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Milestone, MilestoneDocument } from '../../entities/milestone/milestone';
+import {
+  Milestone,
+  MilestoneDocument,
+} from '../../entities/milestone/milestone';
 import { User, UserDocument } from '../../entities/user/user';
 import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class MilestoneService {
+  public validTypes = ['system achievement', 'system progress', 'recognition'];
+  public validSystemAchievements = [
+    '1st Post', // Done
+    'Use a Post Inspiration', // Done
+    'Comment Received on Post', // Done
+    '1st Upvote', // Done
+    'Perfect Score',
+    'Discussion Created', // Done
+  ];
+  constructor(
+    @InjectModel(Milestone.name)
+    private milestoneModel: Model<MilestoneDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => NotificationService))
+    private notificationService: NotificationService,
+  ) {}
 
-    public validTypes = ["system achievement", "system progress", "recognition"];
-    public validSystemAchievements = ["1st Post", "Use Post Inspiration", "Comment Received on Post", "1st Upvote", "Perfect Score", "Discussion Created"];
-    public validSystemProgress = [ 
-        "5th Post",
-        "10th Post",
-        "100th Post",
-        "1000th Post",
-        "5th Use of Post Inspiration",
-        "10th Use of Post Inspiration",
-        "100th Use of Post Inspiration",
-        "1000th Use of Post Inspiration",
-        "5th Upvote",
-        "10th Upvote",
-        "100th Upvote",
-        "1000th Upvote",
-        "5th Reaction",
-        "10th Reaction",
-        "100th Reaction",
-        "1000th Reaction",
-        "5th Perfect Score",
-        "10th Perfect Score",
-        "100th Perfect Score",
-        "1000th Perfect Score",
-        "5th Discussion Created",
-        "10th Discussion Created",
-        "100th Discussion Created",
-        "1000th Discussion Created"
-    ];
-    constructor(
-        @InjectModel(Milestone.name) private milestoneModel: Model<MilestoneDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>,
-        //private notificationService: NotificationService,
-    ) {}
-
-    async createMilestoneForUser(
-        userId: Types.ObjectId,
-        type: string,
-        milestoneName: string,
-        info: { discussionId: Types.ObjectId, postId: Types.ObjectId, date }
-    ) {
-        // See the milestone is a valid type
-        if(!this.validTypes.includes(type)) {
-            throw new HttpException('The type is not a valid milestone type', HttpStatus.BAD_REQUEST);
-        }
-        if(type === 'system achievement') {
-            if(!this.validSystemAchievements.includes(milestoneName)) {
-                throw new HttpException('The milestone is not valid for a system achievement', HttpStatus.BAD_REQUEST);
-            }
-        }
-        const milestone = new this.milestoneModel({
-            userId: userId,
-            type: type,
-            date: new Date(),
-            milestone: milestoneName,
-            info: info
-        });
-        const savedMilestone = await milestone.save();
-        //await this.notificationService.createNotification(userId, { header: `<h1 className="notification-header">You have achieved a badge!"</h1>`, text: `${milestoneName}`, type: 'badge'});
-        return savedMilestone;
+  async createMilestoneForUser(
+    userId: Types.ObjectId,
+    type: string,
+    milestoneName: string,
+    info: { discussionId: Types.ObjectId; postId: Types.ObjectId; date },
+  ) {
+    if (!this.validSystemAchievements.includes(milestoneName)) {
+      throw new Error('Not a valid milestone name');
     }
+    const milestone = new this.milestoneModel({
+      userId: userId,
+      type: type,
+      date: new Date(),
+      milestone: milestoneName,
+      info: info,
+    });
+    const savedMilestone = await milestone.save();
+    await this.notificationService.createNotification(userId, userId, {
+      header: `<h1 className="notification-header">You have achieved a badge!"</h1>`,
+      text: `${milestoneName}`,
+      type: 'badge',
+    });
+    return savedMilestone;
+  }
 
-    getMilestoneForUser(
-        userId: Types.ObjectId,
-        type: string,
-        milestoneName: string,
-    ) {
-        
-    }
+  /**
+   * This function is to check for the progress of a milestone
+   * @param userId
+   * @returns
+   */
+  // async checkUserMilestoneProgress(userId: Types.ObjectId) {
+  //     // Check what progress milestones the user has achieved
+  //     const milestones = await this.milestoneModel.find({userId: userId});
 
-    async checkUserMilestoneProgress(userId: Types.ObjectId) {
-        // Check what progress milestones the user has achieved 
-        const milestones = await this.milestoneModel.find({userId: userId});
+  //     // See if they have achieved any new ones
+  //     const newMilestones = [];
+  //     milestones.forEach(milestone => {
+  //         console.log(milestone);
+  //     })
+  //     // Add those to the database if they have
+  //     for await(let newMilestone of newMilestones) {
+  //         //this.createMilestoneForUser(userId, newMilestone.type, newMilestone.milestone, )
+  //         const milestone = new this.milestoneModel({
+  //             userId: userId,
+  //             type: newMilestone.type,
+  //             date: new Date(),
+  //             milestone: newMilestone.milestone,
+  //             info: newMilestone.info
+  //         });
+  //         return await milestone.save();
+  //     }
+  // }
 
-        // See if they have achieved any new ones
-        const newMilestones = [];
-        milestones.forEach(milestone => {
-            console.log(milestone);
-        })
-        // Add those to the database if they have
-        for await(let newMilestone of newMilestones) {
-            //this.createMilestoneForUser(userId, newMilestone.type, newMilestone.milestone, )
-            const milestone = new this.milestoneModel({
-                userId: userId,
-                type: newMilestone.type,
-                date: new Date(),
-                milestone: newMilestone.milestone,
-                info: newMilestone.info
-            });
-            return await milestone.save();
-        }
-    }
+  async getMilestonesForUser(userId: Types.ObjectId) {
+    return await this.milestoneModel.find({ userId: userId });
+  }
 
-    getMilestonesForUser(
-        userId: Types.ObjectId
-    ) {
-        return this.milestoneModel.find({ userId: userId });
-    }
-
+  async getMilestoneForUser(userId: Types.ObjectId, milestoneName: string) {
+    return await this.milestoneModel.findOne({
+      userId: userId,
+      milestone: milestoneName,
+    });
+  }
 }

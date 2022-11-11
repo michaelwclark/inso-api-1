@@ -10,8 +10,8 @@ import { DiscussionSetModule } from './modules/discussion-set/discussion-set.mod
 import { DiscussionModule } from './modules/discussion/discussion.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { SendGridModule } from "@ntegral/nestjs-sendgrid";
-import { ConfigModule } from "@nestjs/config";
+import { SendGridModule } from '@ntegral/nestjs-sendgrid';
+import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -20,7 +20,8 @@ import { AppService } from './app.service';
 import { GoogleStrategy } from './auth/guards/google.strategy';
 import { UploadModule } from './modules/upload/upload.module';
 import { MilestoneModule } from './modules/milestone/milestone.module';
-
+import { NotificationModule } from './modules/notification/notification.module';
+import environment from 'src/environment';
 @Module({
   imports: [
     AuthModule,
@@ -37,23 +38,25 @@ import { MilestoneModule } from './modules/milestone/milestone.module';
     PostModule,
     UploadModule,
     MilestoneModule,
+    NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(
-      process.env.MONGO_CONNECTION_STRING,
-      {
-        useUnifiedTopology: true,
-        useNewUrlParser: true,
-      }
-    ),
-    SendGridModule.forRoot({ 
-      apiKey: process.env.SENDGRID_KEY
+    MongooseModule.forRoot(environment.MONGO_CONNECTION_STRING, {
+      useUnifiedTopology: true,
+      useNewUrlParser: true,
+    }),
+    SendGridModule.forRoot({
+      apiKey: environment.SENDGRID_KEY,
     }),
     ThrottlerModule.forRoot({
       ttl: 60,
-      limit: 10
-    })
+      limit: 10,
+    }),
   ],
   controllers: [AppController],
-  providers: [ { provide: APP_GUARD, useClass: ThrottlerGuard }, AppService, GoogleStrategy],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    AppService,
+    GoogleStrategy,
+  ],
 })
 export class AppModule {}
