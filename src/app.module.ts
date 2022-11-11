@@ -47,16 +47,11 @@ import environment from 'src/environment';
     SendGridModule.forRoot({
       apiKey: environment.SENDGRID_KEY,
     }),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 10,
-    }),
   ],
   controllers: [AppController],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
     AppService,
     GoogleStrategy,
   ],
 })
-export class AppModule {}
+export class AppModule { }
