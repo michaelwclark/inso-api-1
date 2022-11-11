@@ -33,7 +33,7 @@ export class InspirationController {
   @ApiOperation({ description: 'Gets all valid inspirations on the system' })
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: 'The user is not logged in' })
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   @ApiQuery({
     name: 'subcats',
     required: false,
@@ -63,7 +63,7 @@ export class InspirationController {
           $group: {
             _id: "$subcats",
             values: {
-              $addToSet: { name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
+              $addToSet: { _id: "$_id", name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
             }
           }
         },
