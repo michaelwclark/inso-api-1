@@ -33,7 +33,7 @@ export class InspirationController {
   @ApiOperation({ description: 'Gets all valid inspirations on the system' })
   @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
   @ApiUnauthorizedResponse({ description: 'The user is not logged in' })
-  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiQuery({
     name: 'subcats',
     required: false,
