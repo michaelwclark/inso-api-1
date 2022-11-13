@@ -52,4 +52,4 @@ import environment from 'src/environment';
   controllers: [AppController],
   providers: [AppService, GoogleStrategy],
 })
-export class AppModule {}
+export class AppModule { }

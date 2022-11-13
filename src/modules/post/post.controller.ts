@@ -61,7 +61,7 @@ export class PostController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-  ) {}
+  ) { }
 
   @Post('discussion/:discussionId/post')
   @ApiOperation({
@@ -165,7 +165,7 @@ export class PostController {
     }
 
     // If the post is a comment_for something notify that participant that someone responded to them
-    if (newPost.comment_for && newPost.userId !== req.userId) {
+    if (newPost.comment_for && postForComment.userId !== newPost.userId) {
       await this.notificationService.createNotification(
         postForComment.userId,
         newPost.userId,
