@@ -13,8 +13,6 @@ import { SendGridModule } from '@ntegral/nestjs-sendgrid';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
 import { AppService } from './app.service';
 import { GoogleStrategy } from './auth/guards/google.strategy';
 import { UploadModule } from './modules/upload/upload.module';
@@ -52,9 +50,6 @@ import environment from 'src/environment';
     }),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    GoogleStrategy,
-  ],
+  providers: [AppService, GoogleStrategy],
 })
-export class AppModule { }
+export class AppModule {}

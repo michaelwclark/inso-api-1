@@ -18,10 +18,7 @@ import {
   Discussion,
   DiscussionDocument,
 } from 'src/entities/discussion/discussion';
-import {
-  Inspiration,
-  InspirationDocument,
-} from 'src/entities/inspiration/inspiration';
+
 import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { User, UserDocument } from 'src/entities/user/user';
@@ -34,8 +31,6 @@ export class AnalyticsController {
   constructor(
     @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
-    @InjectModel(Inspiration.name)
-    private post_inspirationModel: Model<InspirationDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
@@ -124,13 +119,13 @@ export class AnalyticsController {
       const postWithComments = await this.getPostsAndCommentsFromTop(post);
       posts.push(postWithComments);
     }
-    const tags = await this.getTags(posts, discussion.tags);
-    // Build the array of people that used those specific tags
-    // Build the 2D array
-    const participantArray = discussion.participants.map((participant) => {
-      return participant.f_name + ' ' + participant.l_name;
-    });
-    const value = new ChordChartData();
+    // const tags = await this.getTags(posts, discussion.tags);
+    // // Build the array of people that used those specific tags
+    // // Build the 2D array
+    // const participantArray = discussion.participants.map((participant) => {
+    //   return participant.f_name + ' ' + participant.l_name;
+    // });
+    // const value = new ChordChartData();
     return new ChordChartData({
       keys: ['Josh', 'Paige', 'Nick'],
       data: [
@@ -141,14 +136,14 @@ export class AnalyticsController {
     });
   }
 
-  async getBurstChartData(discussion: any): Promise<BurstChartData> {
+  async getBurstChartData(_discussion: any): Promise<BurstChartData> {
     // Get the top 5 tags for the a discussion and all of the people that have used them as top level comments
     // Set the flare for the discussion as the discussion name
     // For each tag set the children of tag
     return new BurstChartData();
   }
 
-  async getDirectedChartData(discussion: any): Promise<DirectedChartData> {
+  async getDirectedChartData(_discussion: any): Promise<DirectedChartData> {
     // Get the directed chart data
     return new DirectedChartData({
       trendingUp: {
@@ -239,7 +234,7 @@ export class AnalyticsController {
     return newPost;
   }
 
-  async getTagsForUser(posts: any, tags: string[], user: any) {
+  async getTagsForUser(posts: any, tags: string[]) {
     let tagsArray = [];
     if (posts.length > 0) {
       const strings = [];
