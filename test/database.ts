@@ -84,39 +84,39 @@ export async function testingDatabase(): Promise<TestingDatabase> {
   const mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   const mongoConnection = (await connect(uri)).connection;
-  const calendarModel = mongoConnection.model(Calendar.name, CalendarSchema);
+  const calendarModel: Model<Calendar> = mongoConnection.model(Calendar.name, CalendarSchema);
 
-  const discussionModel = mongoConnection.model(
+  const discussionModel: Model<Discussion> = mongoConnection.model(
     Discussion.name,
     DiscussionSchema,
   );
-  const discussionTypeModel = mongoConnection.model(
+  const discussionTypeModel: Model<DiscussionType> = mongoConnection.model(
     DiscussionType.name,
     DiscussionTypeSchema,
   );
 
-  const discussionSetModel = mongoConnection.model(
+  const discussionSetModel: Model<DiscussionSet> = mongoConnection.model(
     DiscussionSet.name,
     DiscussionSetSchema,
   );
-  const gradeModel = mongoConnection.model(Grade.name, GradeSchema);
-  const inspirationModel = mongoConnection.model(
+  const gradeModel: Model<Grade> = mongoConnection.model(Grade.name, GradeSchema);
+  const inspirationModel: Model<Inspiration> = mongoConnection.model(
     Inspiration.name,
     InspirationSchema,
   );
-  const milestoneModel = mongoConnection.model(Milestone.name, MilestoneSchema);
-  const notificationModel = mongoConnection.model(
+  const milestoneModel: Model<Milestone> = mongoConnection.model(Milestone.name, MilestoneSchema);
+  const notificationModel: Model<Notification> = mongoConnection.model(
     Notification.name,
     NotificationSchema,
   );
-  const postModel = mongoConnection.model(
+  const postModel: Model<DiscussionPost> = mongoConnection.model(
     DiscussionPost.name,
     DiscussionPostSchema,
   );
-  const reactionModel = mongoConnection.model(Reaction.name, ReactionSchema);
-  const scoreModel = mongoConnection.model(Score.name, ScoreSchema);
-  const settingModel = mongoConnection.model(Setting.name, SettingSchema);
-  const userModel = mongoConnection.model(User.name, UserSchema);
+  const reactionModel: Model<Reaction> = mongoConnection.model(Reaction.name, ReactionSchema);
+  const scoreModel: Model<Score> = mongoConnection.model(Score.name, ScoreSchema);
+  const settingModel: Model<Setting> = mongoConnection.model(Setting.name, SettingSchema);
+  const userModel: Model<User> = mongoConnection.model(User.name, UserSchema);
 
   const database = {
     calendar: calendarModel,
@@ -133,13 +133,11 @@ export async function testingDatabase(): Promise<TestingDatabase> {
     score: scoreModel,
     setting: settingModel,
     user: userModel,
-  };
-
-  return {
-    ...database,
     createFakes: async () => createFakes(database as TestingDatabase),
     clearDatabase: async () => clearDatabase(database as TestingDatabase),
   };
+
+  return database;
 }
 
 async function createFakes(database: TestingDatabase): Promise<FakeDocuments> {
