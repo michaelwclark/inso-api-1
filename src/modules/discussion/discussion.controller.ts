@@ -812,9 +812,12 @@ export class DiscussionController {
     if (!findDiscussion) {
       throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
-    // TODO FIX THIS UPDATE
-    // TODO ADD 409 if user is already muted
-    //await this.discussionModel.findOneAndUpdate({_id: discussionId}, {"participants.muted": true});
+
+    return await this.discussionModel.findOneAndUpdate(
+      { _id: discussionId, 'participants.user': new Types.ObjectId(userId) },
+      { $set: { 'participants.$.muted': true } },
+      { new: true },
+    );
   }
 
   @Delete('discussion/:discussionId')

@@ -36,6 +36,14 @@ export class NotificationService {
     return await this.notificationModel.findOneAndUpdate(
       { _id: notificationId },
       { read: true },
+      { new: true },
+    );
+  }
+
+  async markAllNotificationsAsRead(userId: Types.ObjectId) {
+    return await this.notificationModel.updateMany(
+      { userId: userId },
+      { read: true },
     );
   }
 

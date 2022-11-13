@@ -23,7 +23,7 @@ export class PostTypeCreateDTO {
     isArray: false,
     example: {},
   })
-  outline: Object;
+  outline: any;
 
   constructor(partial: Partial<PostTypeCreateDTO>) {
     if (partial) {

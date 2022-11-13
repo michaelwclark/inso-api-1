@@ -43,4 +43,4 @@ import { MilestoneModule } from '../milestone/milestone.module';
   providers: [DiscussionController, JwtStrategy],
   exports: [DiscussionController]
 })
-export class DiscussionModule { }
+export class DiscussionModule {}

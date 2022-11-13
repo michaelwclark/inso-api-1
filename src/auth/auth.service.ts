@@ -3,7 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { DiscussionDocument } from '../entities/discussion/discussion';
+import {
+  Discussion,
+  DiscussionDocument,
+} from '../entities/discussion/discussion';
 import { DiscussionPostDocument, DiscussionPost } from '../entities/post/post';
 import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
 import { Score, ScoreDocument } from '../entities/score/score';
@@ -19,7 +22,7 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
 
-    @InjectModel('Discussion')
+    @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,

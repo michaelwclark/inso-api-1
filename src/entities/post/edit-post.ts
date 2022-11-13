@@ -23,7 +23,7 @@ export class PostTypeUpdateDTO {
     isArray: false,
     example: 'I like potato pancakes with ketchup',
   })
-  outline: Object;
+  outline: any;
 }
 export class PostUpdateDTO {
   @ApiProperty({
