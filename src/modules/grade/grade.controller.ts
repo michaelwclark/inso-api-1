@@ -1,27 +1,6 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  Patch,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Param, Patch, Req, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  ApiBadRequestResponse,
-  ApiBody,
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import { ConnectParticipant } from 'aws-sdk';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
@@ -33,8 +12,10 @@ import { DiscussionReadDTO } from 'src/entities/discussion/read-discussion';
 import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
-import { NotificationService } from '../notification/notification.service';
+import { NotificationService } from 'src/modules/notification/notification.service';
 import environment from 'src/environment';
+import GRADE_ERRORS from './grade-errors';
+
 @Controller()
 export class GradeController {
   constructor(
@@ -69,24 +50,16 @@ export class GradeController {
       })
       .lean();
     if (!discussion) {
-      throw new HttpException(
-        'Discussion does not exist',
-        HttpStatus.NOT_FOUND,
-      );
+      throw GRADE_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const newDiscussion = new DiscussionReadDTO(discussion);
 
     // Make sure the participant is apart of the discussion and not already graded
-    const participant = discussion.participants.filter((part) => {
-      if (part.user.toString() === participantId) {
-        return part;
-      }
-    })[0];
+    const participant = discussion.participants.find(
+      (part) => part.user.toString() === participantId,
+    );
     if (!participant) {
-      throw new HttpException(
-        "Participant is not a part of this discussion and can't receive a grade",
-        HttpStatus.BAD_REQUEST,
-      );
+      throw GRADE_ERRORS.PARTICIPANT_NOT_FOUND;
     }
 
     const confirmedGrade = new GradeDTO(grade);
@@ -94,14 +67,11 @@ export class GradeController {
       confirmedGrade.criteria.length !==
       newDiscussion.settings.scores.criteria.length
     ) {
-      throw new HttpException(
-        'Criteria for score not all included',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw GRADE_ERRORS.CRITERIAN_NOT_INCLUDED;
     }
 
     // Generate the grade, put it in the database, and
-    const gradeModel = {
+    const gradePayload = {
       discussionId: discussion._id,
       userId: new Types.ObjectId(participantId),
       grade: confirmedGrade.total,
@@ -120,20 +90,25 @@ export class GradeController {
         type: 'grade',
       },
     );
-    if (participant.grade === null) {
-      const newGrade = new this.gradeModel(gradeModel);
-      const gradeId = await newGrade.save();
+
+    const isNewGrade = participant.grade === null;
+
+    if (isNewGrade) {
+      const newGrade = await this.gradeModel.create(gradePayload);
       return await this.discussionModel.findOneAndUpdate(
         {
-          _id: discussionId,
+          _id: new Types.ObjectId(discussionId),
           'participants.user': new Types.ObjectId(participantId),
         },
-        { $set: { 'participants.$.grade': gradeId._id } },
+        { $set: { 'participants.$.grade': newGrade._id } },
+        { new: true },
       );
     } else {
+      // TODO: This should probably be moved to a PATCH request.
       return await this.gradeModel.findOneAndUpdate(
         { _id: participant.grade },
-        gradeModel,
+        gradePayload,
+        { new: true },
       );
     }
   }
@@ -149,10 +124,7 @@ export class GradeController {
     if (Types.ObjectId.isValid(discussionId)) {
       return await this.gradeService.gradeDiscussion(discussionId);
     } else {
-      throw new HttpException(
-        'DiscussionId is not valid',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw GRADE_ERRORS.DISCUSSION_ID_INVALID;
     }
   }
 }

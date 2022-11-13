@@ -1,4 +1,4 @@
-import { ObjectId, Types, Document } from 'mongoose';
+import { Types, Document } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
 export type DiscussionDocument = Discussion & Document;
@@ -24,7 +24,7 @@ export class Discussion {
   public settings: Types.ObjectId;
 
   @Prop({ type: [Types.ObjectId], ref: 'User' })
-  public facilitators: ObjectId[];
+  public facilitators: Types.ObjectId[];
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   public poster: Types.ObjectId;
@@ -43,7 +43,7 @@ export class Discussion {
     grade: Types.ObjectId;
   }[];
   @Prop({ type: [Types.ObjectId] })
-  public set: ObjectId[];
+  public set: Types.ObjectId[];
 
   constructor(partial: Partial<Discussion>) {
     Object.assign(this, partial);

@@ -1,20 +1,22 @@
-import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiOperation, ApiBody, ApiParam, ApiOkResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiNotFoundResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
-import { Model, Types } from 'mongoose';
-import { InspirationCreateDTO } from 'src/entities/inspiration/create-inspiration';
-import { InspirationEditDTO } from 'src/entities/inspiration/edit-inspiration';
+import {
+  ApiOperation,
+  ApiOkResponse,
+  ApiUnauthorizedResponse,
+  ApiTags,
+  ApiQuery,
+} from '@nestjs/swagger';
+import { Model } from 'mongoose';
 import { Inspiration } from 'src/entities/inspiration/inspiration';
 import { InspirationReadResponse } from 'src/entities/inspiration/read-inspiration';
-import { respondingClosePast } from '../calendar/calendarMocks';
-
 
 @Controller()
 export class InspirationController {
   constructor(
     @InjectModel(Inspiration.name) private inspirationModel: Model<Inspiration>,
-  ) { }
+  ) {}
 
   // @Post('inspiration')
   // @ApiOperation({description: 'Create an inspiration for a discussion'})
@@ -31,7 +33,10 @@ export class InspirationController {
 
   @Get('inspirations')
   @ApiOperation({ description: 'Gets all valid inspirations on the system' })
-  @ApiOkResponse({ description: 'List of inspirations organized by type', type: InspirationReadResponse })
+  @ApiOkResponse({
+    description: 'List of inspirations organized by type',
+    type: InspirationReadResponse,
+  })
   @ApiUnauthorizedResponse({ description: 'The user is not logged in' })
   @UseGuards(JwtAuthGuard)
   @ApiQuery({
@@ -42,34 +47,39 @@ export class InspirationController {
   @ApiTags('Inspiration')
   async getInspirations(@Query('subcats') subcats: string[]): Promise<any> {
     const returnVal = {
-      "posting": [],
-      "responding": [],
-      "synthesizing": []
-    }
+      posting: [],
+      responding: [],
+      synthesizing: [],
+    };
 
-    const types = ["posting", "responding", "synthesizing"];
+    const types = ['posting', 'responding', 'synthesizing'];
 
     for await (const type of types) {
       const aggregation = [];
       // Group by the unique elements
       aggregation.push(
         {
-          $match: { type: type }
+          $match: { type: type },
         },
         {
-          $unwind: { path: "$subcats", preserveNullAndEmptyArrays: true }
+          $unwind: { path: '$subcats', preserveNullAndEmptyArrays: true },
         },
         {
           $group: {
-            _id: "$subcats",
+            _id: '$subcats',
             values: {
-              $addToSet: { _id: "$_id", name: "$name", instructions: "$instructions", outline: "$outline", icon: "$icon" }
-            }
-          }
+              $addToSet: {
+                name: '$name',
+                instructions: '$instructions',
+                outline: '$outline',
+                icon: '$icon',
+              },
+            },
+          },
         },
         {
-          $project: { cat: "$_id", values: "$values", _id: 0 }
-        }
+          $project: { cat: '$_id', values: '$values', _id: 0 },
+        },
       );
 
       let vals = await this.inspirationModel.aggregate(aggregation);
@@ -78,7 +88,7 @@ export class InspirationController {
         if (!Array.isArray(subcats)) {
           subcats = !!subcats ? [subcats] : [];
         }
-        vals = vals.filter(val => {
+        vals = vals.filter((val) => {
           if (subcats.includes(val.cat)) {
             return val;
           }

@@ -1,6 +1,36 @@
 {
+  "git.repositoryScanIgnoredFolders": ["node_modules", "dist"],
   "editor.formatOnSave": true,
   "prettier.embeddedLanguageFormatting": "auto",
   "eslint.codeActionsOnSave.mode": "all",
   "javascript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.autoImportFileExcludePatterns": [
+    "node_modules",
+    "dist"
+  ],
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "dist/": true,
+    "build/": true,
+    "mongo-data": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.hg/store/**": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "dist/": true,
+    "build/": true,
+    "mongo-data": true
+  }
 }

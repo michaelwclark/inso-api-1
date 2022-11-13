@@ -13,7 +13,6 @@ import {
   ChartData,
   ChordChartData,
   DirectedChartData,
-  TagData,
 } from 'src/entities/chart-data/chart-data';
 import {
   Discussion,
@@ -27,8 +26,8 @@ import { DiscussionPost, DiscussionPostDocument } from 'src/entities/post/post';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { User, UserDocument } from 'src/entities/user/user';
 import { AnalyticsQueryDto } from './types/query';
-const { removeStopwords } = require('stopword');
-const count = require('count-array-values');
+import { removeStopwords } from 'stopword';
+import count from 'count-array-values';
 
 @Controller()
 export class AnalyticsController {
@@ -127,9 +126,9 @@ export class AnalyticsController {
     }
     const tags = await this.getTags(posts, discussion.tags);
     // Build the array of people that used those specific tags
-    // Build the 2D array 
-    const participantArray = discussion.participants.map(participant => {
-      return participant.f_name + " " + participant.l_name;
+    // Build the 2D array
+    const participantArray = discussion.participants.map((participant) => {
+      return participant.f_name + ' ' + participant.l_name;
     });
     const value = new ChordChartData();
     return new ChordChartData({
@@ -265,7 +264,7 @@ export class AnalyticsController {
         // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
         temp = postNoStopWords.join(' ');
-        strings.push(temp)
+        strings.push(temp);
       }
 
       let allPosts = strings.join(' ');

@@ -1,13 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsDefined,
-  IsMongoId,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsDefined, IsMongoId, IsOptional } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class PostTypeCreateDTO {
@@ -29,7 +23,7 @@ export class PostTypeCreateDTO {
     isArray: false,
     example: {},
   })
-  outline: Object;
+  outline: any;
 
   constructor(partial: Partial<PostTypeCreateDTO>) {
     if (partial) {

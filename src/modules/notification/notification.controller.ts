@@ -2,8 +2,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   UseGuards,
@@ -14,7 +12,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -24,6 +21,7 @@ import { RequesterIsUserGuard } from '../../auth/guards/userGuards/requesterIsUs
 import { NotificationReadDTO } from '../../entities/notification/read-notification';
 import { User, UserDocument } from '../../entities/user/user';
 import { NotificationService } from './notification.service';
+import NOTIFICATION_ERRORS from './notification-errors';
 
 @Controller()
 export class NotificationController {
@@ -47,14 +45,11 @@ export class NotificationController {
   @UseGuards(JwtAuthGuard, RequesterIsUserGuard)
   async getNotifications(@Param('userId') userId: string) {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException(
-        `${userId} is not a valid id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw NOTIFICATION_ERRORS.USER_ID_INVALID;
     }
     const user = await this.userModel.findOne({ _id: userId });
     if (!user) {
-      throw new HttpException(`${userId} does not exist`, HttpStatus.NOT_FOUND);
+      throw NOTIFICATION_ERRORS.USER_NOT_FOUND;
     }
     return await this.notificationService.getNotifications(
       new Types.ObjectId(userId),
@@ -79,24 +74,46 @@ export class NotificationController {
     @Param('notificationId') notificationId: string,
   ) {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException(
-        `${userId} is not a valid id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw NOTIFICATION_ERRORS.USER_ID_INVALID;
     }
     const user = await this.userModel.findOne({ _id: userId });
     if (!user) {
-      throw new HttpException(`${userId} does not exist`, HttpStatus.NOT_FOUND);
+      throw NOTIFICATION_ERRORS.USER_NOT_FOUND;
     }
     if (!Types.ObjectId.isValid(notificationId)) {
-      throw new HttpException(
-        `${notificationId} is not a valid id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw NOTIFICATION_ERRORS.NOTIFICATION_ID_INVALID;
     }
     return this.notificationService.markNotificationAsRead(
       new Types.ObjectId(notificationId),
     );
+  }
+
+  @Patch('users/:userId/notifications/readall')
+  @ApiOperation({ description: 'Mark all notifications as read for a user' })
+  @ApiOkResponse({
+    description: 'Array of notifications',
+    type: [NotificationReadDTO],
+  })
+  @ApiNotFoundResponse({ description: 'User was not found' })
+  @ApiUnauthorizedResponse({ description: 'User is not authenticated' })
+  @ApiForbiddenResponse({
+    description: 'User is not permitted to see notifications for this user',
+  })
+  @ApiTags('Notifications')
+  @UseGuards(JwtAuthGuard, RequesterIsUserGuard)
+  async markAllNotificationAsRead(@Param('userId') userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw NOTIFICATION_ERRORS.USER_ID_INVALID;
+    }
+    const user = await this.userModel.findOne({ _id: userId });
+    if (!user) {
+      throw NOTIFICATION_ERRORS.USER_NOT_FOUND;
+    }
+    this.notificationService.markAllNotificationsAsRead(
+      new Types.ObjectId(userId),
+    );
+
+    return 'All notifications marked as read';
   }
 
   @Delete('users/:userId/notifications/:notificationId')
@@ -113,20 +130,14 @@ export class NotificationController {
     @Param('notificationId') notificationId: string,
   ) {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException(
-        `${userId} is not a valid id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw NOTIFICATION_ERRORS.USER_ID_INVALID;
     }
     const user = await this.userModel.findOne({ _id: userId });
     if (!user) {
-      throw new HttpException(`${userId} does not exist`, HttpStatus.NOT_FOUND);
+      throw NOTIFICATION_ERRORS.USER_NOT_FOUND;
     }
     if (!Types.ObjectId.isValid(notificationId)) {
-      throw new HttpException(
-        `${notificationId} is not a valid id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw NOTIFICATION_ERRORS.NOTIFICATION_ID_INVALID;
     }
     return this.notificationService.deleteNotification(
       new Types.ObjectId(notificationId),

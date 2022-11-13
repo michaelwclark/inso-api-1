@@ -11,9 +11,10 @@ export class DiscussionType {
     @Prop(String)
     public starter_prompt: String;
 
-    constructor(partial: any) {
-        Object.assign(this, partial);
-    }
+  constructor(partial: any) {
+    Object.assign(this, partial);
+  }
 }
 
-export const DiscussionTypeSchema = SchemaFactory.createForClass(DiscussionType);
+export const DiscussionTypeSchema =
+  SchemaFactory.createForClass(DiscussionType);

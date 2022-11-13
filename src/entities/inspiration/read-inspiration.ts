@@ -23,32 +23,30 @@ export class InspirationRead {
 }
 
 export class InspirationReadResponse {
-
   @ApiProperty({
     name: 'posting',
     description: 'The posting inspirations',
     required: false,
     type: [InspirationRead],
-    isArray: true
+    isArray: true,
   })
-  posting: InspirationRead[]
+  posting: InspirationRead[];
 
   @ApiProperty({
     name: 'responding',
     description: 'The responding inspirations',
     required: false,
     type: [InspirationRead],
-    isArray: true
+    isArray: true,
   })
-  responding: InspirationRead[]
+  responding: InspirationRead[];
 
   @ApiProperty({
     name: 'synthesizing',
     description: 'The synthesizing inspirations',
     required: false,
     type: [InspirationRead],
-    isArray: true
+    isArray: true,
   })
-  synthesizing: InspirationRead[]
+  synthesizing: InspirationRead[];
 }
-

@@ -1,11 +1,9 @@
 import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { appendFile } from 'fs';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { PostController } from '../src/modules/post/post.controller';
 import { PostModule } from '../src/modules/post/post.module';
 
-describe('AppController', () => {
+describe('Discussion Setting E2E', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -98,6 +96,6 @@ describe('AppController', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 });
