@@ -8,7 +8,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  Length,
 } from 'class-validator';
 import { Types } from 'mongoose';
 
