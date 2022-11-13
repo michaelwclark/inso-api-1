@@ -2,9 +2,6 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -21,10 +18,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Model, Types } from 'mongoose';
+import { Model, Types, HydratedDocument } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { IsReactionCreatorGuard } from 'src/auth/guards/userGuards/isReactionCreator.guard';
-import { RequesterIsUserGuard } from 'src/auth/guards/userGuards/requesterIsUser.guard';
 import {
   Discussion,
   DiscussionDocument,
@@ -37,6 +33,7 @@ import { User, UserDocument } from 'src/entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 import environment from 'src/environment';
+import REACTION_ERRORS from './reaction-errors';
 
 @Controller()
 export class ReactionController {
@@ -68,10 +65,10 @@ export class ReactionController {
     @Param('postId') postId: string,
     @Body() reaction: CreateReactionDTO,
     @Request() req,
-  ) {
+  ): Promise<HydratedDocument<Reaction>> {
     // Validate postId
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(`${postId} is not valid`, HttpStatus.BAD_REQUEST);
+      throw REACTION_ERRORS.POST_ID_INVALID;
     }
 
     // Make sure the post exists still
@@ -79,18 +76,15 @@ export class ReactionController {
       _id: new Types.ObjectId(postId),
     });
     if (!post) {
-      throw new HttpException(`${postId} does not exist`, HttpStatus.NOT_FOUND);
+      throw REACTION_ERRORS.POST_NOT_FOUND;
     }
 
     const user = await this.userModel.findOne({ _id: reaction.userId });
     if (!user) {
-      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+      throw REACTION_ERRORS.USER_NOT_FOUND;
     }
     if (req.user.userId !== reaction.userId) {
-      throw new HttpException(
-        'Body user id does not match user in request',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw REACTION_ERRORS.USER_MISMATCH;
     }
     const checkReaction = new Reaction({
       ...reaction,
@@ -101,6 +95,7 @@ export class ReactionController {
     const discussion = await this.discussionModel.findOne({
       _id: post.discussionId,
     });
+
     if (reaction.reaction !== '+1') {
       await this.notificationService.createNotification(
         post.userId,
@@ -161,29 +156,23 @@ export class ReactionController {
     @Param('postId') postId: string,
     @Param('reactionId') reactionId: string,
     @Body() reaction: UpdateReactionDTO,
-  ) {
+  ): Promise<HydratedDocument<Reaction>> {
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(
-        `${postId} is not a valid mongo Id`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw REACTION_ERRORS.POST_ID_INVALID;
     }
 
     const reactionFound = await this.reactionModel.findOne({
       _id: new Types.ObjectId(reactionId),
     });
     if (!reactionFound) {
-      throw new HttpException(
-        `${reactionId} does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw REACTION_ERRORS.REACTION_NOT_FOUND;
     }
 
-    await this.reactionModel.findOneAndUpdate(
+    return await this.reactionModel.findOneAndUpdate(
       { _id: new Types.ObjectId(reactionId) },
-      { reaction: reaction.reaction },
+      { reaction: reaction.reaction, unified: reaction.unified },
+      { new: true },
     );
-    return;
   }
 
   @Delete('post/:postId/reaction/:reactionId')
@@ -200,10 +189,7 @@ export class ReactionController {
     @Param('reactionId') reactionId: string,
   ): Promise<any> {
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(
-        `${postId} is not a valid postId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw REACTION_ERRORS.POST_ID_INVALID;
     }
     const deleted = await this.reactionModel.deleteOne({
       _id: new Types.ObjectId(reactionId),

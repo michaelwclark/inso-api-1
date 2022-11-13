@@ -16,15 +16,12 @@ import {
   ApiOperation,
   ApiBody,
   ApiOkResponse,
-  ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiNotFoundResponse,
   ApiTags,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import { ObjectUnsubscribedError } from 'rxjs';
-import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from '../../auth/guards/userGuards/isDiscussionMember.guard';
@@ -48,6 +45,7 @@ import { User, UserDocument } from '../../entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 import environment from 'src/environment';
+import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 
 @Controller()
 export class PostController {
@@ -137,7 +135,6 @@ export class PostController {
     }
     const user = await this.userModel.findOne({ _id: req.user.userId });
 
-    const checkPost = new PostCreateDTO(post);
     const newPost = new this.discussionPostModel({
       ...post,
       discussionId: new Types.ObjectId(discussionId),
@@ -320,7 +317,7 @@ export class PostController {
     @Param('discussionId') discussionId: string,
     @Param('postId') postId: string,
   ): Promise<any> {
-    const discussion = await this.verifyDiscussion(discussionId);
+    await this.verifyDiscussion(discussionId);
     if (!Types.ObjectId.isValid(postId)) {
       throw new HttpException(
         `${postId} is not a valid postId`,

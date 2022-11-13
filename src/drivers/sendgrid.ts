@@ -8,9 +8,6 @@ export enum SENDGRID_TEMPLATES {
   PASSWORD_RESET_CONFIRMATION = 'd-39eddc4474e24f62bca941c80496e9b2',
 }
 
-const MAILER_DEFAULTS = {
-  from: { email: MAIL_DEFAULTS.FROM.NO_REPLY },
-};
 @Injectable()
 export class SGService {
   private TEMPLATES = new Map<MAIL_DEFAULTS.TEMPLATES, string>();

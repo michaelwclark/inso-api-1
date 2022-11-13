@@ -1,30 +1,25 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  Discussion,
-  DiscussionDocument,
-} from '../entities/discussion/discussion';
-import { DiscussionPost, DiscussionPostDocument } from '../entities/post/post';
+import { DiscussionDocument } from '../entities/discussion/discussion';
+import { DiscussionPostDocument, DiscussionPost } from '../entities/post/post';
 import { Calendar, CalendarDocument } from '../entities/calendar/calendar';
 import { Score, ScoreDocument } from '../entities/score/score';
 import { User, UserDocument } from '../entities/user/user';
-import { SGService } from '../drivers/sendgrid';
 import { validatePassword } from '../entities/user/commonFunctions/validatePassword';
 import { GoogleUserDTO } from '../entities/user/google-user';
 import { UserReadDTO } from '../entities/user/read-user';
 import { Reaction, ReactionDocument } from '../entities/reaction/reaction';
-import { MilestoneService } from '../modules/milestone/milestone.service';
+import AUTH_ERRORS from './auth-errors';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    private sgService: SGService,
-    private milestoneService: MilestoneService,
-    @InjectModel(Discussion.name)
+
+    @InjectModel('Discussion')
     private discussionModel: Model<DiscussionDocument>,
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
@@ -37,24 +32,15 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ 'contact.email': email });
     if (!user) {
-      throw new HttpException(
-        'Email does not exist in database',
-        HttpStatus.NOT_FOUND,
-      );
+      throw AUTH_ERRORS.EMAIL_NOT_FOUND;
     }
 
     if (!user.password) {
-      throw new HttpException(
-        'User has Google SSO configured. Please login through Google',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw AUTH_ERRORS.SSO_CONFIGURED;
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch == false) {
-      throw new HttpException(
-        'Invalid credentials, password is not correct',
-        HttpStatus.UNAUTHORIZED,
-      );
+      throw AUTH_ERRORS.INVALID_PASSWORD;
     }
 
     return this.login(user);
@@ -68,14 +54,10 @@ export class AuthService {
   }
 
   /** GOOGLE LOGIN */
-  async googleLogin(req) {
+  async googleLogin(req: any) {
     if (!req.user) {
-      throw new HttpException(
-        'User does not exist to Google!',
-        HttpStatus.NOT_FOUND,
-      );
+      throw AUTH_ERRORS.USER_NOT_FOUND_GOOGLE;
     }
-
     // Check out db for the user and see if the email is attached
     const user = await this.userModel.findOne({
       'contact.email': req.user.email,
@@ -84,20 +66,11 @@ export class AuthService {
       let username = req.user.firstName + req.user.lastName;
       let sameUsername = await this.userModel.findOne({ username: username });
       let counter = 1;
+      const baseUsername = username;
       username = username + counter.toString();
-      while (sameUsername) {
-        if (counter < 10) {
-          username = username.substring(0, username.length - 1);
-        }
-        if (counter < 100 && counter >= 10) {
-          username = username.substring(0, username.length - 2);
-        }
-        // WARNING THIS WILL ONLY WORK UP TO {{first}}{{last}}1000
-        if (counter < 1000 && counter >= 100) {
-          username = username.substring(0, username.length - 3);
-        }
-        username = username + counter.toString();
+      while (sameUsername && counter < 5000) {
         sameUsername = await this.userModel.findOne({ username: username });
+        username = baseUsername + counter.toString();
         counter++;
       }
       // Create a user based on the req.user
@@ -146,10 +119,7 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (isMatch == false) {
-      throw new HttpException(
-        'Invalid credentials, old password is not correct',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw AUTH_ERRORS.PASSWORD_NOT_MATCH;
     }
 
     validatePassword(newPassword);
@@ -208,10 +178,6 @@ export class AuthService {
     });
     stats.posts_made = posts_made.length;
 
-    const milestones = this.milestoneService.getMilestonesForUser(
-      new Types.ObjectId(userId),
-    );
-
     // Put all the posts_made ids into an array and then use that to query for the comments_received and the upvotes
     const postIds = posts_made.map((post) => {
       return post._id;
@@ -243,27 +209,19 @@ export class AuthService {
         ? false
         : true;
     if (!isCreator) {
-      throw new HttpException(
-        `User: ${userId} is not permitted to perform this action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isCreator;
   }
 
   async isDiscussionFacilitator(userId: string, discussionId: string) {
-    const isFacilitator =
-      (await this.discussionModel.findOne({
-        _id: new Types.ObjectId(discussionId),
-        facilitators: new Types.ObjectId(userId),
-      })) === null
-        ? false
-        : true;
+    const count = await this.discussionModel.countDocuments({
+      _id: new Types.ObjectId(discussionId),
+      facilitators: new Types.ObjectId(userId),
+    });
+    const isFacilitator = count > 0;
     if (!isFacilitator) {
-      throw new HttpException(
-        `User: ${userId} is not a facilitator and cannon perform action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isFacilitator;
   }
@@ -273,19 +231,13 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw new HttpException(
-        `Discussion could not be found`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw AUTH_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
     });
     if (!participantIds.includes(userId)) {
-      throw new HttpException(
-        `User: ${userId} is not a participant of the discussion and cannot perform action on the discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return true;
   }
@@ -299,10 +251,7 @@ export class AuthService {
         ? false
         : true;
     if (!isPoster) {
-      throw new HttpException(
-        `User: ${userId} is not the author of the post and cannot perform this action`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isPoster;
   }
@@ -316,10 +265,7 @@ export class AuthService {
         ? false
         : true;
     if (!isReactionCreator) {
-      throw new HttpException(
-        `User ${userId} is not the creator of the reaction and cannot modify it`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isReactionCreator;
   }
@@ -339,10 +285,7 @@ export class AuthService {
       _id: new Types.ObjectId(discussionId),
     });
     if (!discussion) {
-      throw new HttpException(
-        `Discussion does not exist`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw AUTH_ERRORS.DISCUSSION_NOT_FOUND;
     }
     const participantIds = discussion.participants.map((part) => {
       return part.user.toString();
@@ -350,10 +293,7 @@ export class AuthService {
     const isParticipant = participantIds.includes(userId);
 
     if (!isFacilitator && !isParticipant) {
-      throw new HttpException(
-        `${userId} is not a member of this discussion`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isFacilitator || isParticipant;
   }
@@ -367,10 +307,7 @@ export class AuthService {
         ? false
         : true;
     if (!isScorer) {
-      throw new HttpException(
-        `${userId} is not permitted to perform action on the score`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isScorer;
   }
@@ -387,10 +324,7 @@ export class AuthService {
         ? false
         : true;
     if (!isCalendarCreator) {
-      throw new HttpException(
-        `${userId} is not permitted to perform action on the calendar`,
-        HttpStatus.FORBIDDEN,
-      );
+      throw AUTH_ERRORS.FORBIDDEN_FOR_USER;
     }
     return isCalendarCreator;
   }
@@ -399,10 +333,7 @@ export class AuthService {
   verifyMongoIds(ids: string[]) {
     ids.forEach((id) => {
       if (!Types.ObjectId.isValid(id)) {
-        throw new HttpException(
-          `${id} is not a valid Mongo Id`,
-          HttpStatus.BAD_REQUEST,
-        );
+        throw AUTH_ERRORS.INVALID_ID;
       }
     });
   }

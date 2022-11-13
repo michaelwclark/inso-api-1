@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtStrategy } from './guards/jwt.strategy';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { User, UserSchema } from '../entities/user/user';

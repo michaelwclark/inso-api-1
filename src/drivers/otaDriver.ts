@@ -43,7 +43,7 @@ export function decodeOta(ota: string): Promise<decodedOtaCode> {
     environment.OTA_CODE_REPLACER,
     environment.TOKEN_REPLACEMENT,
   );
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     jwt.verify(code, environment.OTA_SECRET, (err: any, decoded: any) => {
       if (err) {
         throw new HttpException(

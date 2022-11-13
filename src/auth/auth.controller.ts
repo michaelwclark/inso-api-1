@@ -8,8 +8,6 @@ import {
   Req,
   Patch,
   Param,
-  HttpException,
-  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -28,6 +26,7 @@ import {
   PasswordResetDTO,
 } from '../entities/user/password-reset';
 import { UserReadDTO } from '../entities/user/read-user';
+import authErrors from './auth-errors';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -106,10 +105,7 @@ export class AuthController {
     @Req() req,
   ) {
     if (req.user.userId !== userId) {
-      throw new HttpException(
-        'User is not permitted to reset password for another user',
-        HttpStatus.FORBIDDEN,
-      );
+      throw authErrors.FORBIDDEN_FOR_USER;
     }
     await this.authService.resetPassword(
       userId,
@@ -123,6 +119,7 @@ export class AuthController {
   @ApiOperation({
     description: 'Updates a password through OTA code passed in email',
   })
+  @ApiUnauthorizedResponse({ description: 'The password is not correct' })
   @ApiBody({ type: EmailPasswordResetDTO })
   @ApiTags('User')
   async resetPasswordOta(

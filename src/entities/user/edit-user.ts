@@ -1,11 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsDate,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -14,8 +11,6 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { Types } from 'mongoose';
-import { ContactCreateDTO } from './create-user';
 
 export class ContactEditDTO {
   @ApiProperty({

@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  UseGuards,
-  Request,
-  Body,
-  Req,
-  Res,
-  Redirect,
-} from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Redirect } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -24,8 +14,7 @@ export class GoogleAuthController {
       'If user is registered it will log the user in once authenticated through Google, if they are not registered they will be added to the database.',
   })
   @ApiTags('User')
-  async googleAuth(@Req() req) {}
-
+  // async googleAuth(@Req() req) {}
   @Get('redirect')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
@@ -33,7 +22,7 @@ export class GoogleAuthController {
   })
   @Redirect(environment.SSO_REDIRECT)
   @ApiTags('User')
-  async googleAuthRedirect(@Req() req, @Res() res) {
+  async googleAuthRedirect(@Req() req) {
     const jwt = await this.authService.googleLogin(req);
     return { url: environment.SSO_REDIRECT + `?t=` + jwt.access_token };
   }

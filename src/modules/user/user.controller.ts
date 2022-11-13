@@ -3,8 +3,6 @@ import {
   Controller,
   Get,
   HttpCode,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -20,18 +18,19 @@ import {
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { Model, Types } from 'mongoose';
-import {
-  ContactCreateDTO,
-  UserCreateDTO,
-} from '../../entities/user/create-user';
-import { UserEditDTO } from '../../entities/user/edit-user';
-import { User, UserDocument } from '../../entities/user/user';
+import { UserCreateDTO } from 'src/entities/user/create-user';
+import { UserEditDTO } from 'src/entities/user/edit-user';
+import { User, UserDocument } from 'src/entities/user/user';
 import * as bcrypt from 'bcrypt';
-import { SENDGRID_TEMPLATES, SGService } from '../../drivers/sendgrid';
-import { validatePassword } from '../../entities/user/commonFunctions/validatePassword';
-import { decodeOta, generateCode } from '../../drivers/otaDriver';
-import * as MAIL_DEFAULTS from '../../drivers/interfaces/mailerDefaults';
+import { SENDGRID_TEMPLATES, SGService } from 'src/drivers/sendgrid';
+import { decodeOta, generateCode } from 'src/drivers/otaDriver';
+import * as MAIL_DEFAULTS from 'src/drivers/interfaces/mailerDefaults';
 import environment from 'src/environment';
+import { validatePassword } from 'src/entities/user/commonFunctions/validatePassword';
+import { checkForDuplicateContacts } from 'src/entities/user/commonFunctions/checkForDuplicateContacts';
+import { validateUsername } from 'src/entities/user/commonFunctions/validateUsername';
+import { isEmail } from 'src/entities/user/commonFunctions/isEmail';
+import USER_ERRORS from './user-errors';
 
 @Controller()
 export class UserController {
@@ -45,10 +44,6 @@ export class UserController {
   @Redirect(environment.PASSWORD_RESET_PAGE)
   async passwordTest(@Query('ota') ota: string) {
     const code = await decodeOta(ota);
-
-    const checkVerified = await this.userModel.findOne({
-      'contact.email': code.data,
-    });
 
     await this.userModel.findOneAndUpdate(
       { 'contact.email': code.data },
@@ -83,24 +78,24 @@ export class UserController {
 
     checkForDuplicateContacts(user.contact); // throws error if same email appears more than once
 
+    // Ensure new users are not verified by default
     const array = user.contact.map((x) => {
       x.verified = false;
       x.primary = false;
       return x;
     });
+    // Set first contact as primary
     array[0].primary = true;
     user.contact = array;
 
-    for await (const contact of user.contact) {
-      const sameEmail = await this.userModel.findOne({
-        'contact.email': contact.email,
-      });
-      if (sameEmail != undefined) {
-        throw new HttpException(
-          'Email ' + contact.email + ' already is associated with an account',
-          HttpStatus.BAD_REQUEST,
-        );
-      } // checks and throws error if any of the given emails are already in use
+    const contactEmails = user.contact.map((x) => x.email);
+
+    const foundUser = await this.userModel.countDocuments({
+      'contact.email': { $in: contactEmails },
+    });
+
+    if (foundUser) {
+      throw USER_ERRORS.EMAIL_IN_USE;
     }
 
     validatePassword(user.password);
@@ -128,17 +123,11 @@ export class UserController {
   @Post('password-reset/:email')
   async resetPasswordRequest(@Param('email') email: string) {
     if (isEmail(email) == false) {
-      throw new HttpException(
-        'Please enter a valid email address',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw USER_ERRORS.INVALID_EMAIL;
     }
     const foundUser = await this.userModel.findOne({ 'contact.email': email });
     if (!foundUser) {
-      throw new HttpException(
-        'No account associated with email: ' + email,
-        HttpStatus.NOT_FOUND,
-      );
+      throw USER_ERRORS.USER_NOT_FOUND;
     }
     const userPasswordRequest = {
       userId: foundUser._id,
@@ -149,9 +138,9 @@ export class UserController {
     const ota = await generateCode(userPasswordRequest);
     await this.sgService.resetPassword({
       ...userPasswordRequest,
-      link: 'http://localhost:3000/password-reset?ota=' + ota.code,
+      link: environment.PASSWORD_RESET_PAGE + `?ota=` + ota,
     });
-    return 'Password reset request has been sent to email: ' + email;
+    return 'Password reset request has been sent to email';
   }
 
   @Patch('user/:userId')
@@ -167,17 +156,13 @@ export class UserController {
   @ApiTags('User')
   async updateUser(@Param('userId') userId: string, @Body() user: UserEditDTO) {
     // user id validation
-    if (userId === null) {
-      throw new HttpException('No user id provided', HttpStatus.BAD_REQUEST);
+    if (!userId || !Types.ObjectId.isValid(userId)) {
+      throw USER_ERRORS.INVALID_USER_ID;
     }
-    if (!Types.ObjectId.isValid(userId)) {
-      throw new HttpException('User id is not valid', HttpStatus.BAD_REQUEST);
-    }
-
     // check if user does exist
     const foundUser = await this.userModel.findOne({ _id: userId });
     if (!foundUser) {
-      throw new HttpException('User does not exist', HttpStatus.NOT_FOUND);
+      throw USER_ERRORS.USER_NOT_FOUND;
     }
 
     if (user.hasOwnProperty('username')) {
@@ -190,10 +175,7 @@ export class UserController {
         !(sameUsername == undefined) &&
         !(sameUsername.username === previousUsername)
       ) {
-        throw new HttpException(
-          'Username already exists, please choose another',
-          HttpStatus.BAD_REQUEST,
-        );
+        throw USER_ERRORS.USERNAME_IN_USE;
       }
     } // Will allow if username is property in patch body but there is no change in value of username for object
 
@@ -205,10 +187,7 @@ export class UserController {
           'contact.email': contact.email,
         });
         if (sameEmail != undefined && contact.delete != true) {
-          throw new HttpException(
-            'Email ' + contact.email + ' already is associated with an account',
-            HttpStatus.BAD_REQUEST,
-          );
+          throw USER_ERRORS.EMAIL_IN_USE;
         } // checks and throws error if any of the given emails are already in use
       }
 
@@ -229,13 +208,14 @@ export class UserController {
       } // removing all contacts from the delete array, that are present in the database
 
       let hasNewPrimary = false;
+      let primaryIndex = 0;
       for (
         let _i = 0;
         _i < contactsToKeep.length && hasNewPrimary == false;
         _i++
       ) {
         if (contactsToKeep[_i].primary == true) {
-          var primaryIndex = _i;
+          primaryIndex = _i;
           hasNewPrimary = true;
         }
       } // checks if there is a new primary contact to overwrite the old, and stores the index value
@@ -265,12 +245,11 @@ export class UserController {
           { _id: userId },
           { $set: { contact: oldContacts } },
         );
-        throw new HttpException(
-          'You must have at least one email contact',
-          HttpStatus.BAD_REQUEST,
-        );
+        throw USER_ERRORS.MISSING_EMAIL;
       } // checks that not all contacts were removed
 
+      // TODO: Remove this portion, it's never going to be true so is unreachable.
+      //  Leaving it for now until i can come back and refactor this holistically.
       const primaryTest = user.contact.filter(function (e) {
         return e.primary == true;
       }); // returns the contacts with primary as true
@@ -279,15 +258,11 @@ export class UserController {
           { _id: userId },
           { $set: { contact: oldContacts } },
         );
-        throw new HttpException(
-          'You must have only one primary email contact',
-          HttpStatus.BAD_REQUEST,
-        );
+        throw USER_ERRORS.ONLY_ONE_PRIMARY_EMAIL;
       } // checks that only one contact is set as primary
     }
 
-    const res = await foundUser.updateOne(user);
-
+    await foundUser.updateOne(user);
     return 'User Updated';
   }
 
@@ -297,13 +272,17 @@ export class UserController {
     @Query('ota') ota: string,
   ) {
     if (newPassword.password !== newPassword.confirmPassword) {
-      throw new HttpException(
-        'Password and confirm password fields must match',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw USER_ERRORS.PASSWORDS_DO_NOT_MATCH;
     }
     validatePassword(newPassword.password);
-    this.verifyPasswordResetToken(ota, newPassword.password);
+    const code = await decodeOta(ota);
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword.password, saltRounds);
+    return await this.userModel.findOneAndUpdate(
+      { 'contact.email': code.data },
+      { $set: { password: hashedPassword } },
+      { new: true },
+    );
   }
 
   //**  Uses SendGrid to send email, function is performed at the end of user registration (POST USER ROUTE) */
@@ -326,10 +305,7 @@ export class UserController {
     const arr = checkVerified.contact;
     for (const e of arr) {
       if (e.email == code.data && e.verified == true) {
-        throw new HttpException(
-          'Email has already been verified',
-          HttpStatus.CONFLICT,
-        );
+        throw USER_ERRORS.USER_EMAIL_ALREADY_VERIFIED;
       }
     }
 
@@ -338,81 +314,5 @@ export class UserController {
       { $set: { 'contact.$.verified': true } },
     );
     return true;
-  }
-
-  async sendPasswordResetRequest(user: any) {
-    const ota = await generateCode(user.contact);
-    return await this.sgService.sendEmail({
-      ...user,
-      template: SENDGRID_TEMPLATES.PASSWORD_RESET_REQUEST,
-      action: MAIL_DEFAULTS.SUBJECTS.RESET_PASSWORD,
-      data: { link: environment.PASSWORD_RESET_REDIRECT + ota.code },
-    });
-  }
-
-  async verifyPasswordResetToken(ota: string, password: string) {
-    const code = await decodeOta(ota);
-    const saltRounds = 10;
-    const newPassword = await bcrypt.hash(password, saltRounds);
-    const user = await this.userModel.findOneAndUpdate(
-      { 'contact.email': code.data },
-      { $set: { password: newPassword } },
-    );
-  }
-}
-
-/** validates the username for a new user or when updating a username, the value meets all  required conditions */
-function validateUsername(userName: string) {
-  if (userName.length < 5 || userName.length > 32) {
-    throw new HttpException(
-      'Username length must be at least 5 characters and no more than 32',
-      HttpStatus.BAD_REQUEST,
-    );
-  }
-
-  if (isEmail(userName) == true) {
-    throw new HttpException(
-      'Username cannot be an email address',
-      HttpStatus.BAD_REQUEST,
-    );
-  }
-
-  const Filter = require('bad-words'),
-    filter = new Filter();
-  filter.addWords('shithead', 'fuckingking');
-  const badUsernameCheck = filter.clean(userName);
-  if (badUsernameCheck.includes('*')) {
-    throw new HttpException(
-      'Username cannot contain obscene or profain language',
-      HttpStatus.BAD_REQUEST,
-    );
-  }
-}
-
-/** uses regex to ensure a string is a valid email address */
-function isEmail(search: string) {
-  let searchFind: boolean;
-  const regexp = new RegExp(
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-  );
-
-  searchFind = regexp.test(search);
-  return searchFind;
-}
-
-/** checks if array of new contacts in User create or edit DTOs, contains duplicate emails */
-function checkForDuplicateContacts(array: ContactCreateDTO[]) {
-  const contactsArray = array;
-  const unique = contactsArray.filter(
-    (c, index, self) => index === self.findIndex((t) => t.email === c.email),
-  );
-
-  if (array.length != unique.length) {
-    throw new HttpException(
-      'Cannot have duplicate emails in array',
-      HttpStatus.BAD_REQUEST,
-    );
-  } else {
-    return unique;
   }
 }
