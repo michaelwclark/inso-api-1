@@ -943,6 +943,7 @@ export class DiscussionController {
       tagsArray = count(newArray, 'tag');
 
 
+
       const stringTags = tagsArray.map((tag) => {
         return tag.tag;
       });
