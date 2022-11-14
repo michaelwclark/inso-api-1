@@ -41,8 +41,8 @@ import environment from 'src/environment';
         uri: environment.MONGO_CONNECTION_STRING,
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
+        // useFindAndModify: false,
+        // useCreateIndex: true,
       }),
     }),
     SendGridModule.forRoot({
@@ -52,4 +52,4 @@ import environment from 'src/environment';
   controllers: [AppController],
   providers: [AppService, GoogleStrategy],
 })
-export class AppModule {}
+export class AppModule { }
