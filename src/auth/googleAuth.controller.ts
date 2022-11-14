@@ -14,6 +14,7 @@ export class GoogleAuthController {
       'If user is registered it will log the user in once authenticated through Google, if they are not registered they will be added to the database.',
   })
   @ApiTags('User')
+  // eslint-disable-next-line
   async googleAuth() { }
 
   @Get('redirect')
