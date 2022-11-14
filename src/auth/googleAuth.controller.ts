@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import environment from 'src/environment';
 @Controller('google')
 export class GoogleAuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Get()
   @UseGuards(AuthGuard('google'))
@@ -14,7 +14,9 @@ export class GoogleAuthController {
       'If user is registered it will log the user in once authenticated through Google, if they are not registered they will be added to the database.',
   })
   @ApiTags('User')
-  // async googleAuth(@Req() req) {}
+  // eslint-disable-next-line
+  async googleAuth() { }
+
   @Get('redirect')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
