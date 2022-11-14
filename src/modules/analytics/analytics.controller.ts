@@ -35,7 +35,7 @@ export class AnalyticsController {
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
-  ) {}
+  ) { }
 
   @Get('discussion/:discussionId/analytics')
   async getAnalytics(
@@ -52,6 +52,9 @@ export class AnalyticsController {
 
     const found = await this.discussionModel
       .findOne({ _id: discussion })
+      .populate('settings', [
+        'calendar'
+      ])
       .lean();
 
     if (!found) {
@@ -77,17 +80,13 @@ export class AnalyticsController {
     let burst = new BurstChartData();
     let directedChart = new DirectedChartData();
 
-    if (query.chord) {
-      chord = await this.getChordChartData(found);
-    }
-
-    if (query.burst) {
+    if (query.burst === true) {
       burst = await this.getBurstChartData(found);
     }
 
-    if (query.directed) {
-      directedChart = await this.getDirectedChartData(found);
-    }
+    // if (query.directed === true) {
+    //   directedChart = await this.getDirectedChartData(found);
+    // }
     return new ChartData({
       chordChartData: chord,
       burstChartData: burst,
@@ -97,8 +96,12 @@ export class AnalyticsController {
 
   /** PRIVATE FUNCTIONS */
 
-  async getChordChartData(discussion: any): Promise<ChordChartData> {
-    // Get the tags for a discussion and all of the people that have used them
+  /**
+   * Generate data for burst chart for a discussion
+   * @param discussion The discussion we want to get burst chart data for
+   * @returns BurstChartData
+   */
+  async getBurstChartData(discussion: any): Promise<BurstChartData> {
     const dbPosts = await this.postModel
       .find({
         discussionId: new Types.ObjectId(discussion._id),
@@ -116,89 +119,42 @@ export class AnalyticsController {
       .lean();
     const posts = [];
     for await (const post of dbPosts) {
-      const postWithComments = await this.getPostsAndCommentsFromTop(post);
+      const postWithComments = await this.getBurstData(post);
       posts.push(postWithComments);
     }
-    // const tags = await this.getTags(posts, discussion.tags);
-    // // Build the array of people that used those specific tags
-    // // Build the 2D array
-    // const participantArray = discussion.participants.map((participant) => {
-    //   return participant.f_name + ' ' + participant.l_name;
-    // });
-    // const value = new ChordChartData();
-    return new ChordChartData({
-      keys: ['Josh', 'Paige', 'Nick'],
-      data: [
-        [0, 3, 1],
-        [3, 0, 2],
-        [1, 2, 0],
-      ],
-    });
+    return new BurstChartData({ flare: 'post threads', children: posts });
   }
 
-  async getBurstChartData(_discussion: any): Promise<BurstChartData> {
-    // Get the top 5 tags for the a discussion and all of the people that have used them as top level comments
-    // Set the flare for the discussion as the discussion name
-    // For each tag set the children of tag
-    return new BurstChartData();
-  }
+  async getDirectedChartData(discussion: any): Promise<DirectedChartData> {
+    // Get the tags for the discussion
+    console.log(discussion._id);
+    // const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  async getDirectedChartData(_discussion: any): Promise<DirectedChartData> {
-    // Get the directed chart data
-    return new DirectedChartData({
-      trendingUp: {
-        tag: {
-          name: 'Nuclear',
-          count: 13,
-          pastDays: [
-            {
-              date: new Date(),
-              count: 8,
-            },
-            {
-              date: new Date(),
-              count: 5,
-            },
-          ],
-        },
-      },
-      trendingDown: {
-        tag: {
-          name: 'iPhone',
-          count: 3,
-          pastDays: [
-            {
-              date: new Date(),
-              count: 2,
-            },
-            {
-              date: new Date(),
-              count: 1,
-            },
-          ],
-        },
-      },
-      random: {
-        tag: {
-          name: 'towson',
-          count: 6,
-          pastDays: [
-            {
-              date: new Date(),
-              count: 1,
-            },
-            {
-              date: new Date(),
-              count: 4,
-            },
-            {
-              date: new Date(),
-              count: 1,
-            },
-          ],
-        },
-      },
-    });
+    // const dbPosts = await this.postModel
+    //   .find({
+    //     discussionId: new Types.ObjectId(discussion._id),
+    //     draft: false,
+    //     date: { $gte: sevenDaysAgo }
+    //   })
+    //   .populate('userId', [
+    //     'f_name',
+    //     'l_name',
+    //     'email',
+    //     'username',
+    //     'profilePicture',
+    //   ])
+    //   .sort({ date: -1 })
+    //   .lean();
+
+    //const tags = await this.getTags(dbPosts, discussion.tags);
+
+    // Get trending up
+
+    // Get trending down 
+
+    // Pick a random tag
+
+    return new DirectedChartData({});
   }
 
   async getPostsAndCommentsFromTop(post: any) {
@@ -233,6 +189,29 @@ export class AnalyticsController {
     delete newPost.userId;
     return newPost;
   }
+
+  async getBurstData(post: any) {
+    const comments = await this.postModel
+      .find({ comment_for: post._id })
+      .sort({ date: -1 })
+      .populate('userId', ['f_name', 'l_name', 'email', 'username'])
+      .lean();
+    const freshComments = [];
+    if (comments.length) {
+      for await (const comment of comments) {
+        const post = await this.getBurstData(comment);
+        freshComments.push({ ...comment, name: post.userId.f_name + ' ' + post.userId.l_name, children: [] });
+      }
+    }
+
+    const newPost = {
+      ...post,
+      name: post.userId.f_name + post.userId.l_name,
+      children: freshComments,
+    };
+    return newPost;
+  }
+
 
   async getTagsForUser(posts: any, tags: string[]) {
     let tagsArray = [];
@@ -290,6 +269,12 @@ export class AnalyticsController {
     return tagsArray;
   }
 
+  /**
+   * Gets tags for posts within a specified discussion
+   * @param posts the posts in the discussion
+   * @param tags the tags that fit in
+   * @returns tags
+   */
   async getTags(posts: any, tags: string[]) {
     let tagsArray = [];
     if (posts.length > 0) {
