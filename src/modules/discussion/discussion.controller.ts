@@ -48,14 +48,14 @@ import { Calendar, CalendarDocument } from 'src/entities/calendar/calendar';
 import { BulkReadDiscussionDTO } from 'src/entities/discussion/bulk-read-discussion';
 import { IsDiscussionCreatorGuard } from 'src/auth/guards/userGuards/isDiscussionCreator.guard';
 import { IsDiscussionFacilitatorGuard } from 'src/auth/guards/userGuards/isDiscussionFacilitator.guard';
-import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
+//import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 import { MilestoneService } from '../milestone/milestone.service';
 import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 import { removeStopwords } from 'stopword';
-import { count } from 'count-array-values';
+import * as count from 'count-array-values';
 import DISCUSSION_ERRORS from './discussion-errors';
 
 @Controller()
@@ -235,7 +235,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: '' })
   @ApiNotFoundResponse({ description: 'The discussion was not found' })
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  //@UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussion(
     @Param('discussionId') discussionId: string,
   ): Promise<DiscussionReadDTO> {
@@ -941,6 +941,7 @@ export class DiscussionController {
       });
 
       tagsArray = count(newArray, 'tag');
+
 
       const stringTags = tagsArray.map((tag) => {
         return tag.tag;
