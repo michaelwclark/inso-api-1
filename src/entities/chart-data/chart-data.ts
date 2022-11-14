@@ -10,7 +10,7 @@ export class BurstChartChildren {
   constructor(partial?: any) {
     if (partial) {
       this.name = partial.name;
-      this.children = partial.children;
+      this.children = partial.children ? partial.children.map(partial => { return new BurstChartChildren(partial) }) : [];
     }
   }
 }
@@ -22,7 +22,7 @@ export class BurstChartData {
   constructor(partial?: any) {
     if (partial) {
       this.flare = partial.flare;
-      this.children = partial.children;
+      this.children = partial.children ? partial.children.map(partial => { return new BurstChartChildren(partial) }) : [];
     }
   }
 }
