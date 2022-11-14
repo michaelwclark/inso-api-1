@@ -25,6 +25,7 @@ export class NotificationReadDTO {
     l_name: string;
     username: string;
     email: string;
+    profilePicture: string;
   };
 
   @ApiProperty({
@@ -70,6 +71,7 @@ export class NotificationReadDTO {
     l_name: string;
     username: string;
     email: string;
+    profilePicture: string;
   };
 
   constructor(partial: any) {
@@ -80,6 +82,7 @@ export class NotificationReadDTO {
         l_name: partial.userId.l_name,
         username: partial.userId.username,
         email: partial.userId.contact[0].email,
+        profilePicture: partial.userId.profilePicture
       };
       this.date = partial.date;
       this.notificationHeader = partial.header;
@@ -87,17 +90,19 @@ export class NotificationReadDTO {
       this.type = partial.type;
       this.notificationUser = partial.notificationUser
         ? {
-            f_name: partial.notificationUser.f_name,
-            l_name: partial.notificationUser.l_name,
-            username: partial.notificationUser.username,
-            email: partial.notificationUser.contact[0].email,
-          }
+          f_name: partial.notificationUser.f_name,
+          l_name: partial.notificationUser.l_name,
+          username: partial.notificationUser.username,
+          email: partial.notificationUser.contact[0].email,
+          profilePicture: partial.notificationUser.profilePicture
+        }
         : {
-            f_name: undefined,
-            l_name: undefined,
-            username: undefined,
-            email: undefined,
-          };
+          f_name: undefined,
+          l_name: undefined,
+          username: undefined,
+          email: undefined,
+          profilePicture: undefined
+        };
     }
   }
 }
