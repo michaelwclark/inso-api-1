@@ -4,12 +4,12 @@ export type DiscussionTypeDocument = DiscussionType & Document;
 
 @Schema()
 export class DiscussionType {
-    @Prop(String)
-    public type: String;
-    @Prop(String)
-    public viewType: String;
-    @Prop(String)
-    public starter_prompt: String;
+  @Prop(String)
+  public type: string;
+  @Prop(String)
+  public viewType: string;
+  @Prop(String)
+  public starter_prompt: string;
 
   constructor(partial: any) {
     Object.assign(this, partial);

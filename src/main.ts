@@ -5,7 +5,6 @@ import { AppModule } from './app.module';
 import environment from 'src/environment';
 import helmet from 'helmet';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
