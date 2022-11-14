@@ -10,6 +10,7 @@ export const makeFakeNotificationReadDTO = (
     l_name: faker.name.lastName(),
     username: faker.internet.userName(),
     email: faker.internet.email(),
+    profilePicture: faker.internet.url()
   },
   date: faker.date.past(),
   notificationHeader: faker.random.word(),
@@ -20,6 +21,7 @@ export const makeFakeNotificationReadDTO = (
     l_name: faker.name.lastName(),
     username: faker.internet.userName(),
     email: faker.internet.email(),
+    profilePicture: faker.internet.url()
   },
   ...notification,
 });
