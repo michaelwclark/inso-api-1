@@ -55,7 +55,7 @@ import { DiscussionTagCreateDTO } from 'src/entities/discussion/tag/create-tag';
 import { MilestoneService } from '../milestone/milestone.service';
 import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 import { removeStopwords } from 'stopword';
-import count from 'count-array-values';
+import { count } from 'count-array-values';
 import DISCUSSION_ERRORS from './discussion-errors';
 
 @Controller()
@@ -215,7 +215,7 @@ export class DiscussionController {
     if (
       discussion.participants != undefined &&
       JSON.stringify(discussion.participants) !=
-        JSON.stringify(found.participants)
+      JSON.stringify(found.participants)
     ) {
       throw DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS;
     }
