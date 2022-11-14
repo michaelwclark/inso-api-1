@@ -156,7 +156,7 @@ export class PostController {
           participant.user,
           newPost.userId,
           {
-            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPostId}">${discussion.name}</a></h1>`,
             text: `${notificationText}`,
             type: 'post',
           },
@@ -170,7 +170,7 @@ export class PostController {
         postForComment.userId,
         newPost.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post sin <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPostId}">${discussion.name}</a></h1>`,
           text: `${notificationText}`,
           type: 'replies',
         },
