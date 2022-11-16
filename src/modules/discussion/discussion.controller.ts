@@ -786,10 +786,16 @@ export class DiscussionController {
   @ApiOperation({ description: 'The ability to mute a user in a discussion' })
   @ApiOkResponse({ description: 'Discussion has been muted' })
   @ApiTags('Discussion')
-  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  @ApiQuery({
+    name: 'unmute',
+    required: false,
+    description: 'Set to true if the user wants to unmute',
+  })
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async muteUserInDiscussion(
     @Param('userId') userId: string,
     @Param('discussionId') discussionId: string,
+    @Query('unmute') unmute: boolean
   ): Promise<any> {
     //Invalid UserId and DiscussionId
     if (!Types.ObjectId.isValid(userId)) {
@@ -815,11 +821,13 @@ export class DiscussionController {
       throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
 
-    return await this.discussionModel.findOneAndUpdate(
+    const val = unmute === true ? false : true
+    await this.discussionModel.findOneAndUpdate(
       { _id: discussionId, 'participants.user': new Types.ObjectId(userId) },
-      { $set: { 'participants.$.muted': true } },
+      { $set: { 'participants.$.muted': val } },
       { new: true },
     );
+    return val ? 'User muted' : 'User unmuted';
   }
 
   @Delete('discussion/:discussionId')
