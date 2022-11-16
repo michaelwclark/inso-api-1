@@ -57,6 +57,7 @@ import { DiscussionType } from 'src/entities/discussionType/discussion-type';
 import { removeStopwords } from 'stopword';
 import * as count from 'count-array-values';
 import DISCUSSION_ERRORS from './discussion-errors';
+import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
 
 @Controller()
 export class DiscussionController {
@@ -235,7 +236,7 @@ export class DiscussionController {
   @ApiUnauthorizedResponse({ description: '' })
   @ApiNotFoundResponse({ description: 'The discussion was not found' })
   @ApiTags('Discussion')
-  //@UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async getDiscussion(
     @Param('discussionId') discussionId: string,
   ): Promise<DiscussionReadDTO> {
@@ -784,7 +785,7 @@ export class DiscussionController {
   @ApiOperation({ description: 'The ability to mute a user in a discussion' })
   @ApiOkResponse({ description: 'Discussion has been muted' })
   @ApiTags('Discussion')
-  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async muteUserInDiscussion(
     @Param('userId') userId: string,
     @Param('discussionId') discussionId: string,
