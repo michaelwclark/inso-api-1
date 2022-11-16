@@ -61,6 +61,7 @@ import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussion
 
 @Controller()
 export class DiscussionController {
+
   constructor(
     @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
