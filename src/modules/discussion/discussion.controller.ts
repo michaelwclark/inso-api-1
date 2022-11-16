@@ -821,7 +821,8 @@ export class DiscussionController {
       throw DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND;
     }
 
-    const val = unmute === true ? false : true
+    const val = unmute === true ? false : true;
+
     await this.discussionModel.findOneAndUpdate(
       { _id: discussionId, 'participants.user': new Types.ObjectId(userId) },
       { $set: { 'participants.$.muted': val } },
