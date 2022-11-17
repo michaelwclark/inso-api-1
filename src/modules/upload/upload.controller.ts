@@ -58,7 +58,7 @@ export class UploadController {
     name: 'type',
     required: true,
     description:
-      'What you are trying to upload a file for: discussion, profile, or post',
+      'What you are trying to upload a file for: discussion, profile, post, or prompt',
   })
   @ApiQuery({
     name: 'id',
@@ -104,7 +104,7 @@ export class UploadController {
       );
     }
     // Make sure they are trying to upload to a valid entity
-    const values = ['profile', 'discussion', 'post'];
+    const values = ['profile', 'discussion', 'post', 'prompt'];
     if (!values.includes(type)) {
       throw new HttpException(
         'File can only be uploaded for a discussion, post, or profile',
@@ -163,6 +163,11 @@ export class UploadController {
           HttpStatus.FORBIDDEN,
         );
       }
+      filePath = filePath + id + '/' + file.originalname;
+    }
+
+    // For starter prompts that do not yet have an ID associated.
+    if (type === 'prompt') {
       filePath = filePath + id + '/' + file.originalname;
     }
 

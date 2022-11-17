@@ -61,7 +61,6 @@ import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussion
 
 @Controller()
 export class DiscussionController {
-
   constructor(
     @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
@@ -217,7 +216,7 @@ export class DiscussionController {
     if (
       discussion.participants != undefined &&
       JSON.stringify(discussion.participants) !=
-      JSON.stringify(found.participants)
+        JSON.stringify(found.participants)
     ) {
       throw DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS;
     }
@@ -795,7 +794,7 @@ export class DiscussionController {
   async muteUserInDiscussion(
     @Param('userId') userId: string,
     @Param('discussionId') discussionId: string,
-    @Query('unmute') unmute: boolean
+    @Query('unmute') unmute: boolean,
   ): Promise<any> {
     //Invalid UserId and DiscussionId
     if (!Types.ObjectId.isValid(userId)) {
