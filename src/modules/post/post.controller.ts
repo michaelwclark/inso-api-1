@@ -229,7 +229,7 @@ export class PostController {
       );
     }
 
-    return newPost;
+    return newPost.save();
   }
 
   @Patch('discussion/:discussionId/post/:postId')
