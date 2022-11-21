@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -21,7 +19,7 @@ import {
   ApiTags,
   ApiForbiddenResponse,
 } from '@nestjs/swagger';
-import { Model, Types } from 'mongoose';
+import { Model, Types, HydratedDocument } from 'mongoose';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { IsDiscussionFacilitatorGuard } from '../../auth/guards/userGuards/isDiscussionFacilitator.guard';
 import { IsDiscussionMemberGuard } from '../../auth/guards/userGuards/isDiscussionMember.guard';
@@ -46,6 +44,9 @@ import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
 import environment from 'src/environment';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
+import POST_ERRORS from './post-errors';
+
+const Filter = require('bad-words'); // eslint-disable-line
 
 @Controller()
 export class PostController {
@@ -61,7 +62,7 @@ export class PostController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-  ) { }
+  ) {}
 
   @Post('discussion/:discussionId/post')
   @ApiOperation({
@@ -77,24 +78,26 @@ export class PostController {
     @Param('discussionId') discussionId: string,
     @Body() post: PostCreateDTO,
     @Req() req: any,
-  ): Promise<string> {
+  ): Promise<HydratedDocument<DiscussionPost>> {
     const discussion = await this.verifyDiscussion(discussionId);
 
     if (discussion.archived !== null) {
-      throw new HttpException(
-        `${discussionId} is currently archived and is not accepting posts`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.DISCUSSION_ARCHIVED;
+    }
+
+    // check participant is not muted in discussion
+    const participant = discussion.participants.find((participant: any) => {
+      return participant.user.toString() === req.user.userId.toString();
+    });
+    if (participant?.muted) {
+      throw POST_ERRORS.USER_MUTED;
     }
 
     if (
       discussion.settings.calendar &&
       discussion.settings.calendar.close < new Date()
     ) {
-      throw new HttpException(
-        `${discussionId} is currently closed and is not accepting posts`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.DISCUSSION_CLOSED;
     }
 
     let postForComment;
@@ -106,10 +109,7 @@ export class PostController {
         _id: post.comment_for,
       });
       if (!postForComment) {
-        throw new HttpException(
-          `${post.comment_for} is not a post and cannot be responded to`,
-          HttpStatus.NOT_FOUND,
-        );
+        throw POST_ERRORS.POST_NOT_FOUND;
       }
       post.comment_for = new Types.ObjectId(post.comment_for);
 
@@ -135,6 +135,16 @@ export class PostController {
     }
     const user = await this.userModel.findOne({ _id: req.user.userId });
 
+    if (post.post.post) {
+      validateForBadWords(post.post.post);
+    } else if (post.post.outline) {
+      for (const [key, value] of Object.entries(post.post.outline)) {
+        validateForBadWords(`${key}`);
+        validateForBadWords(`${value}`);
+      }
+    }
+
+    new PostCreateDTO(post);
     const newPost = new this.discussionPostModel({
       ...post,
       discussionId: new Types.ObjectId(discussionId),
@@ -142,7 +152,6 @@ export class PostController {
       date: new Date(),
       comment_for: post.comment_for,
     });
-    const newPostId = await newPost.save();
 
     const notificationText =
       post.post.post !== undefined
@@ -156,7 +165,7 @@ export class PostController {
           participant.user,
           newPost.userId,
           {
-            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPostId._id}">${discussion.name}</a></h1>`,
+            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
             text: `${notificationText}`,
             type: 'post',
           },
@@ -170,7 +179,7 @@ export class PostController {
         postForComment.userId,
         newPost.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPostId._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
           text: `${notificationText}`,
           type: 'replies',
         },
@@ -188,7 +197,7 @@ export class PostController {
         '1st Post',
         {
           discussionId: new Types.ObjectId(discussionId),
-          postId: new Types.ObjectId(newPostId.toString()),
+          postId: newPost._id,
           date: new Date(),
         },
       );
@@ -204,14 +213,14 @@ export class PostController {
         'Use a Post Inspiration',
         {
           discussionId: new Types.ObjectId(discussionId),
-          postId: new Types.ObjectId(newPostId.toString()),
+          postId: newPost._id,
           date: new Date(),
         },
       );
     }
 
     if (milestoneForComment) {
-      milestoneForComment.info.postId = new Types.ObjectId(newPostId._id);
+      milestoneForComment.info.postId = newPost._id;
       await this.milestoneService.createMilestoneForUser(
         milestoneForComment.userId,
         milestoneForComment.type,
@@ -220,7 +229,7 @@ export class PostController {
       );
     }
 
-    return newPostId._id;
+    return newPost;
   }
 
   @Patch('discussion/:discussionId/post/:postId')
@@ -243,10 +252,7 @@ export class PostController {
 
     // Verify that the postId is valid
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(
-        `${postId} is not a valid postId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.POST_ID_INVALID;
     }
 
     // Check the post_inspiration is valid
@@ -257,6 +263,17 @@ export class PostController {
       );
     }
 
+    if (postUpdates.post.post) {
+      validateForBadWords(postUpdates.post.post);
+    } else if (postUpdates.post.outline) {
+      for (const [key, value] of Object.entries(postUpdates.post.outline)) {
+        validateForBadWords(`${key}`);
+        validateForBadWords(`${value}`);
+      }
+    }
+
+    //const newPost =
+    new PostUpdateDTO(postUpdates);
     const postUpdate = await this.discussionPostModel.findOneAndUpdate(
       { _id: new Types.ObjectId(postId) },
       {
@@ -265,7 +282,7 @@ export class PostController {
       },
     );
     if (postUpdate === null) {
-      throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
+      throw POST_ERRORS.POST_NOT_FOUND;
     }
 
     return postUpdate;
@@ -288,10 +305,7 @@ export class PostController {
 
     // Verify that the postId is valid
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(
-        `${postId} is not a valid postId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.POST_ID_INVALID;
     }
 
     const update = await this.discussionPostModel.findOneAndUpdate(
@@ -299,7 +313,7 @@ export class PostController {
       { draft: false },
     );
     if (update === null) {
-      throw new HttpException(`${postId} was not found`, HttpStatus.NOT_FOUND);
+      throw POST_ERRORS.POST_NOT_FOUND;
     }
     return 'Updated!';
   }
@@ -319,10 +333,7 @@ export class PostController {
   ): Promise<any> {
     await this.verifyDiscussion(discussionId);
     if (!Types.ObjectId.isValid(postId)) {
-      throw new HttpException(
-        `${postId} is not a valid postId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.POST_ID_INVALID;
     }
 
     // Need to check if the post has comments_for
@@ -330,21 +341,16 @@ export class PostController {
       comment_for: new Types.ObjectId(postId),
     });
     if (comments.length > 0) {
-      throw new HttpException(
-        `${postId} cannot delete a post that has comments`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.CAN_NOT_DELETE_POST;
     }
 
     const deleteMarker = await this.discussionPostModel.deleteOne({
       _id: new Types.ObjectId(postId),
     });
     if (deleteMarker.deletedCount === 1) {
-      // TODO Remove any milestones achieved that are not longer valid because of delete operation. I.E. this was the 5th post and now they are back to 4
-      //await this.milestoneService.checkUserMilestoneProgress(.userId);
       return `${postId} deleted`;
     } else {
-      throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+      throw POST_ERRORS.POST_NOT_FOUND;
     }
   }
 
@@ -366,10 +372,7 @@ export class PostController {
   ): Promise<any> {
     const discussion = await this.verifyDiscussion(discussionId);
     if (!Types.ObjectId.isValid(participantId)) {
-      throw new HttpException(
-        `${participantId} is not a valid participantId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.PARTICIPANT_ID_INVALID;
     }
 
     const posts = await this.discussionPostModel
@@ -397,10 +400,7 @@ export class PostController {
 
   async verifyDiscussion(discussionId: string): Promise<any> {
     if (!Types.ObjectId.isValid(discussionId)) {
-      throw new HttpException(
-        `${discussionId} is not a valid discussionId`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.DISCUSSION_ID_INVALID;
     }
     const discussion = await this.discussionModel
       .findOne({ _id: new Types.ObjectId(discussionId) })
@@ -428,10 +428,7 @@ export class PostController {
       })
       .lean();
     if (!discussion) {
-      throw new HttpException(
-        `${discussionId} was not found`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw POST_ERRORS.DISCUSSION_NOT_FOUND;
     }
     return discussion;
   }
@@ -445,19 +442,13 @@ export class PostController {
       _id: inspirationId,
     });
     if (!inspiration) {
-      throw new HttpException(
-        `${inspirationId} is not a valid post inspiration`,
-        HttpStatus.NOT_FOUND,
-      );
+      throw POST_ERRORS.POST_INSPIRATION_NOT_FOUND;
     }
 
     // Check if the post inspiration is in the discussion settings inspirations array
     const settings = await this.settingsModel.findOne({ _id: settingsId });
     if (!settings.post_inspirations.includes(inspiration._id)) {
-      throw new HttpException(
-        `${inspiration._id} is not an inspiration for this discussion`,
-        HttpStatus.BAD_REQUEST,
-      );
+      throw POST_ERRORS.POST_INSPIRATION_ID_INVALID;
     }
   }
 
@@ -545,5 +536,16 @@ export class PostController {
     const newPost = { ...comment, user: comment.userId, reactions: reactions };
     delete newPost.userId;
     return newPost;
+  }
+}
+
+function validateForBadWords(post: string) {
+  const filter = new Filter();
+  filter.addWords('shithead', 'fuckingking');
+
+  const badwordCheck: string = filter.clean(post);
+
+  if (badwordCheck.includes('*')) {
+    throw POST_ERRORS.POST_WITH_BAD_WORDS;
   }
 }

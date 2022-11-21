@@ -1,8 +1,8 @@
-# Use an official Node runtime as a parent image
-FROM node:12.18.1
+# Use an official Node runtime at a specific sha256
+FROM node:lts-alpine@sha256:2c405ed42fc0fd6aacbe5730042640450e5ec030bada7617beac88f742b6997b as base
 
-# Set the working directory to /app
-WORKDIR '/src'
+# Set the working directory to /src
+WORKDIR /src
 
 # Copy package.json to the working directory
 COPY package.json .
@@ -19,5 +19,23 @@ EXPOSE 3000
 # Build the application
 RUN npm run build
 
-# Run app when the container launches
+
+
+# ------------------------------
+# Production Stage
+#
+# Uses base step and copies
+# compiled js from source
+# ------------------------------
+
+FROM base as prod
+
+# hadolint ignore=DL3018
+RUN apk --no-cache add build-base py3-pip python3-dev dumb-init
+
+COPY --chown=node:node --from=base /src/dist /src/dist
+
+# Just make sure that we're not running as root
+USER node
+
 CMD ["npm", "run", "start:prod"]

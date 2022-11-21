@@ -762,14 +762,10 @@ describe('DiscussionController', () => {
         const result = await discussionController.muteUserInDiscussion(
           fakeDocuments.user._id.toString(),
           unmutedDiscussion._id.toString(),
+          false,
         );
 
-        expect(result.participants).toContainEqual({
-          user: fakeDocuments.user._id,
-          joined: expect.any(Date),
-          muted: true,
-          grade: null,
-        });
+        expect(result).toEqual('User muted');
       });
     });
 
@@ -779,6 +775,7 @@ describe('DiscussionController', () => {
           discussionController.muteUserInDiscussion(
             fakeDocuments.user._id.toString(),
             faker.database.mongoObjectIdString(),
+            false,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_NOT_FOUND);
       });
@@ -787,6 +784,7 @@ describe('DiscussionController', () => {
           discussionController.muteUserInDiscussion(
             faker.database.mongoObjectIdString(),
             fakeDocuments.discussion._id.toString(),
+            false,
           ),
         ).rejects.toThrowError(DISCUSSION_ERRORS.USER_NOT_FOUND);
       });
@@ -799,6 +797,7 @@ describe('DiscussionController', () => {
         discussionController.muteUserInDiscussion(
           faker.datatype.string(6),
           fakeDocuments.discussion._id.toString(),
+          false,
         ),
       ).rejects.toThrowError(DISCUSSION_ERRORS.USER_ID_INVALID);
     });
@@ -808,6 +807,7 @@ describe('DiscussionController', () => {
         discussionController.muteUserInDiscussion(
           fakeDocuments.user._id.toString(),
           faker.datatype.string(6),
+          false,
         ),
       ).rejects.toThrowError(DISCUSSION_ERRORS.DISCUSSION_ID_INVALID);
     });

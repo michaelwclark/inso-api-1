@@ -1,6 +1,5 @@
 const envVars = {
-  MONGO_CONNECTION_STRING:
-    process.env.MONGO_CONNECTION_STRING || '',
+  MONGO_CONNECTION_STRING: process.env.MONGO_CONNECTION_STRING || '',
   SENDGRID_KEY: process.env.SENDGRID_KEY || 'SENDGRID_KEY',
   PORT: process.env.PORT || 3000,
   SECRET: process.env.SECRET || 'SECRET',

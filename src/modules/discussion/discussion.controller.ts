@@ -58,10 +58,10 @@ import { removeStopwords } from 'stopword';
 import * as count from 'count-array-values';
 import DISCUSSION_ERRORS from './discussion-errors';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
+import { isGibberish } from '../shared/detectGarbageInputs';
 
 @Controller()
 export class DiscussionController {
-
   constructor(
     @InjectModel(Discussion.name)
     private discussionModel: Model<DiscussionDocument>,
@@ -217,7 +217,7 @@ export class DiscussionController {
     if (
       discussion.participants != undefined &&
       JSON.stringify(discussion.participants) !=
-      JSON.stringify(found.participants)
+        JSON.stringify(found.participants)
     ) {
       throw DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS;
     }
@@ -732,7 +732,7 @@ export class DiscussionController {
     description: 'The ability to remove a participant from a discussion',
   })
   @ApiTags('Discussion')
-  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async removeParticipant(
     @Param('discussionId') discussionId: string,
     @Param('participantId') participantId: string,
@@ -795,7 +795,7 @@ export class DiscussionController {
   async muteUserInDiscussion(
     @Param('userId') userId: string,
     @Param('discussionId') discussionId: string,
-    @Query('unmute') unmute: boolean
+    @Query('unmute') unmute: boolean,
   ): Promise<any> {
     //Invalid UserId and DiscussionId
     if (!Types.ObjectId.isValid(userId)) {
@@ -932,10 +932,13 @@ export class DiscussionController {
         // Remove any html tags
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, '');
         postElement = cleanText.split(' ');
-        // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
-        temp = postNoStopWords.join(' ');
-        strings.push(temp);
+
+        const postNoGibberish = isGibberish(postElement[0]);
+        if (postNoGibberish === false) {
+          temp = postNoStopWords.join(' ');
+          strings.push(temp);
+        }
       }
 
       let allPosts = strings.join(' ');
