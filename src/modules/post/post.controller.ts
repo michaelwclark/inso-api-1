@@ -62,7 +62,7 @@ export class PostController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-  ) { }
+  ) {}
 
   @Post('discussion/:discussionId/post')
   @ApiOperation({
