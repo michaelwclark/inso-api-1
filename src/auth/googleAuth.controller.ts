@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import environment from 'src/environment';
 @Controller('google')
 export class GoogleAuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Get()
   @UseGuards(AuthGuard('google'))

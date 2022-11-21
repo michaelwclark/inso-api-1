@@ -58,6 +58,7 @@ import { removeStopwords } from 'stopword';
 import * as count from 'count-array-values';
 import DISCUSSION_ERRORS from './discussion-errors';
 import { IsDiscussionMemberGuard } from 'src/auth/guards/userGuards/isDiscussionMember.guard';
+import { isGibberish } from '../shared/detectGarbageInputs';
 
 @Controller()
 export class DiscussionController {
@@ -731,7 +732,7 @@ export class DiscussionController {
     description: 'The ability to remove a participant from a discussion',
   })
   @ApiTags('Discussion')
-  //@UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionFacilitatorGuard)
   async removeParticipant(
     @Param('discussionId') discussionId: string,
     @Param('participantId') participantId: string,
@@ -931,10 +932,13 @@ export class DiscussionController {
         // Remove any html tags
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, '');
         postElement = cleanText.split(' ');
-        // TODO: Change the tags here
         postNoStopWords = removeStopwords(postElement);
-        temp = postNoStopWords.join(' ');
-        strings.push(temp);
+
+        const postNoGibberish = isGibberish(postElement[0]);
+        if (postNoGibberish === false) {
+          temp = postNoStopWords.join(' ');
+          strings.push(temp);
+        }
       }
 
       let allPosts = strings.join(' ');

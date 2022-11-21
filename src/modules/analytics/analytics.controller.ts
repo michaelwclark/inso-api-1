@@ -35,7 +35,7 @@ export class AnalyticsController {
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
-  ) { }
+  ) {}
 
   @Get('discussion/:discussionId/analytics')
   async getAnalytics(
@@ -52,9 +52,7 @@ export class AnalyticsController {
 
     const found = await this.discussionModel
       .findOne({ _id: discussion })
-      .populate('settings', [
-        'calendar'
-      ])
+      .populate('settings', ['calendar'])
       .lean();
 
     if (!found) {
@@ -76,9 +74,9 @@ export class AnalyticsController {
     found.participants = participants;
 
     query = new AnalyticsQueryDto(query);
-    let chord = new ChordChartData();
+    const chord = new ChordChartData();
     let burst = new BurstChartData();
-    let directedChart = new DirectedChartData();
+    const directedChart = new DirectedChartData();
 
     if (query.burst === true) {
       burst = await this.getBurstChartData(found);
@@ -150,7 +148,7 @@ export class AnalyticsController {
 
     // Get trending up
 
-    // Get trending down 
+    // Get trending down
 
     // Pick a random tag
 
@@ -200,7 +198,11 @@ export class AnalyticsController {
     if (comments.length) {
       for await (const comment of comments) {
         const post = await this.getBurstData(comment);
-        freshComments.push({ ...comment, name: post.userId.f_name + ' ' + post.userId.l_name, children: [] });
+        freshComments.push({
+          ...comment,
+          name: post.userId.f_name + ' ' + post.userId.l_name,
+          children: [],
+        });
       }
     }
 
@@ -211,7 +213,6 @@ export class AnalyticsController {
     };
     return newPost;
   }
-
 
   async getTagsForUser(posts: any, tags: string[]) {
     let tagsArray = [];

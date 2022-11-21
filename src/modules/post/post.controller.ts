@@ -46,6 +46,8 @@ import environment from 'src/environment';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import POST_ERRORS from './post-errors';
 
+const Filter = require('bad-words'); // eslint-disable-line
+
 @Controller()
 export class PostController {
   constructor(
@@ -133,7 +135,17 @@ export class PostController {
     }
     const user = await this.userModel.findOne({ _id: req.user.userId });
 
-    const newPost = await this.discussionPostModel.create({
+    if (post.post.post) {
+      validateForBadWords(post.post.post);
+    } else if (post.post.outline) {
+      for (const [key, value] of Object.entries(post.post.outline)) {
+        validateForBadWords(`${key}`);
+        validateForBadWords(`${value}`);
+      }
+    }
+
+    new PostCreateDTO(post);
+    const newPost = new this.discussionPostModel({
       ...post,
       discussionId: new Types.ObjectId(discussionId),
       userId: new Types.ObjectId(req.user.userId),
@@ -251,6 +263,17 @@ export class PostController {
       );
     }
 
+    if (postUpdates.post.post) {
+      validateForBadWords(postUpdates.post.post);
+    } else if (postUpdates.post.outline) {
+      for (const [key, value] of Object.entries(postUpdates.post.outline)) {
+        validateForBadWords(`${key}`);
+        validateForBadWords(`${value}`);
+      }
+    }
+
+    //const newPost =
+    new PostUpdateDTO(postUpdates);
     const postUpdate = await this.discussionPostModel.findOneAndUpdate(
       { _id: new Types.ObjectId(postId) },
       {
@@ -325,8 +348,6 @@ export class PostController {
       _id: new Types.ObjectId(postId),
     });
     if (deleteMarker.deletedCount === 1) {
-      // TODO Remove any milestones achieved that are not longer valid because of delete operation. I.E. this was the 5th post and now they are back to 4
-      //await this.milestoneService.checkUserMilestoneProgress(.userId);
       return `${postId} deleted`;
     } else {
       throw POST_ERRORS.POST_NOT_FOUND;
@@ -515,5 +536,16 @@ export class PostController {
     const newPost = { ...comment, user: comment.userId, reactions: reactions };
     delete newPost.userId;
     return newPost;
+  }
+}
+
+function validateForBadWords(post: string) {
+  const filter = new Filter();
+  filter.addWords('shithead', 'fuckingking');
+
+  const badwordCheck: string = filter.clean(post);
+
+  if (badwordCheck.includes('*')) {
+    throw POST_ERRORS.POST_WITH_BAD_WORDS;
   }
 }
