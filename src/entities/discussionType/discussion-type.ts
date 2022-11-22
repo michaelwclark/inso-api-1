@@ -10,6 +10,8 @@ export class DiscussionType {
   public viewType: string;
   @Prop(String)
   public starter_prompt: string;
+  @Prop(String)
+  public info: string;
 
   constructor(partial: any) {
     Object.assign(this, partial);
