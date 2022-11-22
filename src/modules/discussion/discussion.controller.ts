@@ -217,7 +217,7 @@ export class DiscussionController {
     if (
       discussion.participants != undefined &&
       JSON.stringify(discussion.participants) !=
-        JSON.stringify(found.participants)
+      JSON.stringify(found.participants)
     ) {
       throw DISCUSSION_ERRORS.CAN_NOT_EDIT_PARTICIPANTS;
     }
@@ -759,7 +759,7 @@ export class DiscussionController {
   })
   @ApiBody({ type: DiscussionTagCreateDTO })
   @ApiTags('Tags')
-  //@UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
+  @UseGuards(JwtAuthGuard, IsDiscussionMemberGuard)
   async addTag(
     @Param('discussionId') discussionId: string,
     @Body('tag') tag: string,
@@ -928,17 +928,21 @@ export class DiscussionController {
             vars = vars + ' ' + posts[i].post.outline[key];
           }
         }
+
         const text = posts[i].post.post + vars;
         // Remove any html tags
         const cleanText = text.replace(/<\/?[^>]+(>|$)/g, '');
         postElement = cleanText.split(' ');
         postNoStopWords = removeStopwords(postElement);
 
-        const postNoGibberish = isGibberish(postElement[0]);
-        if (postNoGibberish === false) {
-          temp = postNoStopWords.join(' ');
-          strings.push(temp);
+        for (let j = 0; j < postNoStopWords.length; j++) {
+          const postNoGibberish = isGibberish(postNoStopWords[j]);
+          if (postNoGibberish === true) {
+            postNoStopWords.splice(j, 1);
+          }
         }
+        temp = postNoStopWords.join(' ');
+        strings.push(temp);
       }
 
       let allPosts = strings.join(' ');
