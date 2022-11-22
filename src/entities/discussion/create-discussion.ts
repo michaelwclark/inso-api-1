@@ -35,6 +35,7 @@ export class DiscussionCreateDTO {
   @IsNotEmpty()
   @IsString()
   @IsIn([
+    'open',
     'topic',
     'debate',
     'peerReview',
