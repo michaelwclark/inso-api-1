@@ -42,4 +42,8 @@ export default {
     'Post Inspiration ID is invalid',
     HttpStatus.BAD_REQUEST,
   ), // 400
+  POST_WITH_BAD_WORDS: new HttpException(
+    'Post cannot contain obscene or profane language',
+    HttpStatus.BAD_REQUEST,
+  ),
 };

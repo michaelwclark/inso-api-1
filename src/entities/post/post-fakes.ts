@@ -6,7 +6,11 @@ export function makeFakePostTypeCreateDTO(
 ): PostTypeCreateDTO {
   return {
     post: faker.lorem.sentence(),
-    outline: {},
+    outline: {
+      fake1: faker.lorem.sentence(),
+      fake2: faker.lorem.sentence(),
+      fake3: faker.lorem.sentence(),
+    },
     ...post,
   };
 }

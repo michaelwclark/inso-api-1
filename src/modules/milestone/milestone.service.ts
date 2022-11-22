@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -6,7 +6,7 @@ import {
   MilestoneDocument,
 } from '../../entities/milestone/milestone';
 // import { User, UserDocument } from '../../entities/user/user';
-import { NotificationService } from '../notification/notification.service';
+// import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class MilestoneService {
@@ -21,10 +21,7 @@ export class MilestoneService {
   ];
   constructor(
     @InjectModel(Milestone.name)
-    private milestoneModel: Model<MilestoneDocument>,
-    // @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @Inject(forwardRef(() => NotificationService))
-    private notificationService: NotificationService,
+    private milestoneModel: Model<MilestoneDocument>, // @InjectModel(User.name) private userModel: Model<UserDocument>, // @Inject(forwardRef(() => NotificationService)) // private notificationService: NotificationService,
   ) {}
 
   async createMilestoneForUser(
@@ -44,11 +41,12 @@ export class MilestoneService {
       info: info,
     });
     const savedMilestone = await milestone.save();
-    await this.notificationService.createNotification(userId, userId, {
-      header: `<h1 className="notification-header">You have achieved a badge!"</h1>`,
-      text: `${milestoneName}`,
-      type: 'badge',
-    });
+    // Temporarily Remove Notifications for milestones
+    // await this.notificationService.createNotification(userId, userId, {
+    //   header: `<h1 className="notification-header">You have achieved a badge!"</h1>`,
+    //   text: `${milestoneName}`,
+    //   type: 'badge',
+    // });
     return savedMilestone;
   }
 

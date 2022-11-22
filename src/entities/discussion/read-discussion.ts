@@ -204,6 +204,7 @@ export class DiscussionReadDTO {
               f_name: participant.f_name,
               l_name: participant.l_name,
               username: participant.username,
+              profilePicture: participant.profilePicture,
               muted: participant.muted,
               grade: participant.grade,
             };
