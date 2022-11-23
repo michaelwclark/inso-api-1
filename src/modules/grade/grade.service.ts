@@ -104,17 +104,7 @@ export class GradeService {
       })
       .lean();
 
-    //const now = new Date();
     const newDiscussion = new DiscussionReadDTO(foundDiscussion);
-
-    // if(newDiscussion.settings.calendar) {
-
-    // }
-    // let closeDate = new Date(newDiscussion.settings.calendar.close);
-    // closeDate.setHours(0, 0, 0, 0); // set hour to midnight or beginning of date
-    // // eslint-disable-next-line @typescript-eslint/no-var-requires
-    // const addSubtractDate = require('add-subtract-date');
-    // closeDate = addSubtractDate.add(closeDate, 1, 'minute'); // add one minute to closing date
 
     if (!discussion) {
       throw new HttpException(
@@ -134,12 +124,6 @@ export class GradeService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    // if (closeDate < now) {
-    //   throw new HttpException(
-    //     'Discussion has not been closed yet',
-    //     HttpStatus.BAD_REQUEST,
-    //   );
-    // }
     if (discussion.participants.length == 0) {
       throw new HttpException(
         'Discussion has no participants to grade',
