@@ -16,7 +16,7 @@ import { InspirationReadResponse } from 'src/entities/inspiration/read-inspirati
 export class InspirationController {
   constructor(
     @InjectModel(Inspiration.name) private inspirationModel: Model<Inspiration>,
-  ) {}
+  ) { }
 
   // @Post('inspiration')
   // @ApiOperation({description: 'Create an inspiration for a discussion'})
@@ -69,6 +69,7 @@ export class InspirationController {
             _id: '$subcats',
             values: {
               $addToSet: {
+                _id: '$_id',
                 name: '$name',
                 instructions: '$instructions',
                 outline: '$outline',
@@ -83,7 +84,6 @@ export class InspirationController {
       );
 
       let vals = await this.inspirationModel.aggregate(aggregation);
-
       if (subcats) {
         if (!Array.isArray(subcats)) {
           subcats = !!subcats ? [subcats] : [];
