@@ -29,4 +29,4 @@ import { GradeService } from './grade.service';
   providers: [GradeService],
   exports: [GradeService],
 })
-export class GradeModule {}
+export class GradeModule { }

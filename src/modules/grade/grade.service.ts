@@ -104,14 +104,17 @@ export class GradeService {
       })
       .lean();
 
-    const now = new Date();
+    //const now = new Date();
     const newDiscussion = new DiscussionReadDTO(foundDiscussion);
 
-    let closeDate = new Date(newDiscussion.settings.calendar.close);
-    closeDate.setHours(0, 0, 0, 0); // set hour to midnight or beginning of date
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const addSubtractDate = require('add-subtract-date');
-    closeDate = addSubtractDate.add(closeDate, 1, 'minute'); // add one minute to closing date
+    // if(newDiscussion.settings.calendar) {
+
+    // }
+    // let closeDate = new Date(newDiscussion.settings.calendar.close);
+    // closeDate.setHours(0, 0, 0, 0); // set hour to midnight or beginning of date
+    // // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // const addSubtractDate = require('add-subtract-date');
+    // closeDate = addSubtractDate.add(closeDate, 1, 'minute'); // add one minute to closing date
 
     if (!discussion) {
       throw new HttpException(
@@ -131,12 +134,12 @@ export class GradeService {
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (closeDate < now) {
-      throw new HttpException(
-        'Discussion has not been closed yet',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    // if (closeDate < now) {
+    //   throw new HttpException(
+    //     'Discussion has not been closed yet',
+    //     HttpStatus.BAD_REQUEST,
+    //   );
+    // }
     if (discussion.participants.length == 0) {
       throw new HttpException(
         'Discussion has no participants to grade',
@@ -144,16 +147,14 @@ export class GradeService {
       );
     }
 
-    schedule.scheduleJob(closeDate, async function () {
-      for await (const participant of discussion.participants) {
-        await this.gradeParticipant(
-          new Types.ObjectId(newDiscussion._id),
-          new Types.ObjectId(newDiscussion.poster._id),
-          new Types.ObjectId(participant.user),
-          newDiscussion.settings.scores,
-        );
-      }
-    });
+    for await (const participant of discussion.participants) {
+      await this.gradeParticipant(
+        new Types.ObjectId(newDiscussion._id),
+        new Types.ObjectId(newDiscussion.poster._id),
+        new Types.ObjectId(participant.user),
+        newDiscussion.settings.scores,
+      );
+    }
   }
 
   async gradeParticipant(
@@ -162,6 +163,7 @@ export class GradeService {
     participantId: Types.ObjectId,
     rubric: any,
   ) {
+
     const gradeCriteria = {
       posts_made: rubric.posts_made ? rubric.posts_made : null,
       active_days: rubric.active_days ? rubric.active_days : null,
@@ -197,14 +199,17 @@ export class GradeService {
           percentage = 100;
         }
 
-        const tempGrade =
+        let tempGrade = 0;
+        tempGrade =
           (gradeCriteria.posts_made.max_points / 100) * percentage;
 
         grade.criteria.push({
           criteria: 'posts made',
+          earnedCriteria: dbPosts.length,
           max_points: gradeCriteria.posts_made.max_points,
           earned: tempGrade,
         });
+
         grade.total = grade.total + tempGrade;
       }
     }
@@ -225,14 +230,17 @@ export class GradeService {
       if (percentage > 100) {
         percentage = 100;
       }
-      const activeDatesGrade =
+      let activeDatesGrade = 0;
+      activeDatesGrade =
         (gradeCriteria.active_days.max_points / 100) * percentage;
 
       grade.criteria.push({
         criteria: 'active days',
+        earnedCritera: activeDates.length,
         max_points: gradeCriteria.active_days.max_points,
         earned: activeDatesGrade,
       });
+
       grade.total = grade.total + activeDatesGrade;
     }
 
@@ -256,20 +264,26 @@ export class GradeService {
         break;
       }
 
-      let percentage =
-        (commentsToUser / gradeCriteria.comments_received.required) * 100;
-      if (percentage > 100) {
-        percentage = 100;
+
+      let percentage = 0;
+      if (commentsToUser > 0) {
+        percentage = (commentsToUser / gradeCriteria.comments_received.required) * 100;
+        if (percentage > 100) {
+          percentage = 100;
+        }
       }
 
-      const commentsGrade =
+      let commentsGrade = 0;
+      commentsGrade =
         (gradeCriteria.comments_received.max_points / 100) * percentage;
 
       grade.criteria.push({
         criteria: 'comments received',
+        earnedCriteria: commentsToUser,
         max_points: gradeCriteria.comments_received.max_points,
         earned: commentsGrade,
       });
+
       grade.total = grade.total + commentsGrade;
     }
 
@@ -326,6 +340,7 @@ export class GradeService {
       });
       await saveGrade.save();
     } else {
+      console.log('false')
       await this.gradeModel.findOneAndUpdate(
         { discussionId: discussionId, userId: participantId },
         {

@@ -18,6 +18,7 @@ import {
 import { DiscussionPost, DiscussionPostSchema } from '../../entities/post/post';
 import { Setting, SettingSchema } from '../../entities/setting/setting';
 import { User, UserSchema } from '../../entities/user/user';
+import { GradeModule } from '../grade/grade.module';
 import { MilestoneModule } from '../milestone/milestone.module';
 import { NotificationModule } from '../notification/notification.module';
 import { PostController } from './post.controller';
@@ -27,6 +28,7 @@ import { PostController } from './post.controller';
     AuthModule,
     NotificationModule,
     MilestoneModule,
+    GradeModule,
     MongooseModule.forFeature([
       { name: DiscussionPost.name, schema: DiscussionPostSchema },
     ]),
@@ -51,4 +53,4 @@ import { PostController } from './post.controller';
   controllers: [PostController],
   providers: [],
 })
-export class PostModule {}
+export class PostModule { }
