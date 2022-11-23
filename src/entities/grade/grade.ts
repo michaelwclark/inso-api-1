@@ -28,6 +28,7 @@ export class Grade {
   public rubric: {
     criteria: string;
     max_points: number;
+    earnedCriteria: number;
     earned: number;
   }[];
 

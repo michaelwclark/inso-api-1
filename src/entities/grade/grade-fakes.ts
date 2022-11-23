@@ -47,6 +47,7 @@ export function makeFakeGradePayload(grade: Partial<Grade> = {}): Grade {
       {
         criteria: faker.lorem.words(3),
         max_points: faker.datatype.number(),
+        earnedCriteria: faker.datatype.number(),
         earned: faker.datatype.number(),
       },
     ],

@@ -45,6 +45,7 @@ import { NotificationService } from '../notification/notification.service';
 import environment from 'src/environment';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import POST_ERRORS from './post-errors';
+import { GradeService } from 'src/modules/grade/grade.service';
 
 const Filter = require('bad-words'); // eslint-disable-line
 
@@ -62,7 +63,8 @@ export class PostController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-  ) {}
+    private gradeService: GradeService,
+  ) { }
 
   @Post('discussion/:discussionId/post')
   @ApiOperation({
@@ -184,6 +186,8 @@ export class PostController {
           type: 'replies',
         },
       );
+      // Grade the user that received the comment
+      this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], postForComment.userId, discussion.settings.score);
     }
 
     // See what milestones have been achieved
@@ -229,6 +233,7 @@ export class PostController {
       );
     }
 
+    this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
     return newPost.save();
   }
 
