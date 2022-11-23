@@ -972,4 +972,5 @@ export class DiscussionController {
     }
     return tagsArray;
   }
+
 }
