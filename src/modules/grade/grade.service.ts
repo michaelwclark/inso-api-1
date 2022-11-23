@@ -340,7 +340,6 @@ export class GradeService {
       });
       await saveGrade.save();
     } else {
-      console.log('false')
       await this.gradeModel.findOneAndUpdate(
         { discussionId: discussionId, userId: participantId },
         {
