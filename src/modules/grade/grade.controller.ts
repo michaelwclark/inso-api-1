@@ -24,7 +24,7 @@ export class GradeController {
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
     private gradeService: GradeService,
     private notificationservice: NotificationService,
-  ) {}
+  ) { }
 
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
   @ApiBody({ type: GradeDTO })
@@ -85,7 +85,7 @@ export class GradeController {
       participant.user,
       req.user.userId,
       {
-        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussionId}">${participant.grade}</a></h1>`,
+        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="?id=${discussionId}">${participant.grade}</a></h1>`,
         text: `${this.notificationservice}`,
         type: 'grade',
       },

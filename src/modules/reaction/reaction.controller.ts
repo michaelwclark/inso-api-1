@@ -46,7 +46,7 @@ export class ReactionController {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-  ) {}
+  ) { }
 
   @Post('post/:postId/reaction')
   @UseGuards(JwtAuthGuard)
@@ -101,7 +101,7 @@ export class ReactionController {
         post.userId,
         reaction.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> reacted in <a className="discussion-link" href="?id=${discussion._id}">${discussion.name}</a></h1>`,
           text: `${reaction.reaction}`,
           type: 'reaction',
         },
@@ -127,7 +127,7 @@ export class ReactionController {
         post.userId,
         reaction.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> upvoted in <a className="discussion-link" href="?id=${discussion._id}">${discussion.name}</a></h1>`,
           text: `${reaction.reaction}`,
           type: 'upvote',
         },
