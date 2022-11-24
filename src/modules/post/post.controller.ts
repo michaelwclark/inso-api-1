@@ -187,7 +187,7 @@ export class PostController {
         },
       );
       // Grade the user that received the comment
-      this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], postForComment.userId, discussion.settings.score);
+      //this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], postForComment.userId, discussion.settings.score);
     }
 
     // See what milestones have been achieved
@@ -233,7 +233,7 @@ export class PostController {
       );
     }
 
-    this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
+    //this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
     return newPost.save();
   }
 
