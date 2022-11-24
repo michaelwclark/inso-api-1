@@ -45,7 +45,7 @@ import { NotificationService } from '../notification/notification.service';
 import environment from 'src/environment';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import POST_ERRORS from './post-errors';
-import { GradeService } from 'src/modules/grade/grade.service';
+//import { GradeService } from 'src/modules/grade/grade.service';
 
 const Filter = require('bad-words'); // eslint-disable-line
 
@@ -63,7 +63,7 @@ export class PostController {
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private notificationService: NotificationService,
     private milestoneService: MilestoneService,
-    private gradeService: GradeService,
+    //private gradeService: GradeService,
   ) { }
 
   @Post('discussion/:discussionId/post')
