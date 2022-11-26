@@ -13,7 +13,6 @@ import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
-import environment from 'src/environment';
 import GRADE_ERRORS from './grade-errors';
 
 @Controller()
