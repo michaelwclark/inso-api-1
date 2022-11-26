@@ -233,7 +233,8 @@ export class PostController {
       );
     }
 
-    //this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
+    // Use the first facilitator for autograding
+    // await this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
     return newPost.save();
   }
 
