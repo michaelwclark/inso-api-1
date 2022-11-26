@@ -42,7 +42,6 @@ import { Setting, SettingDocument } from '../../entities/setting/setting';
 import { User, UserDocument } from '../../entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
-import environment from 'src/environment';
 import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import POST_ERRORS from './post-errors';
 //import { GradeService } from 'src/modules/grade/grade.service';
@@ -167,7 +166,7 @@ export class PostController {
           participant.user,
           newPost.userId,
           {
-            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
+            header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded in <a className="discussion-link" href="?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
             text: `${notificationText}`,
             type: 'post',
           },
@@ -176,12 +175,13 @@ export class PostController {
     }
 
     // If the post is a comment_for something notify that participant that someone responded to them
-    if (newPost.comment_for && postForComment.userId !== newPost.userId) {
+    if (newPost.comment_for) {
+      // && postForComment.userId !== newPost.userId
       await this.notificationService.createNotification(
         postForComment.userId,
         newPost.userId,
         {
-          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
+          header: `<h1 className="notification-header"><span className="username">@${user.username}</span> responded to your post in <a className="discussion-link" href="?id=${discussion._id}&postId=${newPost._id}">${discussion.name}</a></h1>`,
           text: `${notificationText}`,
           type: 'replies',
         },

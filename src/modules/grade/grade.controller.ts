@@ -13,7 +13,6 @@ import { GradeDTO } from 'src/entities/grade/create-grade';
 import { Grade, GradeDocument } from 'src/entities/grade/grade';
 import { GradeService } from './grade.service';
 import { NotificationService } from 'src/modules/notification/notification.service';
-import environment from 'src/environment';
 import GRADE_ERRORS from './grade-errors';
 
 @Controller()
@@ -24,7 +23,7 @@ export class GradeController {
     @InjectModel(Grade.name) private gradeModel: Model<GradeDocument>,
     private gradeService: GradeService,
     private notificationservice: NotificationService,
-  ) {}
+  ) { }
 
   @Patch('/discussions/:discussionId/participants/:participantId/grade')
   @ApiBody({ type: GradeDTO })
@@ -85,7 +84,7 @@ export class GradeController {
       participant.user,
       req.user.userId,
       {
-        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="${environment.DISCUSSION_REDIRECT}?id=${discussionId}">${participant.grade}</a></h1>`,
+        header: `<h1 className="notification-header">Recent grade post <span className="username">@${participant.user}</span> in <a className="discussion-link" href="?id=${discussionId}">${participant.grade}</a></h1>`,
         text: `${this.notificationservice}`,
         type: 'grade',
       },
