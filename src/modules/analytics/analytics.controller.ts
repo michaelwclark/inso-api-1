@@ -35,7 +35,7 @@ export class AnalyticsController {
     @InjectModel(DiscussionPost.name)
     private postModel: Model<DiscussionPostDocument>,
     @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
-  ) {}
+  ) { }
 
   @Get('discussion/:discussionId/analytics')
   async getAnalytics(
@@ -120,7 +120,7 @@ export class AnalyticsController {
       const postWithComments = await this.getBurstData(post);
       posts.push(postWithComments);
     }
-    return new BurstChartData({ flare: 'post threads', children: posts });
+    return new BurstChartData({ name: 'post threads', children: posts });
   }
 
   async getDirectedChartData(discussion: any): Promise<DirectedChartData> {

@@ -6,30 +6,38 @@
 export class BurstChartChildren {
   name: string;
   children: BurstChartChildren[];
+  value: number;
+  url: string;
+
+  constructor(partial?: any) {
+    if (partial) {
+      this.name = partial.name;
+      this.value = 50;
+      this.children = partial.children
+        ? partial.children.map((partial) => {
+          return new BurstChartChildren(partial);
+        })
+        : [];
+      this.url = `http://localhost:3001/discussion?id=${partial.discussionId}&postId=${partial._id}`
+      // this.post = {
+      //   _id: partial._id,
+      //   discussionId: partial.discussionId
+      // }
+    }
+  }
+}
+
+export class BurstChartData {
+  name: string;
+  children: BurstChartChildren[];
 
   constructor(partial?: any) {
     if (partial) {
       this.name = partial.name;
       this.children = partial.children
         ? partial.children.map((partial) => {
-            return new BurstChartChildren(partial);
-          })
-        : [];
-    }
-  }
-}
-
-export class BurstChartData {
-  flare: string;
-  children: BurstChartChildren[];
-
-  constructor(partial?: any) {
-    if (partial) {
-      this.flare = partial.flare;
-      this.children = partial.children
-        ? partial.children.map((partial) => {
-            return new BurstChartChildren(partial);
-          })
+          return new BurstChartChildren(partial);
+        })
         : [];
     }
   }

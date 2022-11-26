@@ -32,7 +32,6 @@ import { Reaction, ReactionDocument } from 'src/entities/reaction/reaction';
 import { User, UserDocument } from 'src/entities/user/user';
 import { MilestoneService } from '../milestone/milestone.service';
 import { NotificationService } from '../notification/notification.service';
-import environment from 'src/environment';
 import REACTION_ERRORS from './reaction-errors';
 
 @Controller()
