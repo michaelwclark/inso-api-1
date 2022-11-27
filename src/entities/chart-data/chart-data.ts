@@ -19,10 +19,6 @@ export class BurstChartChildren {
         })
         : [];
       this.url = `http://localhost:3001/discussion?id=${partial.discussionId}&postId=${partial._id}`
-      // this.post = {
-      //   _id: partial._id,
-      //   discussionId: partial.discussionId
-      // }
     }
   }
 }

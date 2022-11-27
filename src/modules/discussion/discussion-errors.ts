@@ -1,6 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export default {
+  BAD_DISCUSSION_QUERY: new HttpException(
+    'Query parameters are not valid for discussions',
+    HttpStatus.BAD_REQUEST
+  ),
   USER_NOT_FOUND: new HttpException(
     'User trying to create discussion does not exist',
     HttpStatus.NOT_FOUND,

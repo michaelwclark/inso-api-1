@@ -175,8 +175,8 @@ export class PostController {
     }
 
     // If the post is a comment_for something notify that participant that someone responded to them
-    if (newPost.comment_for) {
-      // && postForComment.userId !== newPost.userId
+    
+    if (newPost.comment_for && postForComment.userId !== req.userId) {
       await this.notificationService.createNotification(
         postForComment.userId,
         newPost.userId,
@@ -233,7 +233,8 @@ export class PostController {
       );
     }
 
-    //this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
+    // Use the first facilitator for autograding
+    // await this.gradeService.gradeParticipant(new Types.ObjectId(discussionId), discussion.facilitators[0], newPost.userId, discussion.settings.score);
     return newPost.save();
   }
 

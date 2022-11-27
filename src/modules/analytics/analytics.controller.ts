@@ -195,13 +195,15 @@ export class AnalyticsController {
       .populate('userId', ['f_name', 'l_name', 'email', 'username'])
       .lean();
     const freshComments = [];
+    const children = [];
     if (comments.length) {
       for await (const comment of comments) {
         const post = await this.getBurstData(comment);
+        children.push(post)
         freshComments.push({
           ...comment,
           name: post.userId.f_name + ' ' + post.userId.l_name,
-          children: [],
+          children: children,
         });
       }
     }
