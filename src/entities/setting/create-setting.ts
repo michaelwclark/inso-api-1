@@ -21,7 +21,7 @@ export class SettingsCreateDTO {
   })
   @IsNotEmpty()
   @IsString()
-  @Length(2, 1000)
+  @Length(2, 3500)
   @IsOptional()
   public starter_prompt: string;
 
