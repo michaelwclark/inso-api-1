@@ -30,7 +30,7 @@ describe('SettingsCreateDTO', () => {
 
     it('when provided should validate length < 1000', async () => {
       const dto = makeFakeSettingsCreateDTOPlain({
-        starter_prompt: 'a'.repeat(1001), // invalid
+        starter_prompt: 'a'.repeat(3501), // invalid
       });
       const invalid = plainToInstance(SettingsCreateDTO, dto);
       const errors = await validate(invalid);
