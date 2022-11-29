@@ -101,6 +101,7 @@ export class InspirationController {
           }
         });
       }
+      // If they have a specific order, order them
       if (type === "posting" || type === "responding") {
         vals.forEach(val => {
           if (val.cat === 'topic') {
