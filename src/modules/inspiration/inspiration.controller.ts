@@ -1,6 +1,6 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+//import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import {
   ApiOperation,
   ApiOkResponse,
@@ -38,7 +38,7 @@ export class InspirationController {
     type: InspirationReadResponse,
   })
   @ApiUnauthorizedResponse({ description: 'The user is not logged in' })
-  @UseGuards(JwtAuthGuard)
+  //@UseGuards(JwtAuthGuard)
   @ApiQuery({
     name: 'subcats',
     required: false,
@@ -74,6 +74,13 @@ export class InspirationController {
                 instructions: '$instructions',
                 outline: '$outline',
                 icon: '$icon',
+                topicOrder: '$topicOrder',
+                debateOrder: '$debateOrder',
+                peerReviewOrder: '$peerReviewOrder',
+                testPrepOrder: '$testPrepOrder',
+                testReviewOrder: '$testReviewOrder',
+                caseStudyOrder: '$caseDesignOrder',
+                designThinkingOrder: '$designThinkingOrder'
               },
             },
           },
@@ -93,6 +100,32 @@ export class InspirationController {
             return val;
           }
         });
+      }
+      if (type === "posting" || type === "responding") {
+        vals.forEach(val => {
+          if (val.cat === 'topic') {
+            val.values.sort(function (a, b) { return (a.topicOrder > b.topicOrder) ? 1 : ((b.topicOrder > a.topicOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'debate') {
+            val.values.sort(function (a, b) { return (a.debateOrder > b.debateOrder) ? 1 : ((b.debateOrder > a.debateOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'peerReview') {
+            val.values.sort(function (a, b) { return (a.peerReviewOrder > b.peerReviewOrder) ? 1 : ((b.peerReviewOrder > a.peerReviewOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'testPrep') {
+            val.values.sort(function (a, b) { return (a.testPrepOrder > b.testPrepOrder) ? 1 : ((b.testPrepOrder > a.testPrepOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'testReview') {
+            val.values.sort(function (a, b) { return (a.testReviewOrder > b.testReviewOrder) ? 1 : ((b.testReviewOrder > a.testReviewOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'caseStudy') {
+            val.values.sort(function (a, b) { return (a.caseStudyOrder > b.caseStudyOrder) ? 1 : ((b.caseStudyOrder > a.caseStudyOrder) ? -1 : 0); });
+          }
+          if (val.cat === 'designThinking') {
+            val.values.sort(function (a, b) { return (a.designThinkingOrder > b.designThinkingOrder) ? 1 : ((b.designThinkingOrder > a.designThinkingOrder) ? -1 : 0); });
+          }
+
+        })
       }
 
       returnVal[type] = vals;
