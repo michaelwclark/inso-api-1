@@ -66,6 +66,7 @@ export class PostUpdateDTO {
 
       if (
         this.post_inspiration &&
+        this.post.outline &&
         Object.keys(this.post.outline).length !== 3
       ) {
         throw new HttpException(
