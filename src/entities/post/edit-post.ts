@@ -73,7 +73,8 @@ export class PostUpdateDTO {
           HttpStatus.BAD_REQUEST,
         );
       }
-      if (!this.post_inspiration && Object.keys(this.post.outline).length > 0) {
+
+      if (!this.post_inspiration && this.post.outline && Object.keys(this.post.outline).length > 0) {
         throw new HttpException(
           'No post inspiration specified. You cannot have an outline',
           HttpStatus.BAD_REQUEST,
