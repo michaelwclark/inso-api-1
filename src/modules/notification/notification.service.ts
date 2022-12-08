@@ -40,7 +40,7 @@ export class NotificationService {
     );
   }
 
-  async markAllNotificationsAsRead(userId: Types.ObjectId) {
+  async markAllNotificationsAsRead(userId: Types.ObjectId): Promise<any> {
     return await this.notificationModel.updateMany(
       { userId: userId },
       { read: true },
