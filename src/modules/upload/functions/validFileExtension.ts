@@ -43,7 +43,7 @@ export const validPhotoExtensions = [
 ];
 
 export function checkFileExtension(type, file) {
-  const extension = file.split('.').pop().lower();
+  const extension = file.split('.').pop()?.toLowerCase();
 
   if (type === 'profile') {
     if (!validPhotoExtensions.includes(extension)) {
