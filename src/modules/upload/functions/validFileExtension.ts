@@ -29,10 +29,21 @@ export const extensions = [
   'wpd',
 ];
 
-export const validPhotoExtensions = ['jpg', 'png', 'jpeg'];
+export const validPhotoExtensions = [
+  'jpg',
+  'png',
+  'jpeg',
+  'jfif',
+  'pjpeg',
+  'pjp',
+  'svg',
+  'webp',
+  'gif',
+  'bmp',
+];
 
 export function checkFileExtension(type, file) {
-  const extension = file.split('.').pop();
+  const extension = file.split('.').pop().lower();
 
   if (type === 'profile') {
     if (!validPhotoExtensions.includes(extension)) {
